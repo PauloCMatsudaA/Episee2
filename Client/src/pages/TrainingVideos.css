@@ -1,0 +1,331 @@
+/* ═══════════════════════════════════════════════════════════
+   TrainingVideos — Estilos do modal e seções
+   ═══════════════════════════════════════════════════════════ */
+
+/* Overlay */
+.tv-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+  animation: tv-fade-in 0.18s ease;
+}
+
+@keyframes tv-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Caixa do modal */
+.tv-modal {
+  background: var(--color-surface, #fff);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.22);
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: tv-slide-up 0.22s cubic-bezier(0.16,1,0.3,1);
+  display: flex;
+  flex-direction: column;
+}
+
+.tv-modal.tv-modal--lg {
+  max-width: 640px;
+}
+
+@keyframes tv-slide-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* Cabeçalho do modal */
+.tv-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  position: sticky;
+  top: 0;
+  background: var(--color-surface, #fff);
+  z-index: 1;
+  border-radius: 14px 14px 0 0;
+}
+
+.tv-modal__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text, #111);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.tv-modal__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted, #6b7280);
+  padding: 0.25rem;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.tv-modal__close:hover {
+  background: var(--color-surface-offset, #f3f4f6);
+  color: var(--color-text, #111);
+}
+
+/* Corpo */
+.tv-modal__body {
+  padding: 1.25rem 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Rodapé */
+.tv-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.625rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  background: var(--color-surface, #fff);
+  border-radius: 0 0 14px 14px;
+  position: sticky;
+  bottom: 0;
+}
+
+/* ── Seções do formulário ── */
+.tv-section {
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.tv-section__label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted, #6b7280);
+  background: var(--color-surface-offset, #f9fafb);
+  padding: 0.55rem 0.875rem;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.tv-section__body {
+  padding: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--color-surface, #fff);
+}
+
+/* ── Abas URL / Upload ── */
+.tv-tabs {
+  display: flex;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 0.25rem;
+}
+
+.tv-tab {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--color-surface-offset, #f9fafb);
+  border: none;
+  color: var(--color-text-muted, #6b7280);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tv-tab:not(:last-child) {
+  border-right: 1px solid var(--color-border, #e5e7eb);
+}
+
+.tv-tab--active {
+  background: var(--color-primary, #01696f);
+  color: #fff;
+  font-weight: 600;
+}
+
+.tv-tab:not(.tv-tab--active):hover {
+  background: var(--color-surface-dynamic, #e5e7eb);
+  color: var(--color-text, #111);
+}
+
+/* ── Área de upload (drag & drop) ── */
+.tv-dropzone {
+  border: 2px dashed var(--color-border, #d1d5db);
+  border-radius: 8px;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: var(--color-surface-offset, #f9fafb);
+  position: relative;
+}
+
+.tv-dropzone:hover,
+.tv-dropzone--active {
+  border-color: var(--color-primary, #01696f);
+  background: color-mix(in oklab, var(--color-primary, #01696f) 6%, white);
+}
+
+.tv-dropzone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.tv-dropzone__icon {
+  color: var(--color-primary, #01696f);
+  margin-bottom: 0.5rem;
+}
+
+.tv-dropzone__text {
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #6b7280);
+  margin: 0;
+}
+
+.tv-dropzone__text strong {
+  color: var(--color-primary, #01696f);
+}
+
+.tv-dropzone__hint {
+  font-size: 0.75rem;
+  color: var(--color-text-faint, #9ca3af);
+  margin-top: 0.25rem;
+}
+
+/* Arquivo selecionado */
+.tv-file-selected {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: color-mix(in oklab, var(--color-primary, #01696f) 8%, white);
+  border: 1px solid color-mix(in oklab, var(--color-primary, #01696f) 30%, white);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--color-text, #111);
+}
+
+.tv-file-selected__name {
+  flex: 1;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tv-file-selected__remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted, #6b7280);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.tv-file-selected__remove:hover { color: var(--color-error, #ef4444); }
+
+/* Barra de progresso */
+.tv-progress {
+  height: 6px;
+  background: var(--color-surface-dynamic, #e5e7eb);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 0.25rem;
+}
+
+.tv-progress__bar {
+  height: 100%;
+  background: var(--color-primary, #01696f);
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+
+/* ── Linha de dois campos ── */
+.tv-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 480px) {
+  .tv-row { grid-template-columns: 1fr; }
+  .tv-modal { max-height: 100vh; border-radius: 14px 14px 0 0; align-self: flex-end; }
+}
+
+/* ── Toggle visível no chatbot ── */
+.tv-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.875rem;
+  color: var(--color-text, #111);
+}
+
+.tv-toggle input { display: none; }
+
+.tv-toggle__track {
+  width: 36px;
+  height: 20px;
+  background: var(--color-surface-dynamic, #d1d5db);
+  border-radius: 99px;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.tv-toggle input:checked + .tv-toggle__track {
+  background: var(--color-primary, #01696f);
+}
+
+.tv-toggle__track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.tv-toggle input:checked + .tv-toggle__track::after {
+  transform: translateX(16px);
+}
