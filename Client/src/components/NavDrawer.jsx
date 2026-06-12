@@ -12,25 +12,27 @@ import {
   LogOut,
   X,
   Users,
+  BookOpen,
 } from "lucide-react";
 
 const itensMenu = [
-  { rota: "/dashboard", rotulo: "Dashboard", Icone: LayoutDashboard },
-  { rota: "/occurrences", rotulo: "Ocorrências", Icone: AlertTriangle },
-  { rota: "/reports", rotulo: "Relatórios", Icone: FileBarChart },
-  { rota: "/epi-requests", rotulo: "Solicitações EPI", Icone: ClipboardList },
-  { rota: "/cameras", rotulo: "Câmeras", Icone: Camera },
-  { rota: "/sectors", rotulo: "Setores", Icone: Building2 },
-  { rota: "/users", rotulo: "Usuários", Icone: Users },
-  { rota: "/settings", rotulo: "Configurações", Icone: Settings },
+  { rota: "/dashboard",       rotulo: "Dashboard",         Icone: LayoutDashboard },
+  { rota: "/occurrences",     rotulo: "Ocorrências",        Icone: AlertTriangle },
+  { rota: "/reports",         rotulo: "Relatórios",         Icone: FileBarChart },
+  { rota: "/epi-requests",    rotulo: "Solicitações EPI",   Icone: ClipboardList },
+  { rota: "/cameras",         rotulo: "Câmeras",            Icone: Camera },
+  { rota: "/sectors",         rotulo: "Setores",            Icone: Building2 },
+  { rota: "/users",           rotulo: "Usuários",           Icone: Users },
+  { rota: "/training-videos", rotulo: "Vídeos Educativos",  Icone: BookOpen },
+  { rota: "/settings",        rotulo: "Configurações",      Icone: Settings },
 ];
 
 export default function MenuGaveta({ aberto, aoFechar }) {
   const { usuario, sair } = useAuth();
 
   const inicial = usuario?.nome?.charAt(0) || usuario?.name?.charAt(0) || "U";
-  const nome = usuario?.nome || usuario?.name || "";
-  const cargo = usuario?.cargo || usuario?.role || "";
+  const nome    = usuario?.nome  || usuario?.name  || "";
+  const cargo   = usuario?.cargo || usuario?.role  || "";
 
   return (
     <>
@@ -82,10 +84,7 @@ export default function MenuGaveta({ aberto, aoFechar }) {
             </div>
           )}
           <button
-            onClick={() => {
-              sair();
-              aoFechar();
-            }}
+            onClick={() => { sair(); aoFechar(); }}
             className="nav-logout"
           >
             <LogOut size={16} />

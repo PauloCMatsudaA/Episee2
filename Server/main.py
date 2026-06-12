@@ -18,7 +18,7 @@ from app.models.sector import Sector
 from app.api import notifications
 from app.api import reports
 from app.api.telegram import router as telegram_router
-
+from app.api.training_videos import router as training_router
 
 import app.models
 
@@ -94,7 +94,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
-    allow_credentials=True,  
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -131,18 +131,19 @@ async def serve_hls(camera_id: str, filename: str):
 
 API_PREFIX = "/api"
 
-app.include_router(auth.router, prefix=API_PREFIX)
-app.include_router(users.router,prefix=API_PREFIX)
-app.include_router(occurrences.router,prefix=API_PREFIX)
-app.include_router(epi_requests.router, prefix=API_PREFIX)
-app.include_router(cameras.router, prefix=API_PREFIX)
-app.include_router(sectors.router,prefix=API_PREFIX)
-app.include_router(dashboard.router,prefix=API_PREFIX)
-app.include_router(detection.router, prefix=API_PREFIX)
-app.include_router(reports.router, prefix=API_PREFIX)
-app.include_router(notifications.router, prefix=API_PREFIX)
+app.include_router(auth.router,           prefix=API_PREFIX)
+app.include_router(users.router,          prefix=API_PREFIX)
+app.include_router(occurrences.router,    prefix=API_PREFIX)
+app.include_router(epi_requests.router,   prefix=API_PREFIX)
+app.include_router(cameras.router,        prefix=API_PREFIX)
+app.include_router(sectors.router,        prefix=API_PREFIX)
+app.include_router(dashboard.router,      prefix=API_PREFIX)
+app.include_router(detection.router,      prefix=API_PREFIX)
+app.include_router(reports.router,        prefix=API_PREFIX)
+app.include_router(notifications.router,  prefix=API_PREFIX)
+app.include_router(training_router,       prefix=API_PREFIX)
 app.include_router(chatbot_router)
-app.include_router(telegram_router, prefix="/api")
+app.include_router(telegram_router,       prefix=API_PREFIX)
 
 
 @app.get("/health", tags=["Health"])
@@ -154,16 +155,17 @@ async def health_check():
 async def root():
     return {"message": "EPIsee API está rodando.", "docs": "/docs", "health": "/health"}
 
+
 @app.on_event("startup")
 async def registrar_webhook_telegram():
     import httpx
     from app.core.config import settings
 
-    token = getattr(settings, "TELEGRAM_BOT_TOKEN", "")
-    url_webhook = getattr(settings, "APP_URL", "")  # ex: https://abc.ngrok.io
+    token       = getattr(settings, "TELEGRAM_BOT_TOKEN", "")
+    url_webhook = getattr(settings, "APP_URL", "")
 
     if not token or not url_webhook:
-        return  # silencioso se não configurado
+        return
 
     webhook_url = f"{url_webhook}/api/telegram/webhook"
     async with httpx.AsyncClient() as client:
