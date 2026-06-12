@@ -12,6 +12,7 @@ from app.schemas.epi_request import (
     EPIRequestCreate,
     EPIRequestResponse,
     EPIRequestApproveReject,
+    EPIRequestEntrega,
 )
 
 router = APIRouter(prefix="/epi-requests", tags=["EPI Requests"])
@@ -22,13 +23,11 @@ async def get_my_requests(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Return EPI requests made by the current user."""
     result = await db.execute(
         select(EPIRequest).where(EPIRequest.worker_id == current_user.id)
         .order_by(EPIRequest.created_at.desc())
     )
-    requests = result.scalars().all()
-    return [EPIRequestResponse.model_validate(r) for r in requests]
+    return [EPIRequestResponse.model_validate(r) for r in result.scalars().all()]
 
 
 @router.get("/", response_model=List[EPIRequestResponse])
@@ -40,22 +39,17 @@ async def list_epi_requests(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """List EPI requests. Managers see all; workers see only their own."""
     query = select(EPIRequest)
-
     if current_user.role == "trabalhador":
         query = query.where(EPIRequest.worker_id == current_user.id)
     else:
         if sector_id:
             query = query.where(EPIRequest.sector_id == sector_id)
-
     if status:
         query = query.where(EPIRequest.status == status)
-
     query = query.order_by(EPIRequest.created_at.desc()).offset(skip).limit(limit)
     result = await db.execute(query)
-    requests = result.scalars().all()
-    return [EPIRequestResponse.model_validate(r) for r in requests]
+    return [EPIRequestResponse.model_validate(r) for r in result.scalars().all()]
 
 
 @router.post("/", response_model=EPIRequestResponse, status_code=status.HTTP_201_CREATED)
@@ -80,23 +74,20 @@ async def create_epi_request(
 @router.patch("/{request_id}/approve", response_model=EPIRequestResponse)
 async def approve_epi_request(
     request_id: int,
-    body: EPIRequestApproveReject = EPIRequestApproveReject(),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_manager),
 ):
-    """Manager approves an EPI request."""
+    """Gestor aprova uma solicitação de EPI."""
     result = await db.execute(select(EPIRequest).where(EPIRequest.id == request_id))
     epi_request = result.scalar_one_or_none()
     if not epi_request:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Solicitação não encontrada")
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
     if epi_request.status != EPIRequestStatus.pendente:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Apenas solicitações pendentes podem ser aprovadas",
-        )
+        raise HTTPException(status_code=400, detail="Apenas solicitações pendentes podem ser aprovadas")
 
     epi_request.status = EPIRequestStatus.aprovada
     epi_request.manager_id = current_user.id
+    epi_request.motivo_rejeicao = None
     epi_request.updated_at = datetime.utcnow()
     await db.flush()
     await db.refresh(epi_request)
@@ -106,23 +97,46 @@ async def approve_epi_request(
 @router.patch("/{request_id}/reject", response_model=EPIRequestResponse)
 async def reject_epi_request(
     request_id: int,
-    body: EPIRequestApproveReject = EPIRequestApproveReject(),
+    body: EPIRequestApproveReject,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_manager),
 ):
-    """Manager rejects an EPI request."""
+    """Gestor rejeita uma solicitação de EPI com justificativa obrigatória."""
+    if not body.motivo_rejeicao or not body.motivo_rejeicao.strip():
+        raise HTTPException(status_code=400, detail="É obrigatório informar o motivo da rejeição.")
+
     result = await db.execute(select(EPIRequest).where(EPIRequest.id == request_id))
     epi_request = result.scalar_one_or_none()
     if not epi_request:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Solicitação não encontrada")
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
     if epi_request.status != EPIRequestStatus.pendente:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Apenas solicitações pendentes podem ser rejeitadas",
-        )
+        raise HTTPException(status_code=400, detail="Apenas solicitações pendentes podem ser rejeitadas")
 
     epi_request.status = EPIRequestStatus.rejeitada
     epi_request.manager_id = current_user.id
+    epi_request.motivo_rejeicao = body.motivo_rejeicao.strip()
+    epi_request.updated_at = datetime.utcnow()
+    await db.flush()
+    await db.refresh(epi_request)
+    return EPIRequestResponse.model_validate(epi_request)
+
+
+@router.patch("/{request_id}/entrega", response_model=EPIRequestResponse)
+async def marcar_entrega(
+    request_id: int,
+    body: EPIRequestEntrega,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_manager),
+):
+    """Gestor marca se o EPI foi entregue ou não ao trabalhador (só para aprovadas)."""
+    result = await db.execute(select(EPIRequest).where(EPIRequest.id == request_id))
+    epi_request = result.scalar_one_or_none()
+    if not epi_request:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
+    if epi_request.status != EPIRequestStatus.aprovada:
+        raise HTTPException(status_code=400, detail="Só é possível marcar entrega em solicitações aprovadas")
+
+    epi_request.entregue = body.entregue
     epi_request.updated_at = datetime.utcnow()
     await db.flush()
     await db.refresh(epi_request)

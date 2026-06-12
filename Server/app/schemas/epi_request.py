@@ -25,6 +25,8 @@ class EPIRequestResponse(EPIRequestBase):
     worker_id: int
     status: EPIRequestStatus
     manager_id: Optional[int] = None
+    entregue: Optional[bool] = None
+    motivo_rejeicao: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -32,4 +34,8 @@ class EPIRequestResponse(EPIRequestBase):
 
 
 class EPIRequestApproveReject(BaseModel):
-    reason: Optional[str] = None
+    motivo_rejeicao: Optional[str] = None
+
+
+class EPIRequestEntrega(BaseModel):
+    entregue: bool
