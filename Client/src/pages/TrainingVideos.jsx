@@ -14,21 +14,19 @@ export default function TrainingVideos() {
   const [sucesso, setSucesso]     = useState('');
   const [expandido, setExpandido] = useState(null);
 
-  // Modal EpiType
   const [modalEpi, setModalEpi]       = useState(false);
   const [epiEditando, setEpiEditando] = useState(null);
   const [formEpi, setFormEpi]         = useState({
-    nome: '', descricao: '', quando_usar: '', como_usar: '', erros_comuns: '', nr6_ref: ''
+    nome: '', descricao: '', quando_usar: '', como_usar: '', erros_comuns: ''
   });
 
-  // Modal Vídeo
-  const [modalVideo, setModalVideo]         = useState(false);
-  const [videoEditando, setVideoEditando]   = useState(null);
+  const [modalVideo, setModalVideo]             = useState(false);
+  const [videoEditando, setVideoEditando]       = useState(null);
   const [epiIdSelecionado, setEpiIdSelecionado] = useState(null);
-  const [formVideo, setFormVideo]           = useState({
+  const [formVideo, setFormVideo]               = useState({
     titulo: '', url: '', descricao: '', fonte: '', aprovado: true, prioridade: 0
   });
-  const [abaVideo, setAbaVideo]   = useState('url'); // 'url' | 'upload'
+  const [abaVideo, setAbaVideo]   = useState('url');
   const [arquivo, setArquivo]     = useState(null);
   const [dragOver, setDragOver]   = useState(false);
   const [uploadPct, setUploadPct] = useState(0);
@@ -48,13 +46,12 @@ export default function TrainingVideos() {
 
   useEffect(() => { carregarEpis(); }, []);
 
-  // ── EpiType ────────────────────────────────────────────────────────────────
   const abrirModalEpi = (epi = null) => {
     setEpiEditando(epi);
     setFormEpi(epi
       ? { nome: epi.nome, descricao: epi.descricao || '', quando_usar: epi.quando_usar || '',
-          como_usar: epi.como_usar || '', erros_comuns: epi.erros_comuns || '', nr6_ref: epi.nr6_ref || '' }
-      : { nome: '', descricao: '', quando_usar: '', como_usar: '', erros_comuns: '', nr6_ref: '' }
+          como_usar: epi.como_usar || '', erros_comuns: epi.erros_comuns || '' }
+      : { nome: '', descricao: '', quando_usar: '', como_usar: '', erros_comuns: '' }
     );
     setModalEpi(true);
   };
@@ -83,7 +80,6 @@ export default function TrainingVideos() {
     } catch { mostrarErro('Erro ao excluir EPI.'); }
   };
 
-  // ── Vídeo ──────────────────────────────────────────────────────────────────
   const abrirModalVideo = (epiId, video = null) => {
     setEpiIdSelecionado(epiId);
     setVideoEditando(video);
@@ -109,12 +105,9 @@ export default function TrainingVideos() {
 
   const salvarVideo = async () => {
     if (!formVideo.titulo.trim()) return mostrarErro('Título é obrigatório.');
-
     try {
       setEnviando(true);
-
       if (abaVideo === 'upload' && arquivo && !videoEditando) {
-        // Upload de arquivo
         const fd = new FormData();
         fd.append('file', arquivo);
         fd.append('titulo', formVideo.titulo);
@@ -123,7 +116,6 @@ export default function TrainingVideos() {
         fd.append('aprovado', formVideo.aprovado);
         fd.append('prioridade', formVideo.prioridade);
         fd.append('epi_type_id', epiIdSelecionado);
-
         await api.post('/api/training/videos/upload', fd, {
           headers: { 'Content-Type': 'multipart/form-data' },
           onUploadProgress: (ev) => {
@@ -132,7 +124,6 @@ export default function TrainingVideos() {
         });
         mostrarSucesso('Vídeo enviado com sucesso!');
       } else {
-        // URL
         if (!formVideo.url.trim()) return mostrarErro('URL do vídeo é obrigatória.');
         if (videoEditando) {
           await api.patch(`/api/training/videos/${videoEditando.id}`, formVideo);
@@ -142,7 +133,6 @@ export default function TrainingVideos() {
           mostrarSucesso('Vídeo adicionado!');
         }
       }
-
       setModalVideo(false);
       carregarEpis();
     } catch (e) {
@@ -164,114 +154,106 @@ export default function TrainingVideos() {
 
   const toggleExpandido = (id) => setExpandido(expandido === id ? null : id);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   if (loading) return (
-    <div className="flex items-center justify-center h-40">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    <div className="tv-loading">
+      <div className="tv-spinner" />
     </div>
   );
 
   return (
-    <div className="space-y-6">
-      {/* Cabeçalho */}
-      <div className="flex items-center justify-between">
+    <div className="tv-page">
+      <div className="tv-header">
         <div>
-          <h2 className="text-xl font-semibold text-primary flex items-center gap-2">
+          <h2 className="tv-header__title">
             <BookOpen size={22} /> Vídeos Educativos de EPIs
           </h2>
-          <p className="text-sm text-secondary mt-1">Gerencie os vídeos que o chatbot recomendará aos trabalhadores</p>
+          <p className="tv-header__subtitle">Gerencie os vídeos que o chatbot recomendará aos trabalhadores</p>
         </div>
-        <button onClick={() => abrirModalEpi()} className="btn-primary flex items-center gap-2">
+        <button onClick={() => abrirModalEpi()} className="btn-primary tv-header__btn">
           <Plus size={16} /> Novo EPI
         </button>
       </div>
 
-      {/* Alertas */}
-      {erro    && <div className="alert-error flex items-center gap-2"><AlertCircle size={16}/>{erro}</div>}
-      {sucesso && <div className="alert-success flex items-center gap-2"><CheckCircle size={16}/>{sucesso}</div>}
+      {erro    && <div className="tv-alert tv-alert--error"><AlertCircle size={16}/>{erro}</div>}
+      {sucesso && <div className="tv-alert tv-alert--success"><CheckCircle size={16}/>{sucesso}</div>}
 
-      {/* Lista de EPIs */}
       {epiTypes.length === 0 ? (
-        <div className="card text-center py-12 text-secondary">
-          <Shield size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">Nenhum EPI cadastrado ainda</p>
-          <p className="text-sm mt-1">Clique em "Novo EPI" para começar</p>
+        <div className="tv-empty">
+          <Shield size={40} className="tv-empty__icon" />
+          <p className="tv-empty__title">Nenhum EPI cadastrado ainda</p>
+          <p className="tv-empty__hint">Clique em "Novo EPI" para começar</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="tv-list">
           {epiTypes.map(epi => (
-            <div key={epi.id} className="card overflow-hidden">
-              <div className="flex items-center justify-between p-4">
-                <button onClick={() => toggleExpandido(epi.id)} className="flex items-center gap-3 flex-1 text-left">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Shield size={18} className="text-primary" />
+            <div key={epi.id} className="tv-card">
+              <div className="tv-card__row">
+                <button onClick={() => toggleExpandido(epi.id)} className="tv-card__toggle">
+                  <div className="tv-card__icon">
+                    <Shield size={18} />
                   </div>
-                  <div>
-                    <p className="font-semibold text-primary">{epi.nome}</p>
-                    <p className="text-xs text-secondary">
-                      {epi.videos?.length ?? 0} vídeo(s){epi.nr6_ref && ` · ${epi.nr6_ref}`}
-                    </p>
+                  <div className="tv-card__info">
+                    <p className="tv-card__name">{epi.nome}</p>
+                    <p className="tv-card__meta">{epi.videos?.length ?? 0} vídeo(s)</p>
                   </div>
                   {expandido === epi.id
-                    ? <ChevronUp size={18} className="ml-auto text-secondary" />
-                    : <ChevronDown size={18} className="ml-auto text-secondary" />}
+                    ? <ChevronUp size={18} className="tv-card__chevron" />
+                    : <ChevronDown size={18} className="tv-card__chevron" />}
                 </button>
-                <div className="flex gap-2 ml-3">
+                <div className="tv-card__actions">
                   <button onClick={() => abrirModalEpi(epi)} className="btn-icon" title="Editar EPI"><Pencil size={15}/></button>
                   <button onClick={() => deletarEpi(epi.id)} className="btn-icon btn-danger" title="Excluir EPI"><Trash2 size={15}/></button>
                 </div>
               </div>
 
               {expandido === epi.id && (
-                <div className="border-t border-border px-4 pb-4 space-y-4">
+                <div className="tv-card__expanded">
                   {(epi.quando_usar || epi.como_usar || epi.erros_comuns) && (
-                    <div className="mt-4 grid gap-3 sm:grid-cols-3 text-sm">
+                    <div className="tv-instructions">
                       {epi.quando_usar && (
-                        <div className="bg-blue-50 rounded-lg p-3">
-                          <p className="font-semibold text-blue-700 mb-1">📅 Quando usar</p>
-                          <p className="text-blue-600">{epi.quando_usar}</p>
+                        <div className="tv-instruction tv-instruction--blue">
+                          <p className="tv-instruction__label">📅 Quando usar</p>
+                          <p className="tv-instruction__text">{epi.quando_usar}</p>
                         </div>
                       )}
                       {epi.como_usar && (
-                        <div className="bg-green-50 rounded-lg p-3">
-                          <p className="font-semibold text-green-700 mb-1">✅ Como usar</p>
-                          <p className="text-green-600">{epi.como_usar}</p>
+                        <div className="tv-instruction tv-instruction--green">
+                          <p className="tv-instruction__label">✅ Como usar</p>
+                          <p className="tv-instruction__text">{epi.como_usar}</p>
                         </div>
                       )}
                       {epi.erros_comuns && (
-                        <div className="bg-red-50 rounded-lg p-3">
-                          <p className="font-semibold text-red-700 mb-1">⚠️ Erros comuns</p>
-                          <p className="text-red-600">{epi.erros_comuns}</p>
+                        <div className="tv-instruction tv-instruction--red">
+                          <p className="tv-instruction__label">⚠️ Erros comuns</p>
+                          <p className="tv-instruction__text">{epi.erros_comuns}</p>
                         </div>
                       )}
                     </div>
                   )}
 
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-semibold text-primary flex items-center gap-1"><Video size={14}/> Vídeos</p>
-                      <button onClick={() => abrirModalVideo(epi.id)} className="btn-secondary text-xs flex items-center gap-1">
+                  <div className="tv-videos">
+                    <div className="tv-videos__header">
+                      <p className="tv-videos__title"><Video size={14}/> Vídeos</p>
+                      <button onClick={() => abrirModalVideo(epi.id)} className="btn-secondary tv-videos__add">
                         <Plus size={13}/> Adicionar vídeo
                       </button>
                     </div>
 
                     {epi.videos?.length === 0 ? (
-                      <p className="text-sm text-secondary">Nenhum vídeo cadastrado para este EPI.</p>
+                      <p className="tv-videos__empty">Nenhum vídeo cadastrado para este EPI.</p>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="tv-videos__list">
                         {epi.videos.map(v => (
-                          <div key={v.id} className={`flex items-center justify-between p-3 rounded-lg border ${
-                            v.aprovado ? 'border-border bg-surface' : 'border-orange-200 bg-orange-50'
-                          }`}>
-                            <div className="flex items-center gap-2 min-w-0">
-                              <Play size={14} className="text-primary flex-shrink-0" />
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium truncate">{v.titulo}</p>
-                                {v.fonte && <p className="text-xs text-secondary">{v.fonte}</p>}
-                                {!v.aprovado && <span className="text-xs text-orange-600 font-medium">Oculto do chatbot</span>}
+                          <div key={v.id} className={`tv-video-item ${!v.aprovado ? 'tv-video-item--hidden' : ''}`}>
+                            <div className="tv-video-item__info">
+                              <Play size={14} className="tv-video-item__icon" />
+                              <div>
+                                <p className="tv-video-item__title">{v.titulo}</p>
+                                {v.fonte && <p className="tv-video-item__fonte">{v.fonte}</p>}
+                                {!v.aprovado && <span className="tv-video-item__badge">Oculto do chatbot</span>}
                               </div>
                             </div>
-                            <div className="flex gap-1 flex-shrink-0 ml-2">
+                            <div className="tv-video-item__actions">
                               <a href={v.url} target="_blank" rel="noopener noreferrer" className="btn-icon" title="Abrir vídeo"><ExternalLink size={14}/></a>
                               <button onClick={() => abrirModalVideo(epi.id, v)} className="btn-icon" title="Editar"><Pencil size={14}/></button>
                               <button onClick={() => deletarVideo(v.id)} className="btn-icon btn-danger" title="Excluir"><Trash2 size={14}/></button>
@@ -288,16 +270,12 @@ export default function TrainingVideos() {
         </div>
       )}
 
-      {/* ═══════════════════════════════════════
-          Modal — Novo / Editar EPI
-      ═══════════════════════════════════════ */}
       {modalEpi && (
         <div className="tv-overlay" onClick={() => setModalEpi(false)}>
           <div className="tv-modal tv-modal--lg" onClick={e => e.stopPropagation()}>
-
             <div className="tv-modal__header">
               <h3 className="tv-modal__title">
-                <Shield size={18} className="text-primary" />
+                <Shield size={18} />
                 {epiEditando ? 'Editar EPI' : 'Novo Tipo de EPI'}
               </h3>
               <button className="tv-modal__close" onClick={() => setModalEpi(false)}>
@@ -306,59 +284,47 @@ export default function TrainingVideos() {
             </div>
 
             <div className="tv-modal__body">
-
-              {/* Seção: Identificação */}
               <div className="tv-section">
                 <div className="tv-section__label"><Info size={13}/> Identificação</div>
                 <div className="tv-section__body">
-                  <div>
-                    <label className="form-label">Nome do EPI *</label>
-                    <input className="form-input" value={formEpi.nome}
+                  <div className="tv-field">
+                    <label className="tv-label">Nome do EPI *</label>
+                    <input className="tv-input" value={formEpi.nome}
                       onChange={e => setFormEpi(p => ({...p, nome: e.target.value}))}
                       placeholder="ex: Capacete de Segurança" />
                   </div>
-                  <div className="tv-row">
-                    <div>
-                      <label className="form-label">Descrição</label>
-                      <input className="form-input" value={formEpi.descricao}
-                        onChange={e => setFormEpi(p => ({...p, descricao: e.target.value}))}
-                        placeholder="Breve descrição" />
-                    </div>
-                    <div>
-                      <label className="form-label">Referência NR-6</label>
-                      <input className="form-input" value={formEpi.nr6_ref}
-                        onChange={e => setFormEpi(p => ({...p, nr6_ref: e.target.value}))}
-                        placeholder="ex: NR-6 item 6.3" />
-                    </div>
+                  <div className="tv-field">
+                    <label className="tv-label">Descrição</label>
+                    <input className="tv-input" value={formEpi.descricao}
+                      onChange={e => setFormEpi(p => ({...p, descricao: e.target.value}))}
+                      placeholder="Breve descrição" />
                   </div>
                 </div>
               </div>
 
-              {/* Seção: Instruções de uso */}
               <div className="tv-section">
                 <div className="tv-section__label"><BookOpen size={13}/> Instruções de uso</div>
                 <div className="tv-section__body">
-                  <div>
-                    <label className="form-label">Quando usar</label>
-                    <textarea className="form-input" rows={2} value={formEpi.quando_usar}
+                  <div className="tv-field">
+                    <label className="tv-label">Quando usar</label>
+                    <textarea className="tv-input" rows={2} value={formEpi.quando_usar}
                       onChange={e => setFormEpi(p => ({...p, quando_usar: e.target.value}))}
                       placeholder="Descreva as ocasiões de uso" />
                   </div>
-                  <div>
-                    <label className="form-label">Como usar corretamente</label>
-                    <textarea className="form-input" rows={2} value={formEpi.como_usar}
+                  <div className="tv-field">
+                    <label className="tv-label">Como usar corretamente</label>
+                    <textarea className="tv-input" rows={2} value={formEpi.como_usar}
                       onChange={e => setFormEpi(p => ({...p, como_usar: e.target.value}))}
                       placeholder="Passo a passo de uso correto" />
                   </div>
-                  <div>
-                    <label className="form-label">Erros comuns</label>
-                    <textarea className="form-input" rows={2} value={formEpi.erros_comuns}
+                  <div className="tv-field">
+                    <label className="tv-label">Erros comuns</label>
+                    <textarea className="tv-input" rows={2} value={formEpi.erros_comuns}
                       onChange={e => setFormEpi(p => ({...p, erros_comuns: e.target.value}))}
                       placeholder="Erros frequentes que o chatbot deve alertar" />
                   </div>
                 </div>
               </div>
-
             </div>
 
             <div className="tv-modal__footer">
@@ -369,16 +335,12 @@ export default function TrainingVideos() {
         </div>
       )}
 
-      {/* ═══════════════════════════════════════
-          Modal — Novo / Editar Vídeo
-      ═══════════════════════════════════════ */}
       {modalVideo && (
         <div className="tv-overlay" onClick={() => setModalVideo(false)}>
           <div className="tv-modal" onClick={e => e.stopPropagation()}>
-
             <div className="tv-modal__header">
               <h3 className="tv-modal__title">
-                <Video size={18} className="text-primary" />
+                <Video size={18} />
                 {videoEditando ? 'Editar Vídeo' : 'Adicionar Vídeo'}
               </h3>
               <button className="tv-modal__close" onClick={() => setModalVideo(false)}>
@@ -387,27 +349,25 @@ export default function TrainingVideos() {
             </div>
 
             <div className="tv-modal__body">
-
-              {/* Seção: Informações básicas */}
               <div className="tv-section">
                 <div className="tv-section__label"><Info size={13}/> Informações básicas</div>
                 <div className="tv-section__body">
-                  <div>
-                    <label className="form-label">Título *</label>
-                    <input className="form-input" value={formVideo.titulo}
+                  <div className="tv-field">
+                    <label className="tv-label">Título *</label>
+                    <input className="tv-input" value={formVideo.titulo}
                       onChange={e => setFormVideo(p => ({...p, titulo: e.target.value}))}
                       placeholder="ex: Como usar capacete corretamente" />
                   </div>
                   <div className="tv-row">
-                    <div>
-                      <label className="form-label">Fonte / Produtora</label>
-                      <input className="form-input" value={formVideo.fonte}
+                    <div className="tv-field">
+                      <label className="tv-label">Fonte / Produtora</label>
+                      <input className="tv-input" value={formVideo.fonte}
                         onChange={e => setFormVideo(p => ({...p, fonte: e.target.value}))}
                         placeholder="ex: SENAI, MTE" />
                     </div>
-                    <div>
-                      <label className="form-label">Descrição</label>
-                      <input className="form-input" value={formVideo.descricao}
+                    <div className="tv-field">
+                      <label className="tv-label">Descrição</label>
+                      <input className="tv-input" value={formVideo.descricao}
                         onChange={e => setFormVideo(p => ({...p, descricao: e.target.value}))}
                         placeholder="Breve descrição" />
                     </div>
@@ -415,39 +375,28 @@ export default function TrainingVideos() {
                 </div>
               </div>
 
-              {/* Seção: Origem do vídeo (abas) */}
               {!videoEditando && (
                 <div className="tv-section">
                   <div className="tv-section__label"><FileVideo size={13}/> Origem do vídeo</div>
                   <div className="tv-section__body">
-
-                    {/* Abas */}
                     <div className="tv-tabs">
-                      <button
-                        className={`tv-tab ${abaVideo === 'url' ? 'tv-tab--active' : ''}`}
-                        onClick={() => setAbaVideo('url')}
-                      >
+                      <button className={`tv-tab ${abaVideo === 'url' ? 'tv-tab--active' : ''}`} onClick={() => setAbaVideo('url')}>
                         <Link2 size={14}/> Link (URL)
                       </button>
-                      <button
-                        className={`tv-tab ${abaVideo === 'upload' ? 'tv-tab--active' : ''}`}
-                        onClick={() => setAbaVideo('upload')}
-                      >
+                      <button className={`tv-tab ${abaVideo === 'upload' ? 'tv-tab--active' : ''}`} onClick={() => setAbaVideo('upload')}>
                         <Upload size={14}/> Upload de arquivo
                       </button>
                     </div>
 
-                    {/* Aba URL */}
                     {abaVideo === 'url' && (
-                      <div>
-                        <label className="form-label">URL do vídeo *</label>
-                        <input className="form-input" value={formVideo.url}
+                      <div className="tv-field">
+                        <label className="tv-label">URL do vídeo *</label>
+                        <input className="tv-input" value={formVideo.url}
                           onChange={e => setFormVideo(p => ({...p, url: e.target.value}))}
                           placeholder="https://youtube.com/watch?v=..." />
                       </div>
                     )}
 
-                    {/* Aba Upload */}
                     {abaVideo === 'upload' && (
                       <div>
                         {!arquivo ? (
@@ -458,34 +407,23 @@ export default function TrainingVideos() {
                             onDrop={e => { e.preventDefault(); setDragOver(false); handleArquivo(e.dataTransfer.files[0]); }}
                             onClick={() => fileInputRef.current?.click()}
                           >
-                            <input
-                              ref={fileInputRef}
-                              type="file"
+                            <input ref={fileInputRef} type="file"
                               accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo"
-                              onChange={e => handleArquivo(e.target.files[0])}
-                            />
-                            <div className="tv-dropzone__icon flex justify-center">
-                              <FileVideo size={32} />
-                            </div>
-                            <p className="tv-dropzone__text">
-                              <strong>Clique para selecionar</strong> ou arraste o arquivo aqui
-                            </p>
+                              onChange={e => handleArquivo(e.target.files[0])} />
+                            <div className="tv-dropzone__icon"><FileVideo size={32} /></div>
+                            <p className="tv-dropzone__text"><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
                             <p className="tv-dropzone__hint">MP4, WebM, OGG, MOV, AVI · Máx. 500 MB</p>
                           </div>
                         ) : (
                           <div>
                             <div className="tv-file-selected">
-                              <FileVideo size={16} className="text-primary flex-shrink-0" />
+                              <FileVideo size={16} className="tv-file-selected__icon" />
                               <span className="tv-file-selected__name">{arquivo.name}</span>
-                              <span className="text-xs text-secondary flex-shrink-0">
-                                {(arquivo.size / 1024 / 1024).toFixed(1)} MB
-                              </span>
-                              <button className="tv-file-selected__remove" onClick={() => setArquivo(null)}>
-                                <X size={14}/>
-                              </button>
+                              <span className="tv-file-selected__size">{(arquivo.size / 1024 / 1024).toFixed(1)} MB</span>
+                              <button className="tv-file-selected__remove" onClick={() => setArquivo(null)}><X size={14}/></button>
                             </div>
                             {uploadPct > 0 && (
-                              <div className="tv-progress mt-2">
+                              <div className="tv-progress">
                                 <div className="tv-progress__bar" style={{ width: `${uploadPct}%` }} />
                               </div>
                             )}
@@ -497,14 +435,13 @@ export default function TrainingVideos() {
                 </div>
               )}
 
-              {/* Aba URL no modo edição */}
               {videoEditando && (
                 <div className="tv-section">
                   <div className="tv-section__label"><Link2 size={13}/> Link do vídeo</div>
                   <div className="tv-section__body">
-                    <div>
-                      <label className="form-label">URL *</label>
-                      <input className="form-input" value={formVideo.url}
+                    <div className="tv-field">
+                      <label className="tv-label">URL *</label>
+                      <input className="tv-input" value={formVideo.url}
                         onChange={e => setFormVideo(p => ({...p, url: e.target.value}))}
                         placeholder="https://youtube.com/watch?v=..." />
                     </div>
@@ -512,17 +449,16 @@ export default function TrainingVideos() {
                 </div>
               )}
 
-              {/* Seção: Configurações */}
               <div className="tv-section">
                 <div className="tv-section__label"><Settings2 size={13}/> Configurações</div>
                 <div className="tv-section__body">
                   <div className="tv-row">
-                    <div>
-                      <label className="form-label">Prioridade (maior = aparece primeiro)</label>
-                      <input type="number" className="form-input" value={formVideo.prioridade}
+                    <div className="tv-field">
+                      <label className="tv-label">Prioridade (maior = aparece primeiro)</label>
+                      <input type="number" className="tv-input" value={formVideo.prioridade}
                         onChange={e => setFormVideo(p => ({...p, prioridade: Number(e.target.value)}))} />
                     </div>
-                    <div className="flex items-center" style={{ paddingTop: '1.4rem' }}>
+                    <div className="tv-field tv-field--center">
                       <label className="tv-toggle">
                         <input type="checkbox" checked={formVideo.aprovado}
                           onChange={e => setFormVideo(p => ({...p, aprovado: e.target.checked}))} />
@@ -533,7 +469,6 @@ export default function TrainingVideos() {
                   </div>
                 </div>
               </div>
-
             </div>
 
             <div className="tv-modal__footer">
