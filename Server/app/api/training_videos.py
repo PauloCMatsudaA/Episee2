@@ -1,169 +1,163 @@
-import logging
-from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+from typing import List, Optional
 
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.security import get_current_user
 from app.models.training_video import EpiType, TrainingVideo
-from app.models.user import User, UserRole
+from app.models.user import User
 from app.schemas.training_video import (
-    EpiTypeCreate, EpiTypeResponse, EpiTypeUpdate,
-    TrainingVideoCreate, TrainingVideoResponse, TrainingVideoUpdate,
+    EpiTypeCreate, EpiTypeUpdate, EpiTypeOut,
+    TrainingVideoCreate, TrainingVideoUpdate, TrainingVideoOut,
 )
 
-logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/training", tags=["training"])
+router = APIRouter(prefix="/api/training", tags=["training"])
 
 
-def _somente_gestor(usuario: User):
-    if usuario.role != UserRole.gestor:
-        raise HTTPException(status_code=403, detail="Apenas gestores podem realizar esta ação.")
+def _exige_gestor(user: User):
+    if getattr(user, 'role', None) not in ('admin', 'manager', 'gestor'):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Apenas gestores podem realizar esta ação.")
 
 
-# ── EpiType CRUD ──────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# ROTA PÚBLICA PARA TRABALHADORES
+# Retorna EPIs que possuem pelo menos um vídeo aprovado
+# ─────────────────────────────────────────────────────────────
 
-@router.get("/epi-types", response_model=List[EpiTypeResponse])
-async def listar_epi_types(
+@router.get("/worker/epis", response_model=List[EpiTypeOut])
+async def listar_epis_worker(
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_current_user),
 ):
-    result = await db.execute(select(EpiType).order_by(EpiType.nome))
+    """Lista EPIs com vídeos aprovados. Acessível a qualquer usuário autenticado."""
+    result = await db.execute(
+        select(EpiType).options(selectinload(EpiType.videos))
+    )
+    epis = result.scalars().all()
+    # Filtra apenas EPIs que tenham ao menos 1 vídeo aprovado e visível no chatbot
+    epis_com_videos = [e for e in epis if any(v.aprovado for v in e.videos)]
+    return epis_com_videos
+
+
+# ─────────────────────────────────────────────────────────────
+# CRUD DE EPI (somente gestor)
+# ─────────────────────────────────────────────────────────────
+
+@router.get("/epis", response_model=List[EpiTypeOut])
+async def listar_epis(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(EpiType).options(selectinload(EpiType.videos))
+    )
     return result.scalars().all()
 
 
-@router.get("/epi-types/{epi_id}", response_model=EpiTypeResponse)
-async def buscar_epi_type(
-    epi_id: int,
+@router.post("/epis", response_model=EpiTypeOut, status_code=status.HTTP_201_CREATED)
+async def criar_epi(
+    dados: EpiTypeCreate,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
-    epi = await db.get(EpiType, epi_id)
-    if not epi:
-        raise HTTPException(status_code=404, detail="Tipo de EPI não encontrado.")
-    return epi
-
-
-@router.post("/epi-types", response_model=EpiTypeResponse, status_code=201)
-async def criar_epi_type(
-    payload: EpiTypeCreate,
-    db: AsyncSession = Depends(get_db),
-    usuario: User = Depends(get_current_user),
-):
-    _somente_gestor(usuario)
-    epi = EpiType(**payload.model_dump())
+    _exige_gestor(current_user)
+    epi = EpiType(**dados.model_dump())
     db.add(epi)
     await db.commit()
     await db.refresh(epi)
     return epi
 
 
-@router.patch("/epi-types/{epi_id}", response_model=EpiTypeResponse)
-async def atualizar_epi_type(
+@router.put("/epis/{epi_id}", response_model=EpiTypeOut)
+async def atualizar_epi(
     epi_id: int,
-    payload: EpiTypeUpdate,
+    dados: EpiTypeUpdate,
     db: AsyncSession = Depends(get_db),
-    usuario: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
-    _somente_gestor(usuario)
-    epi = await db.get(EpiType, epi_id)
+    _exige_gestor(current_user)
+    result = await db.execute(
+        select(EpiType).where(EpiType.id == epi_id).options(selectinload(EpiType.videos))
+    )
+    epi = result.scalar_one_or_none()
     if not epi:
-        raise HTTPException(status_code=404, detail="Tipo de EPI não encontrado.")
-    for campo, valor in payload.model_dump(exclude_unset=True).items():
+        raise HTTPException(status_code=404, detail="EPI não encontrado.")
+    for campo, valor in dados.model_dump(exclude_unset=True).items():
         setattr(epi, campo, valor)
     await db.commit()
     await db.refresh(epi)
     return epi
 
 
-@router.delete("/epi-types/{epi_id}", status_code=204)
-async def deletar_epi_type(
+@router.delete("/epis/{epi_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def deletar_epi(
     epi_id: int,
     db: AsyncSession = Depends(get_db),
-    usuario: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
-    _somente_gestor(usuario)
-    epi = await db.get(EpiType, epi_id)
+    _exige_gestor(current_user)
+    result = await db.execute(select(EpiType).where(EpiType.id == epi_id))
+    epi = result.scalar_one_or_none()
     if not epi:
-        raise HTTPException(status_code=404, detail="Tipo de EPI não encontrado.")
+        raise HTTPException(status_code=404, detail="EPI não encontrado.")
     await db.delete(epi)
     await db.commit()
 
 
-# ── TrainingVideo CRUD ────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# CRUD DE VÍDEOS (somente gestor)
+# ─────────────────────────────────────────────────────────────
 
-@router.get("/videos", response_model=List[TrainingVideoResponse])
-async def listar_videos(
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
-):
-    result = await db.execute(
-        select(TrainingVideo)
-        .where(TrainingVideo.aprovado == True)
-        .order_by(TrainingVideo.prioridade.desc(), TrainingVideo.criado_em.desc())
-    )
-    return result.scalars().all()
-
-
-@router.get("/videos/epi/{epi_id}", response_model=List[TrainingVideoResponse])
-async def videos_por_epi(
+@router.post("/epis/{epi_id}/videos", response_model=TrainingVideoOut,
+             status_code=status.HTTP_201_CREATED)
+async def adicionar_video(
     epi_id: int,
+    dados: TrainingVideoCreate,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(TrainingVideo)
-        .where(TrainingVideo.epi_type_id == epi_id, TrainingVideo.aprovado == True)
-        .order_by(TrainingVideo.prioridade.desc())
-    )
-    return result.scalars().all()
-
-
-@router.post("/videos", response_model=TrainingVideoResponse, status_code=201)
-async def criar_video(
-    payload: TrainingVideoCreate,
-    db: AsyncSession = Depends(get_db),
-    usuario: User = Depends(get_current_user),
-):
-    _somente_gestor(usuario)
-    epi = await db.get(EpiType, payload.epi_type_id)
-    if not epi:
-        raise HTTPException(status_code=404, detail="Tipo de EPI não encontrado.")
-    video = TrainingVideo(**payload.model_dump())
+    _exige_gestor(current_user)
+    result = await db.execute(select(EpiType).where(EpiType.id == epi_id))
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="EPI não encontrado.")
+    video = TrainingVideo(epi_type_id=epi_id, **dados.model_dump())
     db.add(video)
     await db.commit()
     await db.refresh(video)
     return video
 
 
-@router.patch("/videos/{video_id}", response_model=TrainingVideoResponse)
+@router.put("/videos/{video_id}", response_model=TrainingVideoOut)
 async def atualizar_video(
     video_id: int,
-    payload: TrainingVideoUpdate,
+    dados: TrainingVideoUpdate,
     db: AsyncSession = Depends(get_db),
-    usuario: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
-    _somente_gestor(usuario)
-    video = await db.get(TrainingVideo, video_id)
+    _exige_gestor(current_user)
+    result = await db.execute(select(TrainingVideo).where(TrainingVideo.id == video_id))
+    video = result.scalar_one_or_none()
     if not video:
         raise HTTPException(status_code=404, detail="Vídeo não encontrado.")
-    for campo, valor in payload.model_dump(exclude_unset=True).items():
+    for campo, valor in dados.model_dump(exclude_unset=True).items():
         setattr(video, campo, valor)
     await db.commit()
     await db.refresh(video)
     return video
 
 
-@router.delete("/videos/{video_id}", status_code=204)
+@router.delete("/videos/{video_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def deletar_video(
     video_id: int,
     db: AsyncSession = Depends(get_db),
-    usuario: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
-    _somente_gestor(usuario)
-    video = await db.get(TrainingVideo, video_id)
+    _exige_gestor(current_user)
+    result = await db.execute(select(TrainingVideo).where(TrainingVideo.id == video_id))
+    video = result.scalar_one_or_none()
     if not video:
         raise HTTPException(status_code=404, detail="Vídeo não encontrado.")
     await db.delete(video)

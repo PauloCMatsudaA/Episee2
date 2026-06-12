@@ -14,6 +14,7 @@ import Configuracoes from './pages/Settings';
 import PerfilUsuario from './pages/PerfilUsuario';
 import Usuarios from './pages/Usuarios';
 import TrainingVideos from './pages/TrainingVideos';
+import VideosWorker from './pages/VideosWorker';
 
 const titulosPagina = {
   '/dashboard':        'Dashboard',
@@ -26,6 +27,7 @@ const titulosPagina = {
   '/users':            'Usuários',
   '/perfil':           'Meu Perfil',
   '/training-videos':  'Vídeos Educativos',
+  '/meus-treinamentos': 'Meus Treinamentos',
 };
 
 function Protegida({ children }) {
@@ -47,17 +49,18 @@ function Layout() {
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="page-enter">
           <Routes>
-            <Route path="/dashboard"       element={<Dashboard />}       />
-            <Route path="/occurrences"     element={<Ocorrencias />}     />
-            <Route path="/reports"         element={<Relatorios />}      />
-            <Route path="/epi-requests"    element={<SolicitacoesEpi />} />
-            <Route path="/cameras"         element={<Cameras />}         />
-            <Route path="/sectors"         element={<Setores />}         />
-            <Route path="/settings"        element={<Configuracoes />}   />
-            <Route path="/users"           element={<Usuarios />}        />
-            <Route path="/perfil"          element={<PerfilUsuario />}   />
-            <Route path="/training-videos" element={<TrainingVideos />}  />
-            <Route path="*"                element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard"          element={<Dashboard />}        />
+            <Route path="/occurrences"        element={<Ocorrencias />}      />
+            <Route path="/reports"            element={<Relatorios />}       />
+            <Route path="/epi-requests"       element={<SolicitacoesEpi />}  />
+            <Route path="/cameras"            element={<Cameras />}          />
+            <Route path="/sectors"            element={<Setores />}          />
+            <Route path="/settings"           element={<Configuracoes />}    />
+            <Route path="/users"              element={<Usuarios />}         />
+            <Route path="/perfil"             element={<PerfilUsuario />}    />
+            <Route path="/training-videos"    element={<TrainingVideos />}   />
+            <Route path="/meus-treinamentos"  element={<VideosWorker />}     />
+            <Route path="*"                   element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </div>
       </main>
