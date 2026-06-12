@@ -1,0 +1,8 @@
+.env
+*.env
+venv/
+__pycache__/
+*.pyc
+data/faiss_index.bin
+data/faiss_index.meta.pkl
+*.db

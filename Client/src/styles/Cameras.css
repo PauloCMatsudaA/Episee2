@@ -1,0 +1,123 @@
+.cameras-page {
+  gap: 1rem;
+}
+
+.cameras-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cameras-search {
+  min-width: 280px;
+  flex: 1;
+}
+
+.cameras-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 42px;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.cameras-checkbox input {
+  accent-color: var(--brand);
+}
+
+.cameras-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1rem;
+}
+
+.camera-card {
+  overflow: hidden;
+}
+
+.camera-preview {
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.camera-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+.camera-card-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.camera-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.camera-card-location {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin-top: 0.125rem;
+}
+
+.camera-meta {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.camera-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.camera-meta-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.camera-meta-value {
+  font-size: 0.875rem;
+  color: var(--text);
+}
+
+.camera-rtsp {
+  word-break: break-all;
+}
+
+.camera-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.cameras-empty {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+}
+
+.cameras-form {
+  display: grid;
+  gap: 1rem;
+}

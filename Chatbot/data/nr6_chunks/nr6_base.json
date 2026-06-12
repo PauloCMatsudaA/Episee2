@@ -1,0 +1,77 @@
+[
+  {
+    "id": "nr6_definicao",
+    "titulo": "NR-6 — Definição de EPI",
+    "texto": "Equipamento de Proteção Individual (EPI) é todo dispositivo ou produto, de uso individual, utilizado pelo trabalhador, destinado à proteção de riscos suscetíveis de ameaçar a segurança e a saúde no trabalho. O EPI deve ser aprovado pelo Ministério do Trabalho e Emprego, que emite o Certificado de Aprovação (CA), obrigatório para todo EPI comercializado no Brasil."
+  },
+  {
+    "id": "nr6_obrigacao_empresa",
+    "titulo": "NR-6 — Obrigações do Empregador",
+    "texto": "O empregador é obrigado a: a) adquirir o tipo de EPI adequado à atividade do empregado; b) fornecer ao trabalhador somente EPI aprovado pelo órgão nacional competente em matéria de segurança e saúde no trabalho; c) orientar e treinar o trabalhador sobre o uso adequado, guarda e conservação do EPI; d) substituir imediatamente o EPI danificado ou extraviado; e) responsabilizar-se pela higienização e manutenção periódica; f) comunicar ao MTE qualquer irregularidade observada; g) registrar o fornecimento de EPI ao trabalhador (ficha de entrega assinada pelo funcionário)."
+  },
+  {
+    "id": "nr6_obrigacao_trabalhador",
+    "titulo": "NR-6 — Obrigações do Trabalhador",
+    "texto": "O trabalhador é obrigado a: a) usar o EPI apenas para a finalidade a que se destina; b) responsabilizar-se pela guarda e conservação do EPI; c) comunicar ao empregador qualquer alteração que o torne impróprio para uso; d) cumprir as determinações do empregador sobre o uso adequado. O trabalhador tem direito de recusar atividade que apresente risco grave e iminente quando não dispuser do EPI adequado."
+  },
+  {
+    "id": "nr6_ca_certificado",
+    "titulo": "NR-6 — Certificado de Aprovação (CA)",
+    "texto": "Todo EPI deve possuir o Certificado de Aprovação (CA) emitido pelo Ministério do Trabalho e Emprego. O CA tem validade de até 5 anos para EPIs sem prazo de validade definido. Equipamentos sem CA não podem ser fornecidos ao trabalhador. O número do CA deve estar impresso no EPI ou em sua embalagem. Trabalhadores podem verificar a validade do CA no site do MTE."
+  },
+  {
+    "id": "nr6_capacete",
+    "titulo": "NR-6 — Capacete de Segurança",
+    "texto": "O capacete de segurança é obrigatório em obras de construção civil, trabalhos em altura, ambientes com risco de queda de objetos, mineração e indústrias em geral. Deve ser substituído após impacto, mesmo que não apresente danos visíveis. Classes: Classe A (proteção mecânica), Classe B (proteção elétrica até 30.000V), Classe C (proteção mecânica, não isolante). O capacete deve estar ajustado corretamente à cabeça do trabalhador."
+  },
+  {
+    "id": "nr6_luvas",
+    "titulo": "NR-6 — Luvas de Segurança",
+    "texto": "Luvas de segurança variam conforme o risco: luvas de raspa ou vaqueta para trabalhos com materiais abrasivos; luvas de borracha para proteção química; luvas de látex para trabalhos com produtos biológicos ou químicos leves; luvas de malha de aço para uso em frigoríficos e açougues; luvas de PVC para contato com ácidos e bases. Devem ser inspecionadas antes de cada uso e substituídas quando apresentarem rasgos ou desgaste."
+  },
+  {
+    "id": "nr6_protetor_ocular",
+    "titulo": "NR-6 — Protetor Ocular e Facial",
+    "texto": "Óculos de segurança são obrigatórios em atividades com risco de projeção de partículas, respingos químicos, radiação óptica ou poeira intensa. Tipos: óculos ampla visão (para agentes químicos), óculos de policarbonato (para partículas sólidas), protetores faciais (face shield) para soldagem, esmerilhamento e trabalhos com agentes líquidos perigosos. Não devem ser emprestados entre trabalhadores."
+  },
+  {
+    "id": "nr6_calçado",
+    "titulo": "NR-6 — Calçado de Segurança",
+    "texto": "O calçado de segurança (bota ou botina) é obrigatório em obras de construção, indústrias, armazéns e locais com risco de esmagamento. Tipos: com biqueira de aço (proteção mecânica), solado antiderrapante (pisos escorregadios), isolante elétrico (trabalhos com eletricidade), impermeável (ambientes úmidos ou com agentes químicos). Deve ser trocado conforme desgaste do solado ou dano estrutural."
+  },
+  {
+    "id": "nr6_protetor_auditivo",
+    "titulo": "NR-6 — Protetor Auditivo",
+    "texto": "O protetor auditivo é obrigatório quando o nível de ruído ultrapassa 85 dB(A) em jornada de 8 horas. Tipos: protetor tipo concha (abafador), protetor tipo plug (inserido no ouvido — descartável ou reutilizável). O empregador deve fornecer protetor adequado ao NRR (Noise Reduction Rating) do ambiente. Trabalhadores devem ser treinados sobre a importância e o uso correto. Uso contínuo é essencial; retirar o protetor mesmo por períodos curtos reduz drasticamente a proteção."
+  },
+  {
+    "id": "nr6_cinto_segurança",
+    "titulo": "NR-6 — Cinto de Segurança / Trabalho em Altura",
+    "texto": "O cinto de segurança tipo paraquedista é obrigatório para todo trabalho em altura superior a 2 metros com risco de queda, conforme NR-35. Deve ser inspecionado antes de cada uso — verificar costuras, fivelas, talabartes e conectores. O talabarte deve ser conectado a ponto de ancoragem fixo capaz de suportar no mínimo 15 kN. Cintos tipo abdominal não são permitidos para trabalho em altura. Após queda ou carga de impacto, o cinto deve ser descartado."
+  },
+  {
+    "id": "nr6_mascara_respiratoria",
+    "titulo": "NR-6 — Máscaras e Respiradores",
+    "texto": "Respiradores são obrigatórios em ambientes com presença de poeiras, névoas, vapores ou gases tóxicos. Tipos: máscara PFF2/N95 (proteção contra poeiras e aerossóis), respirador de meia-face com filtro (vapores químicos), respirador de face inteira (ambientes severamente contaminados). Os filtros devem ser substituídos conforme prazo do fabricante ou quando houver dificuldade de respiração. Barba pode comprometer a vedação da máscara."
+  },
+  {
+    "id": "nr6_solicitar_epi",
+    "titulo": "Como solicitar EPI — Direitos do Trabalhador",
+    "texto": "O trabalhador tem o direito de solicitar EPIs ao empregador a qualquer momento, especialmente quando o equipamento estiver danificado, desgastado ou não adequado à tarefa. A empresa é obrigada a substituir o EPI sem custo ao trabalhador. Se a empresa se recusar a fornecer o EPI adequado, o trabalhador pode registrar a queixa no Ministério do Trabalho (App Carteira de Trabalho Digital ou site gov.br) ou acionar o sindicato da categoria. É recomendável guardar cópia da ficha de entrega de EPIs assinada."
+  },
+  {
+    "id": "nr6_fiscalizacao_mte",
+    "titulo": "Fiscalização e Penalidades",
+    "texto": "O descumprimento das normas de fornecimento de EPI sujeita o empregador a multas administrativas pelo Ministério do Trabalho, que variam de R$ 668,19 a R$ 6.681,85 por trabalhador irregularmente exposto. Em caso de acidente por falta de EPI, a empresa pode ser responsabilizada cível e criminalmente. Auditors fiscais do trabalho podem interditar maquinários ou o setor onde irregularidades são constatadas."
+  },
+  {
+    "id": "nr6_conservacao",
+    "titulo": "Conservação e Higienização dos EPIs",
+    "texto": "O empregador é responsável pela higienização e manutenção dos EPIs reutilizáveis (ex: capacetes, cintos, óculos). EPIs individuais não devem ser compartilhados sem higienização prévia. Manter EPIs em local limpo, seco e afastado de produtos químicos. Não realizar modificações nos EPIs que possam comprometer sua proteção. Verificar data de validade quando aplicável (ex: filtros, materiais com degradação temporal)."
+  },
+  {
+    "id": "nr6_treinamento",
+    "titulo": "Treinamento sobre uso de EPIs",
+    "texto": "A empresa é obrigada a treinar o trabalhador antes do início das atividades sobre: qual EPI é necessário para cada tarefa, como colocar, ajustar, usar e retirar o EPI corretamente, como verificar o estado de conservação antes do uso, e como e onde solicitar substituição. Treinamentos devem ser periódicos e registrados. O trabalhador tem direito de pedir novo treinamento se mudar de função."
+  }
+]

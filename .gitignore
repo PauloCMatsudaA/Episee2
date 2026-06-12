@@ -1,0 +1,37 @@
+# ── Variáveis de ambiente (NUNCA commitar) ──────────────
+.env
+*.env
+.env.local
+.env.production
+.env.development
+
+# ── Python ──────────────────────────────────────────────
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# ── Banco de dados ───────────────────────────────────────
+*.db
+*.sqlite3
+*.sqlite
+
+# ── FAISS (gerado localmente) ────────────────────────────
+**/data/faiss_index.bin
+**/data/faiss_index.meta.pkl
+
+# ── Node / Expo ──────────────────────────────────────────
+node_modules/
+.expo/
+*.log
+npm-debug.log*
+
+# ── Sistema operacional ──────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini

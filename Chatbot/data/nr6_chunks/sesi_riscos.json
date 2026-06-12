@@ -1,0 +1,62 @@
+[
+  {
+    "id": "sesi_1",
+    "texto": "A identificação dos perigos deve ser realizada por meio da caracterização dos processos desenvolvidos pelos trabalhadores, com informações sobre sua ocupação, atividades que realizam e setores onde estão lotados, com o objetivo de estudar como eles se relacionam com os agentes presentes nesses processos e no ambiente de trabalho.",
+    "fonte": "Manual SESI de Avaliação de Riscos Ocupacionais",
+    "secao": "2.2 Identificação de Perigos"
+  },
+  {
+    "id": "sesi_2",
+    "texto": "O levantamento preliminar de perigos deve ser realizado para todas as categorias de fatores de risco: físicos, químicos, biológicos, ergonômicos e mecânicos, levando em consideração as particularidades de cada situação.",
+    "fonte": "Manual SESI de Avaliação de Riscos Ocupacionais",
+    "secao": "2.1 Levantamento Preliminar de Perigos"
+  },
+  {
+    "id": "sesi_3",
+    "texto": "A probabilidade é calculada com base em dois componentes principais: a Exposição do trabalhador ao risco e o Controle existente na organização para evitar ou mitigar agravos à saúde. O resultado representa: Improvável (2), Pouco provável (3), Provável (4) e Altamente provável (5).",
+    "fonte": "Manual SESI de Avaliação de Riscos Ocupacionais",
+    "secao": "2.3.1 Probabilidade"
+  },
+  {
+    "id": "sesi_4",
+    "texto": "A severidade representa a consequência do risco caso ele ocorra, calculada entre o índice de Gravidade e o número de Pessoas Expostas. Valores: Mínima (2), Mediana (3), Considerável (4) e Crítica (5).",
+    "fonte": "Manual SESI de Avaliação de Riscos Ocupacionais",
+    "secao": "2.3.2 Severidade"
+  },
+  {
+    "id": "sesi_5",
+    "texto": "O Nível de Risco é definido numericamente como o produto entre Severidade e Probabilidade. Os níveis são: Baixo (PR4), Médio (PR3), Alto (PR2) e Crítico (PR1). Cada nível determina a prioridade e conduta a ser adotada pela organização.",
+    "fonte": "Manual SESI de Avaliação de Riscos Ocupacionais",
+    "secao": "2.3.3 Nível de Risco"
+  },
+  {
+    "id": "sesi_6",
+    "texto": "O Programa de Gerenciamento de Riscos (PGR) visa a identificação dos perigos e avaliação dos riscos, constituindo um inventário de riscos ocupacionais para adoção de medidas de prevenção que visam eliminar, minimizar ou neutralizar os riscos por meio da execução de um plano de ação.",
+    "fonte": "Manual SESI de Avaliação de Riscos Ocupacionais",
+    "secao": "Glossário - PGR"
+  },
+  {
+    "id": "sesi_7",
+    "texto": "GES (Grupo de Exposição Similar) corresponde ao grupo de trabalhadores expostos de forma semelhante, de tal forma que a avaliação da exposição de qualquer trabalhador do grupo seja representativa da exposição de todos que pertencerem ao mesmo grupo.",
+    "fonte": "Manual SESI de Avaliação de Riscos Ocupacionais",
+    "secao": "Glossário - GES"
+  },
+  {
+    "id": "sesi_8",
+    "texto": "O GRO (Gerenciamento de Riscos Ocupacionais) constitui-se na gestão ampla de todos os riscos do ambiente laboral da organização, com o objetivo de eliminar, minimizar ou neutralizar os riscos aos trabalhadores. Foi instituído pela NR-01 e entrou em vigor em janeiro de 2022.",
+    "fonte": "Manual SESI de Avaliação de Riscos Ocupacionais",
+    "secao": "Glossário - GRO"
+  },
+  {
+    "id": "sesi_9",
+    "texto": "As medidas de controle para riscos ocupacionais devem seguir a hierarquia: eliminação do perigo, substituição, controles de engenharia, controles administrativos e, por último, Equipamentos de Proteção Individual (EPIs). O EPI é sempre a última medida de controle a ser adotada.",
+    "fonte": "Manual SESI de Avaliação de Riscos Ocupacionais",
+    "secao": "2.3.4 Classificação de Prioridade"
+  },
+  {
+    "id": "sesi_10",
+    "texto": "A metodologia SESI está alinhada às normas ABNT NBR ISO 45001, ABNT NBR ISO 31000, ABNT NBR ISO 31010 e às orientações da AIHA (American Industrial Hygiene Association), sendo referência nacional em gestão de riscos de segurança no trabalho.",
+    "fonte": "Manual SESI de Avaliação de Riscos Ocupacionais",
+    "secao": "Introdução"
+  }
+]
