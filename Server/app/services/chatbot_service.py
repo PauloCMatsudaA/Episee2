@@ -5,18 +5,22 @@ import tempfile
 import httpx
 from openai import AsyncOpenAI
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import AsyncSessionLocal
 from app.models.training_video import EpiType, TrainingVideo
 
 logger = logging.getLogger(__name__)
 
-OPENAI_API_KEY    = os.getenv("OPENAI_API_KEY", "")
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
-TWILIO_AUTH_TOKEN  = os.getenv("TWILIO_AUTH_TOKEN", "")
+# ──────────────────────────────────────────────
+# DeepSeek — API 100% compatível com OpenAI SDK
+# ──────────────────────────────────────────────
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
-openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+deepseek_client = AsyncOpenAI(
+    api_key=DEEPSEEK_API_KEY,
+    base_url="https://api.deepseek.com/v1",
+)
 
 SYSTEM_PROMPT = """
 Você é o EPIsee Bot, um assistente especializado em segurança do trabalho e EPIs (Equipamentos de Proteção Individual).
@@ -37,25 +41,36 @@ Regras:
 - Nunca invente normas, baseie-se apenas na NR-6 e CLT
 - Se não souber algo, diga claramente que não tem essa informação
 - Quando o trabalhador perguntar sobre um EPI específico, inclua as ocasiões de uso, como usar corretamente e erros comuns
+- Suas respostas serão enviadas via Telegram; evite markdown pesado, prefira texto limpo com emojis quando útil
 """
 
 
-async def transcrever_audio(audio_url: str) -> str:
+async def transcrever_audio_telegram(file_id: str) -> str:
+    """
+    Baixa um áudio enviado pelo usuário no Telegram e transcreve via
+    DeepSeek (endpoint compatível com Whisper da OpenAI).
+    """
     try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(
-                audio_url,
-                auth=(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN),
-                timeout=30,
-            )
-            resp.raise_for_status()
+        telegram_api = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 
-        with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as tmp:
-            tmp.write(resp.content)
+        async with httpx.AsyncClient(timeout=30) as client:
+            # 1. Obtém o caminho do arquivo no Telegram
+            r = await client.get(f"{telegram_api}/getFile", params={"file_id": file_id})
+            r.raise_for_status()
+            file_path = r.json()["result"]["file_path"]
+
+            # 2. Baixa o arquivo
+            download_url = f"https://api.telegram.org/file/bot{TELEGRAM_BOT_TOKEN}/{file_path}"
+            audio_resp = await client.get(download_url)
+            audio_resp.raise_for_status()
+
+        suffix = "." + file_path.split(".")[-1] if "." in file_path else ".ogg"
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(audio_resp.content)
             tmp_path = tmp.name
 
         with open(tmp_path, "rb") as audio_file:
-            transcricao = await openai_client.audio.transcriptions.create(
+            transcricao = await deepseek_client.audio.transcriptions.create(
                 model="whisper-1",
                 file=audio_file,
                 language="pt",
@@ -65,7 +80,7 @@ async def transcrever_audio(audio_url: str) -> str:
         return transcricao.text
 
     except Exception as e:
-        logger.error(f"[CHATBOT] Erro ao transcrever áudio: {e}")
+        logger.error(f"[CHATBOT] Erro ao transcrever áudio Telegram: {e}")
         return ""
 
 
@@ -91,7 +106,6 @@ async def _buscar_contexto_epi(mensagem: str) -> str:
                 if epi.nr6_ref:
                     parte += f"\nReferência NR-6: {epi.nr6_ref}"
 
-                # Vídeos aprovados
                 videos_aprovados = [v for v in epi.videos if v.aprovado]
                 if videos_aprovados:
                     parte += "\nVídeos recomendados:"
@@ -108,6 +122,7 @@ async def _buscar_contexto_epi(mensagem: str) -> str:
 
 
 async def responder_chatbot(mensagem: str) -> str:
+    """Recebe uma mensagem de texto e retorna a resposta do DeepSeek."""
     try:
         contexto_db = await _buscar_contexto_epi(mensagem)
 
@@ -118,8 +133,8 @@ async def responder_chatbot(mensagem: str) -> str:
                 "(use estas informações prioritariamente):\n" + contexto_db
             )
 
-        response = await openai_client.chat.completions.create(
-            model="gpt-4o-mini",
+        response = await deepseek_client.chat.completions.create(
+            model="deepseek-chat",
             messages=[
                 {"role": "system", "content": system_content},
                 {"role": "user",   "content": mensagem},
@@ -130,5 +145,5 @@ async def responder_chatbot(mensagem: str) -> str:
         return response.choices[0].message.content.strip()
 
     except Exception as e:
-        logger.error(f"[CHATBOT] Erro: {e}")
-        return "Desculpe, ocorreu um erro. Por favor, tente novamente em alguns instantes."
+        logger.error(f"[CHATBOT] Erro DeepSeek: {e}")
+        return "Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente em instantes."
