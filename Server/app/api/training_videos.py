@@ -1,4 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import os
+import uuid
+import aiofiles
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -16,6 +22,21 @@ from app.schemas.training_video import (
 # prefix apenas "/training" — o main.py já adiciona "/api"
 router = APIRouter(prefix="/training", tags=["training"])
 
+# Pasta onde os vídeos enviados por upload ficam armazenados
+UPLOAD_DIR = Path("uploads") / "training_videos"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+# Tipos MIME permitidos para upload
+MIME_PERMITIDOS = {
+    "video/mp4",
+    "video/webm",
+    "video/ogg",
+    "video/quicktime",
+    "video/x-msvideo",
+}
+
+TAMANHO_MAXIMO = 500 * 1024 * 1024  # 500 MB
+
 
 def _exige_gestor(user: User):
     if getattr(user, 'role', None) not in ('admin', 'manager', 'gestor'):
@@ -25,7 +46,6 @@ def _exige_gestor(user: User):
 
 # ─────────────────────────────────────────────────────────────
 # ROTA PÚBLICA PARA TRABALHADORES
-# Retorna EPIs que possuem pelo menos um vídeo aprovado
 # ─────────────────────────────────────────────────────────────
 
 @router.get("/worker/epis", response_model=List[EpiTypeOut])
@@ -38,8 +58,7 @@ async def listar_epis_worker(
         select(EpiType).options(selectinload(EpiType.videos))
     )
     epis = result.scalars().all()
-    epis_com_videos = [e for e in epis if any(v.aprovado for v in e.videos)]
-    return epis_com_videos
+    return [e for e in epis if any(v.aprovado for v in e.videos)]
 
 
 # ─────────────────────────────────────────────────────────────
@@ -57,7 +76,6 @@ async def listar_epis(
     return result.scalars().all()
 
 
-# Alias para compatibilidade com o frontend que chama /epi-types
 @router.get("/epi-types", response_model=List[EpiTypeOut])
 async def listar_epis_alias(
     db: AsyncSession = Depends(get_db),
@@ -69,6 +87,7 @@ async def listar_epis_alias(
     return result.scalars().all()
 
 
+@router.post("/epi-types", response_model=EpiTypeOut, status_code=status.HTTP_201_CREATED)
 @router.post("/epis", response_model=EpiTypeOut, status_code=status.HTTP_201_CREATED)
 async def criar_epi(
     dados: EpiTypeCreate,
@@ -83,6 +102,7 @@ async def criar_epi(
     return epi
 
 
+@router.patch("/epi-types/{epi_id}", response_model=EpiTypeOut)
 @router.put("/epis/{epi_id}", response_model=EpiTypeOut)
 async def atualizar_epi(
     epi_id: int,
@@ -104,6 +124,7 @@ async def atualizar_epi(
     return epi
 
 
+@router.delete("/epi-types/{epi_id}", status_code=status.HTTP_204_NO_CONTENT)
 @router.delete("/epis/{epi_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def deletar_epi(
     epi_id: int,
@@ -120,12 +141,29 @@ async def deletar_epi(
 
 
 # ─────────────────────────────────────────────────────────────
-# CRUD DE VÍDEOS (somente gestor)
+# CRUD DE VÍDEOS — URL (somente gestor)
 # ─────────────────────────────────────────────────────────────
+
+@router.post("/videos", response_model=TrainingVideoOut, status_code=status.HTTP_201_CREATED)
+async def adicionar_video(
+    dados: TrainingVideoCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    _exige_gestor(current_user)
+    result = await db.execute(select(EpiType).where(EpiType.id == dados.epi_type_id))
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="EPI não encontrado.")
+    video = TrainingVideo(**dados.model_dump())
+    db.add(video)
+    await db.commit()
+    await db.refresh(video)
+    return video
+
 
 @router.post("/epis/{epi_id}/videos", response_model=TrainingVideoOut,
              status_code=status.HTTP_201_CREATED)
-async def adicionar_video(
+async def adicionar_video_por_epi(
     epi_id: int,
     dados: TrainingVideoCreate,
     db: AsyncSession = Depends(get_db),
@@ -142,6 +180,106 @@ async def adicionar_video(
     return video
 
 
+# ─────────────────────────────────────────────────────────────
+# UPLOAD DE ARQUIVO DE VÍDEO  ←  ROTA NOVA
+# POST /api/training/videos/upload
+# Recebe multipart/form-data com os campos abaixo.
+# ─────────────────────────────────────────────────────────────
+
+@router.post("/videos/upload", response_model=TrainingVideoOut,
+             status_code=status.HTTP_201_CREATED)
+async def upload_video(
+    epi_type_id: int        = Form(...),
+    titulo:      str        = Form(...),
+    descricao:   str        = Form(''),
+    fonte:       str        = Form(''),
+    aprovado:    bool       = Form(True),
+    prioridade:  int        = Form(0),
+    file:        UploadFile = File(...),
+    db:          AsyncSession = Depends(get_db),
+    current_user: User     = Depends(get_current_user),
+):
+    """
+    Faz upload de um arquivo de vídeo e cria o registro TrainingVideo.
+    O arquivo fica em  uploads/training_videos/<uuid>.<ext>
+    A URL salva no banco aponta para  /api/training/videos/file/<uuid>.<ext>
+    """
+    _exige_gestor(current_user)
+
+    # Valida EPI
+    result = await db.execute(select(EpiType).where(EpiType.id == epi_type_id))
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="EPI não encontrado.")
+
+    # Valida tipo MIME
+    if file.content_type not in MIME_PERMITIDOS:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"Tipo de arquivo não suportado: {file.content_type}. "
+                   f"Use MP4, WebM, OGG, MOV ou AVI."
+        )
+
+    # Lê em chunks e verifica tamanho
+    extensao = Path(file.filename or "video.mp4").suffix or ".mp4"
+    nome_arquivo = f"{uuid.uuid4().hex}{extensao}"
+    destino = UPLOAD_DIR / nome_arquivo
+
+    tamanho = 0
+    async with aiofiles.open(destino, "wb") as f_out:
+        while chunk := await file.read(1024 * 1024):  # lê 1 MB por vez
+            tamanho += len(chunk)
+            if tamanho > TAMANHO_MAXIMO:
+                await f_out.close()
+                destino.unlink(missing_ok=True)
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail="Arquivo excede o limite de 500 MB."
+                )
+            await f_out.write(chunk)
+
+    # URL interna que o front-end vai usar para reproduzir o vídeo
+    url_video = f"/api/training/videos/file/{nome_arquivo}"
+
+    video = TrainingVideo(
+        epi_type_id=epi_type_id,
+        titulo=titulo,
+        url=url_video,
+        descricao=descricao,
+        fonte=fonte,
+        aprovado=aprovado,
+        prioridade=prioridade,
+    )
+    db.add(video)
+    await db.commit()
+    await db.refresh(video)
+    return video
+
+
+# ─────────────────────────────────────────────────────────────
+# SERVIR ARQUIVO DE VÍDEO ENVIADO POR UPLOAD
+# GET /api/training/videos/file/{nome_arquivo}
+# ─────────────────────────────────────────────────────────────
+
+@router.get("/videos/file/{nome_arquivo}")
+async def servir_video(
+    nome_arquivo: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Retorna o arquivo de vídeo armazenado localmente."""
+    caminho = UPLOAD_DIR / nome_arquivo
+    if not caminho.exists() or not caminho.is_file():
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado.")
+    # Garante que não haja path traversal
+    if not str(caminho.resolve()).startswith(str(UPLOAD_DIR.resolve())):
+        raise HTTPException(status_code=400, detail="Caminho inválido.")
+    return FileResponse(str(caminho), media_type="video/mp4")
+
+
+# ─────────────────────────────────────────────────────────────
+# UPDATE / DELETE DE VÍDEOS
+# ─────────────────────────────────────────────────────────────
+
+@router.patch("/videos/{video_id}", response_model=TrainingVideoOut)
 @router.put("/videos/{video_id}", response_model=TrainingVideoOut)
 async def atualizar_video(
     video_id: int,
@@ -172,5 +310,13 @@ async def deletar_video(
     video = result.scalar_one_or_none()
     if not video:
         raise HTTPException(status_code=404, detail="Vídeo não encontrado.")
+
+    # Se o vídeo foi enviado por upload, remove o arquivo físico também
+    if video.url and video.url.startswith("/api/training/videos/file/"):
+        nome = video.url.split("/")[-1]
+        arquivo = UPLOAD_DIR / nome
+        if arquivo.exists():
+            arquivo.unlink(missing_ok=True)
+
     await db.delete(video)
     await db.commit()
