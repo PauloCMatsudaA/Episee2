@@ -13,7 +13,8 @@ from app.schemas.training_video import (
     TrainingVideoCreate, TrainingVideoUpdate, TrainingVideoOut,
 )
 
-router = APIRouter(prefix="/api/training", tags=["training"])
+# prefix apenas "/training" — o main.py já adiciona "/api"
+router = APIRouter(prefix="/training", tags=["training"])
 
 
 def _exige_gestor(user: User):
@@ -37,7 +38,6 @@ async def listar_epis_worker(
         select(EpiType).options(selectinload(EpiType.videos))
     )
     epis = result.scalars().all()
-    # Filtra apenas EPIs que tenham ao menos 1 vídeo aprovado e visível no chatbot
     epis_com_videos = [e for e in epis if any(v.aprovado for v in e.videos)]
     return epis_com_videos
 
@@ -48,6 +48,18 @@ async def listar_epis_worker(
 
 @router.get("/epis", response_model=List[EpiTypeOut])
 async def listar_epis(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(EpiType).options(selectinload(EpiType.videos))
+    )
+    return result.scalars().all()
+
+
+# Alias para compatibilidade com o frontend que chama /epi-types
+@router.get("/epi-types", response_model=List[EpiTypeOut])
+async def listar_epis_alias(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
