@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 
 
 # ── TrainingVideo ──────────────────────────────────────────────────────────────
@@ -36,6 +36,9 @@ class TrainingVideoResponse(TrainingVideoBase):
     class Config:
         from_attributes = True
 
+# Alias usado em training_videos.py
+TrainingVideoOut = TrainingVideoResponse
+
 
 # ── EpiType ────────────────────────────────────────────────────────────────────
 
@@ -68,3 +71,6 @@ class EpiTypeResponse(EpiTypeBase):
 
     class Config:
         from_attributes = True
+
+# Alias usado em training_videos.py
+EpiTypeOut = EpiTypeResponse
