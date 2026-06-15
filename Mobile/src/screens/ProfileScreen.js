@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { getMeuPerfil, getSetores } from '../api/api';
 
@@ -15,6 +16,7 @@ export default function ProfileScreen({ navigation }) {
   const [perfil, setPerfil]         = useState(user || {});
   const [nomeSetor, setNomeSetor]   = useState('');
   const [carregando, setCarregando] = useState(true);
+  const [saindo, setSaindo]         = useState(false);
 
   useEffect(() => {
     const buscar = async () => {
@@ -39,21 +41,37 @@ export default function ProfileScreen({ navigation }) {
   const nome    = perfil?.name || perfil?.nome || 'Usuário';
   const inicial = nome[0].toUpperCase();
 
+  const fazerLogout = async () => {
+    try {
+      setSaindo(true);
+      // Limpa storage diretamente como garantia extra
+      await AsyncStorage.multiRemove(['@episee:token', '@episee:user']);
+      // Chama o logout do contexto (zera estado global)
+      await logout();
+    } catch (err) {
+      console.warn('[logout]', err.message);
+      // Mesmo com erro, chama o logout do contexto
+      logout();
+    } finally {
+      setSaindo(false);
+    }
+  };
+
   const confirmarLogout = () => {
     Alert.alert(
       'Sair da conta',
       'Tem certeza que deseja sair do EPIsee?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Sair', style: 'destructive', onPress: logout },
+        { text: 'Sair', style: 'destructive', onPress: fazerLogout },
       ]
     );
   };
 
   const infos = [
-    { icone: 'business-outline',  cor: '#22C55E', label: 'Setor',    valor: nomeSetor || (perfil?.sector_id ? `Setor ${perfil.sector_id}` : null) },
-    { icone: 'mail-outline',      cor: '#F97316', label: 'E-mail',   valor: perfil?.email },
-    { icone: 'call-outline',      cor: '#A855F7', label: 'Telefone', valor: perfil?.phone || perfil?.telefone },
+    { icone: 'business-outline', cor: '#22C55E', label: 'Setor',    valor: nomeSetor || (perfil?.sector_id ? `Setor ${perfil.sector_id}` : null) },
+    { icone: 'mail-outline',     cor: '#F97316', label: 'E-mail',   valor: perfil?.email },
+    { icone: 'call-outline',     cor: '#A855F7', label: 'Telefone', valor: perfil?.phone || perfil?.telefone },
   ];
 
   return (
@@ -96,9 +114,19 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         {/* Botão sair */}
-        <TouchableOpacity style={estilos.botaoSair} onPress={confirmarLogout} activeOpacity={0.8}>
-          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-          <Text style={estilos.botaoSairTexto}>Sair da conta</Text>
+        <TouchableOpacity
+          style={[estilos.botaoSair, saindo && { opacity: 0.6 }]}
+          onPress={confirmarLogout}
+          activeOpacity={0.8}
+          disabled={saindo}
+        >
+          {saindo
+            ? <ActivityIndicator size="small" color="#EF4444" />
+            : <>
+                <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+                <Text style={estilos.botaoSairTexto}>Sair da conta</Text>
+              </>
+          }
         </TouchableOpacity>
 
         <Text style={estilos.versao}>EPIsee v1.0.0</Text>
