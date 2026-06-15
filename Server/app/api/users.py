@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -49,6 +49,39 @@ async def get_user(
     return UserResponse.model_validate(user)
 
 
+@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def create_user(
+    user_in: UserCreate,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_manager),
+):
+    """Cria um novo usuário pelo painel do gestor."""
+    email_lower = user_in.email.strip().lower()
+
+    # Verifica duplicidade
+    result = await db.execute(
+        select(User).where(func.lower(User.email) == email_lower)
+    )
+    if result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email já cadastrado",
+        )
+
+    user = User(
+        name=user_in.name,
+        email=email_lower,
+        hashed_password=get_password_hash(user_in.password),
+        role=user_in.role,
+        sector_id=user_in.sector_id,
+        phone=user_in.phone,
+    )
+    db.add(user)
+    await db.flush()
+    await db.refresh(user)
+    return UserResponse.model_validate(user)
+
+
 @router.patch("/{user_id}", response_model=UserResponse)
 async def update_user(
     user_id: int,
@@ -67,6 +100,8 @@ async def update_user(
     update_data = user_in.model_dump(exclude_unset=True)
     if "password" in update_data:
         update_data["hashed_password"] = get_password_hash(update_data.pop("password"))
+    if "email" in update_data:
+        update_data["email"] = update_data["email"].strip().lower()
 
     for field, value in update_data.items():
         setattr(user, field, value)
@@ -88,4 +123,3 @@ async def delete_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
 
     await db.delete(user)
-    await db.flush()

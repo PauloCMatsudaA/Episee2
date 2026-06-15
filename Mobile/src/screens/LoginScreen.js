@@ -42,10 +42,8 @@ export default function LoginScreen() {
 
   // ── Validação e envio ─────────────────────────────────────────────────────
   const handleLogin = async () => {
-    // Limpa erro anterior
     setErro('');
 
-    // Validação básica
     if (!email.trim()) {
       setErro('Informe seu e-mail para continuar.');
       return;
@@ -57,8 +55,8 @@ export default function LoginScreen() {
 
     setCarregando(true);
     try {
-      await login(email.trim().toLowerCase(), senha);
-      // Autenticação OK — o AppNavigator redireciona automaticamente
+      // Envia o email exatamente como digitado — o servidor normaliza internamente
+      await login(email.trim(), senha);
     } catch (err) {
       setErro(err.message || 'Credenciais inválidas. Tente novamente.');
     } finally {
@@ -68,8 +66,8 @@ export default function LoginScreen() {
 
   // ── Preenche credenciais de demo ──────────────────────────────────────────
   const preencherDemo = () => {
-    setEmail('demo@episee.com');
-    setSenha('123456');
+    setEmail('admin@episee.com');
+    setSenha('admin123');
     setErro('');
   };
 
@@ -90,7 +88,6 @@ export default function LoginScreen() {
         >
           {/* ── Logo ─────────────────────────────────────────────────────── */}
           <View style={estilos.logoContainer}>
-            {/* Anel decorativo */}
             <View style={estilos.logoAnel}>
               <View style={estilos.logoAnelInterno}>
                 <Ionicons name="shield-checkmark" size={56} color={CORES.primaria} />
@@ -192,9 +189,9 @@ export default function LoginScreen() {
           >
             <Ionicons name="information-circle-outline" size={15} color={CORES.slate400} />
             <Text style={estilos.demoTexto}>
-              Demo: <Text style={estilos.demoCredencial}>demo@episee.com</Text>
+              Demo: <Text style={estilos.demoCredencial}>admin@episee.com</Text>
               {' / '}
-              <Text style={estilos.demoCredencial}>123456</Text>
+              <Text style={estilos.demoCredencial}>admin123</Text>
               {' — Toque para preencher'}
             </Text>
           </TouchableOpacity>
@@ -209,12 +206,8 @@ export default function LoginScreen() {
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
 const estilos = StyleSheet.create({
-  gradiente: {
-    flex: 1,
-  },
-  keyboardAvoid: {
-    flex: 1,
-  },
+  gradiente: { flex: 1 },
+  keyboardAvoid: { flex: 1 },
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',
@@ -222,160 +215,53 @@ const estilos = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
   },
-
-  // Logo
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
+  logoContainer: { alignItems: 'center', marginBottom: 40 },
   logoAnel: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 110, height: 110, borderRadius: 55,
     backgroundColor: 'rgba(249, 115, 22, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 16,
   },
   logoAnelInterno: {
-    width: 82,
-    height: 82,
-    borderRadius: 41,
+    width: 82, height: 82, borderRadius: 41,
     backgroundColor: 'rgba(249, 115, 22, 0.18)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center', alignItems: 'center',
   },
-  logoTexto: {
-    fontSize: 38,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  tagline: {
-    fontSize: 15,
-    color: '#94A3B8',
-    letterSpacing: 0.3,
-  },
-
-  // Card do formulário
+  logoTexto: { fontSize: 38, fontWeight: '800', color: '#FFFFFF', letterSpacing: 1, marginBottom: 8 },
+  tagline: { fontSize: 15, color: '#94A3B8', letterSpacing: 0.3 },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 12,
-    marginBottom: 20,
+    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15, shadowRadius: 24, elevation: 12, marginBottom: 20,
   },
-  cardTitulo: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 20,
-  },
-
-  // Campos
-  campoContainer: {
-    marginBottom: 16,
-  },
-  campoLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#475569',
-    marginBottom: 6,
-    marginLeft: 2,
-  },
+  cardTitulo: { fontSize: 18, fontWeight: '700', color: '#0F172A', marginBottom: 20 },
+  campoContainer: { marginBottom: 16 },
+  campoLabel: { fontSize: 13, fontWeight: '600', color: '#475569', marginBottom: 6, marginLeft: 2 },
   inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 8,
-    backgroundColor: '#FAFAFA',
-    paddingHorizontal: 12,
-    height: 50,
+    flexDirection: 'row', alignItems: 'center',
+    borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8,
+    backgroundColor: '#FAFAFA', paddingHorizontal: 12, height: 50,
   },
-  inputIcone: {
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: '#0F172A',
-    height: 50,
-  },
-  inputSenha: {
-    flex: 1,
-  },
-
-  // Erro
+  inputIcone: { marginRight: 8 },
+  input: { flex: 1, fontSize: 15, color: '#0F172A', height: 50 },
+  inputSenha: { flex: 1 },
   erroContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEE2E2',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 12,
-    gap: 8,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#FEE2E2', borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12, gap: 8,
   },
-  erroTexto: {
-    fontSize: 13,
-    color: '#EF4444',
-    flex: 1,
-    fontWeight: '500',
-  },
-
-  // Botão
-  botaoWrapper: {
-    marginTop: 4,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
+  erroTexto: { fontSize: 13, color: '#EF4444', flex: 1, fontWeight: '500' },
+  botaoWrapper: { marginTop: 4, borderRadius: 12, overflow: 'hidden' },
   botao: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-    gap: 8,
-    borderRadius: 12,
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+    padding: 16, gap: 8, borderRadius: 12,
   },
-  botaoTexto: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-
-  // Demo
+  botaoTexto: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
   demoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    gap: 6,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 10, gap: 6,
   },
-  demoTexto: {
-    fontSize: 12,
-    color: '#94A3B8',
-    textAlign: 'center',
-  },
-  demoCredencial: {
-    color: '#F97316',
-    fontWeight: '600',
-  },
-
-  // Rodapé
-  rodape: {
-    textAlign: 'center',
-    fontSize: 11,
-    color: '#475569',
-    marginTop: 24,
-  },
+  demoTexto: { fontSize: 12, color: '#94A3B8', textAlign: 'center' },
+  demoCredencial: { color: '#F97316', fontWeight: '600' },
+  rodape: { textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 24 },
 });
