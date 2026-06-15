@@ -63,10 +63,10 @@ export default function HomeScreen({ navigation }) {
   useFocusEffect(useCallback(() => { carregarSolicitacoes(); }, [carregarSolicitacoes]));
 
   const atalhos = [
-    { icone: 'clipboard', cor: '#1D6FE8', fundo: '#EFF6FF', titulo: 'Solicitar EPI',   onPress: () => navigation.navigate('SolicitarEPI') },
-    { icone: 'list',             cor: '#3B82F6', fundo: '#EFF6FF', titulo: 'Solicitações',    onPress: () => navigation.navigate('MinhasSolicitacoes') },
-    { icone: 'book',             cor: '#22C55E', fundo: '#F0FDF4', titulo: 'Consultar NR-6',  onPress: () => navigation.navigate('NR6') },
-    { icone: 'chatbubble-ellipses', cor: '#A855F7', fundo: '#FAF5FF', titulo: 'Assistente IA', onPress: () => navigation.navigate('Chat') },
+    { icone: 'clipboard',           cor: '#1D6FE8', fundo: '#EFF6FF', titulo: 'Solicitar EPI',   onPress: () => navigation.navigate('SolicitarEPI') },
+    { icone: 'list',                cor: '#3B82F6', fundo: '#EFF6FF', titulo: 'Solicitações',     onPress: () => navigation.navigate('MinhasSolicitacoes') },
+    { icone: 'play-circle',         cor: '#22C55E', fundo: '#F0FDF4', titulo: 'Treinamentos',     onPress: () => navigation.navigate('Treinamentos') },
+    { icone: 'chatbubble-ellipses', cor: '#A855F7', fundo: '#FAF5FF', titulo: 'Assistente IA',    onPress: () => navigation.navigate('Chat') },
   ];
 
   const renderStatusEpi = (item, index, total) => {
@@ -100,11 +100,11 @@ export default function HomeScreen({ navigation }) {
         <View style={estilos.header}>
           <View>
             <Text style={estilos.saudacao}>{saudacao},</Text>
-            <Text style={estilos.nomeUsuario}>{user?.nome || 'Trabalhador'} </Text>
+            <Text style={estilos.nomeUsuario}>{user?.name || 'Usuário'}</Text>
             <Text style={estilos.dataHoje}>{dataFormatada}</Text>
           </View>
           <TouchableOpacity style={estilos.avatarHeader} onPress={() => navigation.navigate('Perfil')}>
-            <Text style={estilos.avatarLetra}>{(user?.nome || 'U')[0].toUpperCase()}</Text>
+            <Text style={estilos.avatarLetra}>{(user?.name || 'U')[0].toUpperCase()}</Text>
           </TouchableOpacity>
         </View>
 
