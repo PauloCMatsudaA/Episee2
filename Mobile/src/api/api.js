@@ -14,7 +14,6 @@ api.interceptors.request.use(
   async (config) => {
     try {
       const token = await AsyncStorage.getItem('@episee:token');
-      console.log('[API] Token recuperado:', token ? 'OK' : 'AUSENTE'); // ← adicione
       if (token) config.headers.Authorization = `Bearer ${token}`;
     } catch (e) {
       console.warn('[API] Erro ao obter token:', e);
@@ -60,7 +59,7 @@ export const logoutApi = async () => {
   await AsyncStorage.multiRemove(['@episee:token', '@episee:user']);
 };
 
-// ── Solicitações de EPI ───────────────────────────────────────────────────────
+// ── Solicitações de EPI ────────────────────────────────────────────────────────────────────────────────
 export const criarSolicitacao = async (dados) => {
   const response = await api.post('/epi-requests/', {
     epi_type: dados.epi_type,
@@ -80,13 +79,24 @@ export const todasSolicitacoes = async () => {
   return response.data;
 };
 
-// ── Setores ───────────────────────────────────────────────────────────────────
+// ── Setores ───────────────────────────────────────────────────────────────────────────────────
 export const getSetores = async () => {
   const response = await api.get('/sectors/');
   return response.data;
 };
 
-// ── Chatbot ───────────────────────────────────────────────────────────────────
+// ── Vídeos de Treinamento ──────────────────────────────────────────────────────────────────
+/**
+ * Busca todos os EPIs que possuêm vídeos aprovados.
+ * Rota: GET /api/training/worker/epis
+ * Retorna: EpiType[] com videos[] aninhados.
+ */
+export const getVideosWorker = async () => {
+  const response = await api.get('/training/worker/epis');
+  return response.data;
+};
+
+// ── Chatbot ───────────────────────────────────────────────────────────────────────────────────
 const chatbotCliente = axios.create({
   baseURL: 'http://10.0.0.246:8001',
   timeout: 30000,
