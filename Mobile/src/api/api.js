@@ -10,6 +10,7 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Interceptor de request: injeta o token em toda requisição
 api.interceptors.request.use(
   async (config) => {
     try {
@@ -23,6 +24,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Interceptor de response: se 401 limpa o storage
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -33,7 +35,7 @@ api.interceptors.response.use(
   }
 );
 
-// Login padrão: admin@episee.com / admin123
+// ── Auth ──────────────────────────────────────────────────────────────────
 export const loginApi = async (email, senha) => {
   const params = new URLSearchParams();
   params.append('username', email);
@@ -51,7 +53,7 @@ export const loginApi = async (email, senha) => {
 };
 
 export const getMeuPerfil = async () => {
-  const response = await api.get('/auth/me');
+  const response = await api.get('/auth/me');   // sem barra final
   return response.data;
 };
 
@@ -59,9 +61,9 @@ export const logoutApi = async () => {
   await AsyncStorage.multiRemove(['@episee:token', '@episee:user']);
 };
 
-// ── Solicitações de EPI ────────────────────────────────────────────────────────────────────────────────
+// ── Solicitações de EPI ───────────────────────────────────────────────────
 export const criarSolicitacao = async (dados) => {
-  const response = await api.post('/epi-requests/', {
+  const response = await api.post('/epi-requests', {   // sem barra final
     epi_type: dados.epi_type,
     sector_id: Number(dados.sector_id),
     reason: dados.reason || null,
@@ -70,33 +72,28 @@ export const criarSolicitacao = async (dados) => {
 };
 
 export const minhasSolicitacoes = async () => {
-  const response = await api.get('/epi-requests/my/');
+  const response = await api.get('/epi-requests/my');  // sem barra final
   return response.data;
 };
 
 export const todasSolicitacoes = async () => {
-  const response = await api.get('/epi-requests/');
+  const response = await api.get('/epi-requests');     // sem barra final
   return response.data;
 };
 
-// ── Setores ───────────────────────────────────────────────────────────────────────────────────
+// ── Setores ───────────────────────────────────────────────────────────────
 export const getSetores = async () => {
-  const response = await api.get('/sectors/');
+  const response = await api.get('/sectors');          // sem barra final
   return response.data;
 };
 
-// ── Vídeos de Treinamento ──────────────────────────────────────────────────────────────────
-/**
- * Busca todos os EPIs que possuêm vídeos aprovados.
- * Rota: GET /api/training/worker/epis
- * Retorna: EpiType[] com videos[] aninhados.
- */
+// ── Vídeos de Treinamento ─────────────────────────────────────────────────
 export const getVideosWorker = async () => {
   const response = await api.get('/training/worker/epis');
   return response.data;
 };
 
-// ── Chatbot ───────────────────────────────────────────────────────────────────────────────────
+// ── Chatbot ───────────────────────────────────────────────────────────────
 const chatbotCliente = axios.create({
   baseURL: 'http://10.0.0.246:8001',
   timeout: 30000,
