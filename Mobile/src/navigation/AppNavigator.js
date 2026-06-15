@@ -1,4 +1,4 @@
-// src/navigation/AppNavigator.js — Navegação principal do EPIsee
+// src/navigation/AppNavigator.js
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
@@ -28,10 +28,10 @@ const Stack = createStackNavigator();
 const Tab   = createBottomTabNavigator();
 
 const ICONES_ABA = {
-  Home:               { ativo: 'home',             inativo: 'home-outline'             },
-  Treinamentos:       { ativo: 'play-circle',       inativo: 'play-circle-outline'      },
-  SolicitarEPI:       { ativo: 'clipboard',         inativo: 'clipboard-outline'        },
-  MinhasSolicitacoes: { ativo: 'list',              inativo: 'list-outline'             },
+  Home:               { ativo: 'home',               inativo: 'home-outline'                },
+  Treinamentos:       { ativo: 'play-circle',         inativo: 'play-circle-outline'         },
+  SolicitarEPI:       { ativo: 'clipboard',           inativo: 'clipboard-outline'           },
+  MinhasSolicitacoes: { ativo: 'list',                inativo: 'list-outline'                },
   Chat:               { ativo: 'chatbubble-ellipses', inativo: 'chatbubble-ellipses-outline' },
 };
 
@@ -51,22 +51,22 @@ function TabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerShown:          false,
-        tabBarStyle:          estilos.tabBar,
+        headerShown:             false,
+        tabBarStyle:             estilos.tabBar,
         tabBarActiveTintColor:   COR.primaria,
         tabBarInactiveTintColor: COR.cinza,
-        tabBarLabelStyle:     estilos.tabLabel,
+        tabBarLabelStyle:        estilos.tabLabel,
         tabBarIcon: ({ focused, color, size }) => {
-          const icones  = ICONES_ABA[route.name] ?? { ativo: 'ellipse', inativo: 'ellipse-outline' };
+          const icones    = ICONES_ABA[route.name] ?? { ativo: 'ellipse', inativo: 'ellipse-outline' };
           const nomeIcone = focused ? icones.ativo : icones.inativo;
-          const tamanho = route.name === 'SolicitarEPI' ? 28 : size;
-          const cor     = route.name === 'SolicitarEPI' ? COR.branco : color;
+          const tamanho   = route.name === 'SolicitarEPI' ? 28 : size;
+          const cor       = route.name === 'SolicitarEPI' ? COR.branco : color;
           return <Ionicons name={nomeIcone} size={tamanho} color={cor} />;
         },
       })}
     >
-      <Tab.Screen name="Home"               component={HomeScreen}       options={{ tabBarLabel: 'Início'        }} />
-      <Tab.Screen name="Treinamentos"        component={TrainingScreen}   options={{ tabBarLabel: 'Treinamentos'  }} />
+      <Tab.Screen name="Home"               component={HomeScreen}       options={{ tabBarLabel: 'Início'       }} />
+      <Tab.Screen name="Treinamentos"        component={TrainingScreen}   options={{ tabBarLabel: 'Treinamentos' }} />
       <Tab.Screen
         name="SolicitarEPI"
         component={EpiRequestScreen}
@@ -100,7 +100,17 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAutenticado ? (
-          <Stack.Screen name="Main" component={TabNavigator} />
+          <>
+            <Stack.Screen name="Main"   component={TabNavigator} />
+            <Stack.Screen
+              name="Perfil"
+              component={ProfileScreen}
+              options={{
+                presentation: 'card',
+                gestureEnabled: true,
+              }}
+            />
+          </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
         )}
@@ -111,23 +121,22 @@ export default function AppNavigator() {
 
 const estilos = StyleSheet.create({
   tabBar: {
-    backgroundColor:  COR.branco,
-    borderTopWidth:   1,
-    borderTopColor:   '#E2E8F0',
-    height:           70,
-    paddingBottom:    10,
-    paddingTop:       8,
-    shadowColor:      '#000',
-    shadowOffset:     { width: 0, height: -2 },
-    shadowOpacity:    0.06,
-    shadowRadius:     8,
-    elevation:        10,
+    backgroundColor: COR.branco,
+    borderTopWidth:  1,
+    borderTopColor:  '#E2E8F0',
+    height:          70,
+    paddingBottom:   10,
+    paddingTop:      8,
+    shadowColor:     '#000',
+    shadowOffset:    { width: 0, height: -2 },
+    shadowOpacity:   0.06,
+    shadowRadius:    8,
+    elevation:       10,
   },
   tabLabel: {
     fontSize:   11,
     fontWeight: '500',
   },
-
   botaoCentral: {
     top:              -20,
     justifyContent:   'center',
@@ -151,7 +160,6 @@ const estilos = StyleSheet.create({
     justifyContent:  'center',
     alignItems:      'center',
   },
-
   carregando: {
     flex:            1,
     justifyContent:  'center',
