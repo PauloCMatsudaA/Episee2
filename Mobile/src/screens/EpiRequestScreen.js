@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
-  ScrollView, Modal, ActivityIndicator, Platform,
+  ScrollView, Modal, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -104,49 +104,34 @@ function ModalSucesso({ visivel, onFechar }) {
 
 export default function EpiRequestScreen() {
   const { user } = useAuth();
-  const [tipoEpi, setTipoEpi]     = useState('');
-  const [motivo, setMotivo]       = useState('');
+  const [tipoEpi, setTipoEpi]         = useState('');
+  const [motivo, setMotivo]           = useState('');
   const [observacoes, setObservacoes] = useState('');
-  const [setorId, setSetorId]     = useState('');
-  const [setores, setSetores]     = useState([]);
-  const [carregandoSetores, setCarregandoSetores] = useState(true);
-  const [carregando, setCarregando] = useState(false);
-  const [sucesso, setSucesso]     = useState(false);
-  const [erro, setErro]           = useState('');
-  const [erros, setErros]         = useState({});
+  const [nomeSetor, setNomeSetor]     = useState('');
+  const [carregando, setCarregando]   = useState(false);
+  const [sucesso, setSucesso]         = useState(false);
+  const [erro, setErro]               = useState('');
+  const [erros, setErros]             = useState({});
 
+  // Busca o nome do setor do usuário apenas para exibir
   useEffect(() => {
-    const buscarSetores = async () => {
+    const buscarNomeSetor = async () => {
+      if (!user?.sector_id) return;
       try {
-        const dados = await getSetores();
-        const lista = Array.isArray(dados) ? dados : [];
-        const formatados = lista.map((s) => ({
-          valor: String(s.id),
-          nome:  s.nome || s.name || `Setor ${s.id}`,
-          icone: 'business-outline',
-        }));
-        setSetores(formatados);
-        if (user?.setor_id) {
-          setSetorId(String(user.setor_id));
-        } else if (formatados.length > 0) {
-          setSetorId(formatados[0].valor);
-        }
-      } catch (err) {
-        console.warn('[EpiRequest] Setores:', err.message);
-        setSetores([{ valor: '1', nome: 'Geral', icone: 'business-outline' }]);
-        setSetorId('1');
-      } finally {
-        setCarregandoSetores(false);
+        const setores = await getSetores();
+        const setor = setores.find((s) => s.id === user.sector_id);
+        setNomeSetor(setor?.nome || setor?.name || `Setor ${user.sector_id}`);
+      } catch {
+        setNomeSetor(`Setor ${user.sector_id}`);
       }
     };
-    buscarSetores();
+    buscarNomeSetor();
   }, [user]);
 
   const validar = () => {
     const novosErros = {};
     if (!tipoEpi) novosErros.tipoEpi = 'Selecione o tipo de EPI';
     if (!motivo)  novosErros.motivo  = 'Selecione o motivo da solicitação';
-    if (!setorId) novosErros.setor   = 'Selecione o setor';
     setErros(novosErros);
     return Object.keys(novosErros).length === 0;
   };
@@ -158,7 +143,7 @@ export default function EpiRequestScreen() {
     try {
       await criarSolicitacao({
         epi_type:  tipoEpi,
-        sector_id: Number(setorId),
+        sector_id: user?.sector_id,
         reason:    motivo + (observacoes ? ` — ${observacoes}` : ''),
       });
       setTipoEpi(''); setMotivo(''); setObservacoes(''); setErros({});
@@ -186,6 +171,22 @@ export default function EpiRequestScreen() {
         </View>
 
         <View style={estilos.formularioCard}>
+
+          {/* Setor fixo — exibido mas não editável */}
+          {(nomeSetor || user?.sector_id) ? (
+            <View style={estilos.campo}>
+              <Text style={estilos.campoLabel}>Seu Setor</Text>
+              <View style={estilos.setorFixo}>
+                <Ionicons name="business-outline" size={18} color="#F97316" />
+                <Text style={estilos.setorFixoTexto}>
+                  {nomeSetor || `Setor ${user?.sector_id}`}
+                </Text>
+                <Ionicons name="lock-closed-outline" size={14} color="#94A3B8" />
+              </View>
+              <Text style={estilos.setorDica}>Definido no seu cadastro</Text>
+            </View>
+          ) : null}
+
           <View style={estilos.campo}>
             <Text style={estilos.campoLabel}>Tipo de EPI <Text style={estilos.obrigatorio}>*</Text></Text>
             <Seletor titulo="Selecione o tipo de EPI" opcoes={TIPOS_EPI} valorSelecionado={tipoEpi}
@@ -198,15 +199,6 @@ export default function EpiRequestScreen() {
             <Seletor titulo="Selecione o motivo" opcoes={MOTIVOS} valorSelecionado={motivo}
               onSelecionar={(v) => { setMotivo(v); setErros({ ...erros, motivo: undefined }); }} erro={!!erros.motivo} />
             {erros.motivo && <Text style={estilos.textoErro}>{erros.motivo}</Text>}
-          </View>
-
-      
-          <View style={estilos.campo}>
-            <Text style={estilos.campoLabel}>Setor <Text style={estilos.obrigatorio}>*</Text></Text>
-            <Seletor titulo="Selecione o setor" opcoes={setores} valorSelecionado={setorId}
-              onSelecionar={(v) => { setSetorId(v); setErros({ ...erros, setor: undefined }); }}
-              erro={!!erros.setor} carregando={carregandoSetores} />
-            {erros.setor && <Text style={estilos.textoErro}>{erros.setor}</Text>}
           </View>
 
           <View style={estilos.campo}>
@@ -249,34 +241,35 @@ const estilos = StyleSheet.create({
   campoLabel: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
   obrigatorio: { color: '#EF4444', fontWeight: '700' },
   opcional: { color: '#94A3B8', fontWeight: '400', fontSize: 12 },
-  seletorTrigger: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, backgroundColor: '#FAFAFA', paddingHorizontal: 14, height: 50, justifyContent: 'space-between' },
+  setorFixo: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 14, paddingVertical: 14 },
+  setorFixoTexto: { flex: 1, fontSize: 15, fontWeight: '600', color: '#0F172A' },
+  setorDica: { fontSize: 11, color: '#94A3B8', marginTop: 4, marginLeft: 4 },
+  seletorTrigger: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 14, paddingVertical: 14, minHeight: 50 },
   seletorSelecionado: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  seletorTextoSelecionado: { fontSize: 15, color: '#0F172A', fontWeight: '500' },
-  seletorPlaceholder: { fontSize: 15, color: '#94A3B8' },
-  inputErro: { borderColor: '#EF4444', backgroundColor: '#FFF5F5' },
-  textArea: { borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, backgroundColor: '#FAFAFA', paddingHorizontal: 14, paddingTop: 12, paddingBottom: 12, fontSize: 15, color: '#0F172A', minHeight: 100, lineHeight: 20 },
-  textoErro: { fontSize: 12, color: '#EF4444', marginTop: 4, marginLeft: 2 },
-  erroContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEE2E2', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, gap: 8, marginTop: 4 },
-  erroTexto: { fontSize: 13, color: '#EF4444', flex: 1 },
-  avisoObrigatorio: { fontSize: 12, color: '#94A3B8', marginTop: -6 },
-  infoCard: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#EFF6FF', borderRadius: 12, padding: 14, marginBottom: 16, gap: 10, borderLeftWidth: 3, borderLeftColor: '#3B82F6' },
-  infoTexto: { flex: 1, fontSize: 13, color: '#1E40AF', lineHeight: 19 },
-  botaoWrapper: { borderRadius: 12, overflow: 'hidden', marginBottom: 8 },
-  botao: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 16, gap: 10, borderRadius: 12 },
-  botaoTexto: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalSheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 16, paddingBottom: Platform.OS === 'ios' ? 40 : 24, paddingTop: 8, maxHeight: '70%' },
-  modalAlca: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0', alignSelf: 'center', marginVertical: 12 },
-  modalTitulo: { fontSize: 17, fontWeight: '700', color: '#0F172A', marginBottom: 14, textAlign: 'center' },
-  modalOpcao: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 12, borderRadius: 10, marginBottom: 4, gap: 12 },
-  modalOpcaoSelecionada: { backgroundColor: '#FFF7ED' },
-  modalOpcaoIcone: { width: 38, height: 38, borderRadius: 10, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' },
-  modalOpcaoTexto: { fontSize: 15, color: '#334155', flex: 1 },
-  modalOpcaoTextoSelecionado: { color: '#F97316', fontWeight: '600' },
-  sucessoOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  sucessoCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 32, alignItems: 'center', width: '100%', shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 12 },
-  sucessoTitulo: { fontSize: 22, fontWeight: '800', color: '#0F172A', marginBottom: 12, textAlign: 'center' },
-  sucessoTexto: { fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 21, marginBottom: 24 },
-  sucessoBotao: { backgroundColor: '#F97316', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 40 },
-  sucessoBotaoTexto: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  seletorTextoSelecionado: { fontSize: 15, fontWeight: '500', color: '#0F172A' },
+  seletorPlaceholder: { fontSize: 15, color: '#94A3B8', flex: 1 },
+  inputErro: { borderColor: '#EF4444', borderWidth: 1.5 },
+  textoErro: { fontSize: 12, color: '#EF4444', marginTop: 4, marginLeft: 4 },
+  textArea: { backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#0F172A', minHeight: 100 },
+  avisoObrigatorio: { fontSize: 12, color: '#94A3B8', marginTop: 4 },
+  erroContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEE2E2', padding: 12, borderRadius: 10, marginTop: 12 },
+  erroTexto: { flex: 1, fontSize: 13, color: '#DC2626' },
+  botaoWrapper: { borderRadius: 14, overflow: 'hidden', marginTop: 8 },
+  botao: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 16 },
+  botaoTexto: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalSheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '70%' },
+  modalAlca: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0', alignSelf: 'center', marginBottom: 16 },
+  modalTitulo: { fontSize: 17, fontWeight: '700', color: '#0F172A', marginBottom: 16 },
+  modalOpcao: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  modalOpcaoSelecionada: { backgroundColor: '#FFF7ED', borderRadius: 12, paddingHorizontal: 8 },
+  modalOpcaoIcone: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' },
+  modalOpcaoTexto: { flex: 1, fontSize: 15, color: '#374151', fontWeight: '500' },
+  modalOpcaoTextoSelecionado: { color: '#F97316', fontWeight: '700' },
+  sucessoOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  sucessoCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 32, alignItems: 'center', width: '100%', maxWidth: 340 },
+  sucessoTitulo: { fontSize: 22, fontWeight: '800', color: '#0F172A', marginBottom: 10 },
+  sucessoTexto: { fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+  sucessoBotao: { backgroundColor: '#22C55E', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 40 },
+  sucessoBotaoTexto: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
 });
