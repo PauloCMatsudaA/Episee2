@@ -65,7 +65,8 @@ export default function HomeScreen({ navigation }) {
   const atalhos = [
     { icone: 'clipboard', cor: '#1D6FE8', fundo: '#EFF6FF', titulo: 'Solicitar EPI',   onPress: () => navigation.navigate('SolicitarEPI') },
     { icone: 'list',             cor: '#3B82F6', fundo: '#EFF6FF', titulo: 'Solicitações',    onPress: () => navigation.navigate('MinhasSolicitacoes') },
-    { icone: 'book',             cor: '#22C55E', fundo: '#F0FDF4', titulo: 'Consultar NR-6',  onPress: () => navigation.navigate('NR6') },
+    { icone: 'play-circle', cor: '#22C55E', fundo: '#F0FDF4',
+       titulo: 'Treinamentos', onPress: () => navigation.navigate('Treinamentos') },
     { icone: 'chatbubble-ellipses', cor: '#A855F7', fundo: '#FAF5FF', titulo: 'Assistente IA', onPress: () => navigation.navigate('Chat') },
   ];
 
