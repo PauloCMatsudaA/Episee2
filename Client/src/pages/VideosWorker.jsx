@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PlayCircle, Search, ChevronDown, ChevronUp, ExternalLink, BookOpen, ShieldCheck, AlertTriangle, Info } from 'lucide-react';
+import { PlayCircle, Search, ChevronDown, ChevronUp, ExternalLink, BookOpen, ShieldCheck, AlertTriangle, Info, Tag } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -18,7 +18,6 @@ function CardVideo({ video }) {
 
   return (
     <div className="rounded-xl overflow-hidden border border-gray-100 bg-white shadow-sm mb-3">
-      {/* Thumbnail / Player */}
       {ytId ? (
         expandido ? (
           <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
@@ -31,11 +30,8 @@ function CardVideo({ video }) {
             />
           </div>
         ) : (
-          <button
-            onClick={() => setExpandido(true)}
-            className="relative w-full group focus:outline-none"
-            style={{ paddingTop: '56.25%' }}
-          >
+          <button onClick={() => setExpandido(true)}
+            className="relative w-full group focus:outline-none" style={{ paddingTop: '56.25%' }}>
             <img
               src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
               alt={video.titulo}
@@ -47,23 +43,15 @@ function CardVideo({ video }) {
           </button>
         )
       ) : (
-        <a
-          href={video.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 transition-colors"
-        >
+        <a href={video.url} target="_blank" rel="noopener noreferrer"
+          className="flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 transition-colors">
           <ExternalLink className="w-5 h-5 text-blue-600 shrink-0" />
           <span className="text-blue-700 text-sm font-medium">Abrir vídeo externo</span>
         </a>
       )}
-
-      {/* Info */}
       <div className="px-4 py-3">
         <p className="font-semibold text-gray-800 text-sm leading-snug">{video.titulo}</p>
-        {video.fonte && (
-          <p className="text-xs text-gray-400 mt-0.5">{video.fonte}</p>
-        )}
+        {video.fonte && <p className="text-xs text-gray-400 mt-0.5">{video.fonte}</p>}
       </div>
     </div>
   );
@@ -72,14 +60,14 @@ function CardVideo({ video }) {
 function CardEpi({ epi }) {
   const [aberto, setAberto] = useState(false);
   const videosVisiveis = (epi.videos || []).filter(v => v.aprovado);
+  const keywords = epi.palavras_chave
+    ? epi.palavras_chave.split(',').map(k => k.trim()).filter(Boolean)
+    : [];
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white shadow-sm mb-4 overflow-hidden">
-      {/* Header */}
-      <button
-        onClick={() => setAberto(a => !a)}
-        className="w-full flex items-center gap-3 px-4 py-4 text-left focus:outline-none active:bg-gray-50"
-      >
+      <button onClick={() => setAberto(a => !a)}
+        className="w-full flex items-center gap-3 px-4 py-4 text-left focus:outline-none active:bg-gray-50">
         <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shrink-0">
           <ShieldCheck className="w-5 h-5 text-white" />
         </div>
@@ -89,15 +77,11 @@ function CardEpi({ epi }) {
             {videosVisiveis.length} vídeo{videosVisiveis.length !== 1 ? 's' : ''} disponível{videosVisiveis.length !== 1 ? 'is' : ''}
           </p>
         </div>
-        {aberto
-          ? <ChevronUp className="w-5 h-5 text-gray-400 shrink-0" />
-          : <ChevronDown className="w-5 h-5 text-gray-400 shrink-0" />}
+        {aberto ? <ChevronUp className="w-5 h-5 text-gray-400 shrink-0" /> : <ChevronDown className="w-5 h-5 text-gray-400 shrink-0" />}
       </button>
 
       {aberto && (
         <div className="px-4 pb-4 space-y-4">
-
-          {/* Instruções */}
           {(epi.quando_usar || epi.como_usar || epi.erros_comuns || epi.nr6_ref) && (
             <div className="space-y-3">
               {epi.quando_usar && (
@@ -128,20 +112,27 @@ function CardEpi({ epi }) {
                 </div>
               )}
               {epi.nr6_ref && (
-                <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
-                  📋 {epi.nr6_ref}
-                </p>
+                <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">📋 {epi.nr6_ref}</p>
               )}
             </div>
           )}
 
-          {/* Vídeos */}
+          {/* Badges de sinônimos */}
+          {keywords.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              <Tag className="w-3.5 h-3.5 text-gray-400 mt-0.5" />
+              {keywords.map(k => (
+                <span key={k} className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-xs">{k}</span>
+              ))}
+            </div>
+          )}
+
           {videosVisiveis.length > 0 ? (
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">🎬 Vídeos de treinamento</p>
-              {videosVisiveis
-                .sort((a, b) => b.prioridade - a.prioridade)
-                .map(v => <CardVideo key={v.id} video={v} />)}
+              {videosVisiveis.sort((a, b) => b.prioridade - a.prioridade).map(v => (
+                <CardVideo key={v.id} video={v} />
+              ))}
             </div>
           ) : (
             <p className="text-sm text-gray-400 text-center py-2">Nenhum vídeo disponível ainda.</p>
@@ -153,9 +144,9 @@ function CardEpi({ epi }) {
 }
 
 export default function VideosWorker() {
-  const [epis, setEpis] = useState([]);
+  const [epis, setEpis]       = useState([]);
   const [carregando, setCarregando] = useState(true);
-  const [busca, setBusca] = useState('');
+  const [busca, setBusca]     = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -168,40 +159,35 @@ export default function VideosWorker() {
       .finally(() => setCarregando(false));
   }, []);
 
-  const episFiltrados = epis.filter(e =>
-    e.nome.toLowerCase().includes(busca.toLowerCase())
-  );
+  const episFiltrados = epis.filter(e => {
+    const q = busca.toLowerCase();
+    if (!q) return true;
+    if (e.nome.toLowerCase().includes(q)) return true;
+    if (e.palavras_chave && e.palavras_chave.toLowerCase().includes(q)) return true;
+    return false;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
-      {/* Hero */}
       <div className="bg-blue-600 px-4 pt-6 pb-8">
         <div className="flex items-center gap-3 mb-1">
           <PlayCircle className="w-7 h-7 text-white" />
           <h1 className="text-xl font-bold text-white">Meus Treinamentos</h1>
         </div>
         <p className="text-blue-100 text-sm">Vídeos e instruções sobre uso correto dos EPIs</p>
-
-        {/* Busca */}
         <div className="relative mt-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="search"
-            placeholder="Buscar EPI..."
-            value={busca}
-            onChange={e => setBusca(e.target.value)}
+          <input type="search" placeholder="Buscar EPI ou sinônimo..."
+            value={busca} onChange={e => setBusca(e.target.value)}
             className="w-full pl-9 pr-4 py-3 rounded-xl text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
         </div>
       </div>
 
-      {/* Lista */}
       <div className="px-4 -mt-4">
         {carregando ? (
           <div className="space-y-3 mt-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-20 rounded-2xl bg-white shadow-sm animate-pulse" />
-            ))}
+            {[1,2,3].map(i => <div key={i} className="h-20 rounded-2xl bg-white shadow-sm animate-pulse" />)}
           </div>
         ) : episFiltrados.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -209,11 +195,7 @@ export default function VideosWorker() {
             <p className="text-gray-500 font-medium">
               {busca ? `Nenhum EPI encontrado para "${busca}"` : 'Nenhum treinamento disponível ainda.'}
             </p>
-            {busca && (
-              <button onClick={() => setBusca('')} className="mt-2 text-sm text-blue-600">
-                Limpar busca
-              </button>
-            )}
+            {busca && <button onClick={() => setBusca('')} className="mt-2 text-sm text-blue-600">Limpar busca</button>}
           </div>
         ) : (
           <div className="mt-4">

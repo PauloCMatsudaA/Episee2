@@ -4,7 +4,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 
-# ── TrainingVideo ──────────────────────────────────────────────────────────────
+# ── TrainingVideo ─────────────────────────────────────────────────────────────
 
 class TrainingVideoBase(BaseModel):
     titulo:     str
@@ -36,19 +36,19 @@ class TrainingVideoResponse(TrainingVideoBase):
     class Config:
         from_attributes = True
 
-# Alias usado em training_videos.py
 TrainingVideoOut = TrainingVideoResponse
 
 
-# ── EpiType ────────────────────────────────────────────────────────────────────
+# ── EpiType ──────────────────────────────────────────────────────────────
 
 class EpiTypeBase(BaseModel):
-    nome:        str
-    descricao:   Optional[str] = None
-    quando_usar: Optional[str] = None
-    como_usar:   Optional[str] = None
-    erros_comuns: Optional[str] = None
-    nr6_ref:     Optional[str] = None
+    nome:           str
+    descricao:      Optional[str] = None
+    quando_usar:    Optional[str] = None
+    como_usar:      Optional[str] = None
+    erros_comuns:   Optional[str] = None
+    nr6_ref:        Optional[str] = None
+    palavras_chave: Optional[str] = None  # sinônimos separados por vírgula
 
 
 class EpiTypeCreate(EpiTypeBase):
@@ -56,12 +56,13 @@ class EpiTypeCreate(EpiTypeBase):
 
 
 class EpiTypeUpdate(BaseModel):
-    nome:        Optional[str] = None
-    descricao:   Optional[str] = None
-    quando_usar: Optional[str] = None
-    como_usar:   Optional[str] = None
-    erros_comuns: Optional[str] = None
-    nr6_ref:     Optional[str] = None
+    nome:           Optional[str] = None
+    descricao:      Optional[str] = None
+    quando_usar:    Optional[str] = None
+    como_usar:      Optional[str] = None
+    erros_comuns:   Optional[str] = None
+    nr6_ref:        Optional[str] = None
+    palavras_chave: Optional[str] = None
 
 
 class EpiTypeResponse(EpiTypeBase):
@@ -72,5 +73,4 @@ class EpiTypeResponse(EpiTypeBase):
     class Config:
         from_attributes = True
 
-# Alias usado em training_videos.py
 EpiTypeOut = EpiTypeResponse

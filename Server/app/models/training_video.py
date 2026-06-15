@@ -8,14 +8,17 @@ class EpiType(Base):
     """Tipos de EPI cadastrados pelo gestor."""
     __tablename__ = "epi_types"
 
-    id          = Column(Integer, primary_key=True, index=True)
-    nome        = Column(String(100), nullable=False, unique=True)  # ex: "Capacete"
-    descricao   = Column(Text, nullable=True)
-    quando_usar = Column(Text, nullable=True)   # ocasiões de uso
-    como_usar   = Column(Text, nullable=True)   # passo a passo de uso correto
-    erros_comuns = Column(Text, nullable=True)  # erros frequentes
-    nr6_ref     = Column(String(100), nullable=True)  # ex: "NR-6 item 6.3"
-    criado_em   = Column(DateTime, server_default=func.now(), nullable=False)
+    id            = Column(Integer, primary_key=True, index=True)
+    nome          = Column(String(100), nullable=False, unique=True)
+    descricao     = Column(Text, nullable=True)
+    quando_usar   = Column(Text, nullable=True)
+    como_usar     = Column(Text, nullable=True)
+    erros_comuns  = Column(Text, nullable=True)
+    nr6_ref       = Column(String(100), nullable=True)
+    # RAG: sinônimos e termos alternativos separados por vírgula
+    # ex: "capacete,protetor de cabeça,EPC craniano,elmo"
+    palavras_chave = Column(Text, nullable=True)
+    criado_em     = Column(DateTime, server_default=func.now(), nullable=False)
 
     videos = relationship(
         "TrainingVideo",
@@ -32,11 +35,11 @@ class TrainingVideo(Base):
     id          = Column(Integer, primary_key=True, index=True)
     epi_type_id = Column(Integer, ForeignKey("epi_types.id"), nullable=False)
     titulo      = Column(String(200), nullable=False)
-    url         = Column(String(500), nullable=False)   # YouTube ou link direto
+    url         = Column(String(500), nullable=False)
     descricao   = Column(Text, nullable=True)
-    fonte       = Column(String(150), nullable=True)    # ex: "SENAI", "Ministério do Trabalho"
-    aprovado    = Column(Boolean, default=True, nullable=False)  # curadoria do gestor
-    prioridade  = Column(Integer, default=0, nullable=False)     # ordena exibição
+    fonte       = Column(String(150), nullable=True)
+    aprovado    = Column(Boolean, default=True, nullable=False)
+    prioridade  = Column(Integer, default=0, nullable=False)
     criado_em   = Column(DateTime, server_default=func.now(), nullable=False)
 
     epi_type = relationship("EpiType", back_populates="videos")

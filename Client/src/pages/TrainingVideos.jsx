@@ -1,263 +1,274 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
-  BookOpen, Play, Plus, Pencil, Trash2, ChevronDown, ChevronUp,
-  AlertCircle, CheckCircle, ExternalLink, Video, Shield,
-  Link2, Upload, X, FileVideo, Info, Settings2
+  PlusCircle, Edit2, Trash2, ChevronDown, ChevronUp,
+  PlayCircle, ExternalLink, BookOpen, Tag,
 } from 'lucide-react';
-import api from '../api/api';
-import './TrainingVideos.css';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+function authHeaders() {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+const EPI_VAZIO = {
+  nome: '', descricao: '', quando_usar: '', como_usar: '',
+  erros_comuns: '', nr6_ref: '', palavras_chave: '',
+};
+const VIDEO_VAZIO = {
+  titulo: '', url: '', descricao: '', fonte: '', aprovado: true, prioridade: 0,
+};
 
 export default function TrainingVideos() {
-  const [epiTypes, setEpiTypes]   = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [erro, setErro]           = useState('');
-  const [sucesso, setSucesso]     = useState('');
+  const [epis, setEpis]           = useState([]);
   const [expandido, setExpandido] = useState(null);
+  const [carregando, setCarregando] = useState(true);
 
-  const [modalEpi, setModalEpi]       = useState(false);
-  const [epiEditando, setEpiEditando] = useState(null);
-  const [formEpi, setFormEpi]         = useState({
-    nome: '', descricao: '', quando_usar: '', como_usar: '', erros_comuns: ''
-  });
+  // Modais
+  const [modalEpi, setModalEpi]     = useState(null); // null | 'criar' | epi
+  const [modalVideo, setModalVideo] = useState(null); // null | { epiId, video? }
+  const [formEpi, setFormEpi]       = useState(EPI_VAZIO);
+  const [formVideo, setFormVideo]   = useState(VIDEO_VAZIO);
+  const [salvando, setSalvando]     = useState(false);
 
-  const [modalVideo, setModalVideo]             = useState(false);
-  const [videoEditando, setVideoEditando]       = useState(null);
-  const [epiIdSelecionado, setEpiIdSelecionado] = useState(null);
-  const [formVideo, setFormVideo]               = useState({
-    titulo: '', url: '', descricao: '', fonte: '', aprovado: true, prioridade: 0
-  });
-  const [abaVideo, setAbaVideo]   = useState('url');
-  const [arquivo, setArquivo]     = useState(null);
-  const [dragOver, setDragOver]   = useState(false);
-  const [uploadPct, setUploadPct] = useState(0);
-  const [enviando, setEnviando]   = useState(false);
-  const fileInputRef              = useRef(null);
-
-  const mostrarSucesso = (msg) => { setSucesso(msg); setTimeout(() => setSucesso(''), 3500); };
-  const mostrarErro    = (msg) => { setErro(msg);    setTimeout(() => setErro(''), 4000); };
-
-  const carregarEpis = async () => {
+  const carregar = useCallback(async () => {
+    setCarregando(true);
     try {
-      const { data } = await api.get('/api/training/epi-types');
-      setEpiTypes(data);
-    } catch { mostrarErro('Erro ao carregar EPIs.'); }
-    finally { setLoading(false); }
-  };
+      const r = await fetch(`${API_BASE}/api/training/epis`, {
+        headers: authHeaders(),
+      });
+      const data = await r.json();
+      setEpis(Array.isArray(data) ? data : []);
+    } catch { setEpis([]); }
+    finally { setCarregando(false); }
+  }, []);
 
-  useEffect(() => { carregarEpis(); }, []);
+  useEffect(() => { carregar(); }, [carregar]);
 
-  const abrirModalEpi = (epi = null) => {
-    setEpiEditando(epi);
-    setFormEpi(epi
-      ? { nome: epi.nome, descricao: epi.descricao || '', quando_usar: epi.quando_usar || '',
-          como_usar: epi.como_usar || '', erros_comuns: epi.erros_comuns || '' }
-      : { nome: '', descricao: '', quando_usar: '', como_usar: '', erros_comuns: '' }
-    );
-    setModalEpi(true);
-  };
-
-  const salvarEpi = async () => {
-    if (!formEpi.nome.trim()) return mostrarErro('Nome do EPI é obrigatório.');
+  // ─ EPI handlers ──────────────────────────────────────────────
+  function abrirCriarEpi() {
+    setFormEpi(EPI_VAZIO);
+    setModalEpi('criar');
+  }
+  function abrirEditarEpi(epi) {
+    setFormEpi({
+      nome: epi.nome || '', descricao: epi.descricao || '',
+      quando_usar: epi.quando_usar || '', como_usar: epi.como_usar || '',
+      erros_comuns: epi.erros_comuns || '', nr6_ref: epi.nr6_ref || '',
+      palavras_chave: epi.palavras_chave || '',
+    });
+    setModalEpi(epi);
+  }
+  async function salvarEpi() {
+    if (!formEpi.nome.trim()) return;
+    setSalvando(true);
     try {
-      if (epiEditando) {
-        await api.patch(`/api/training/epi-types/${epiEditando.id}`, formEpi);
-        mostrarSucesso('EPI atualizado com sucesso!');
-      } else {
-        await api.post('/api/training/epi-types', formEpi);
-        mostrarSucesso('EPI criado com sucesso!');
-      }
-      setModalEpi(false);
-      carregarEpis();
-    } catch (e) { mostrarErro(e.response?.data?.detail || 'Erro ao salvar EPI.'); }
-  };
-
-  const deletarEpi = async (id) => {
+      const isNovo = modalEpi === 'criar';
+      const url    = isNovo
+        ? `${API_BASE}/api/training/epis`
+        : `${API_BASE}/api/training/epis/${modalEpi.id}`;
+      await fetch(url, {
+        method:  isNovo ? 'POST' : 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body:    JSON.stringify(formEpi),
+      });
+      setModalEpi(null);
+      await carregar();
+    } finally { setSalvando(false); }
+  }
+  async function deletarEpi(id) {
     if (!confirm('Excluir este EPI e todos os seus vídeos?')) return;
+    await fetch(`${API_BASE}/api/training/epis/${id}`, {
+      method: 'DELETE', headers: authHeaders(),
+    });
+    await carregar();
+  }
+
+  // ─ Vídeo handlers ───────────────────────────────────────────
+  function abrirCriarVideo(epiId) {
+    setFormVideo(VIDEO_VAZIO);
+    setModalVideo({ epiId });
+  }
+  function abrirEditarVideo(epiId, video) {
+    setFormVideo({
+      titulo: video.titulo || '', url: video.url || '',
+      descricao: video.descricao || '', fonte: video.fonte || '',
+      aprovado: video.aprovado ?? true, prioridade: video.prioridade ?? 0,
+    });
+    setModalVideo({ epiId, video });
+  }
+  async function salvarVideo() {
+    if (!formVideo.titulo.trim() || !formVideo.url.trim()) return;
+    setSalvando(true);
     try {
-      await api.delete(`/api/training/epi-types/${id}`);
-      mostrarSucesso('EPI excluído.');
-      carregarEpis();
-    } catch { mostrarErro('Erro ao excluir EPI.'); }
-  };
-
-  const abrirModalVideo = (epiId, video = null) => {
-    setEpiIdSelecionado(epiId);
-    setVideoEditando(video);
-    setFormVideo(video
-      ? { titulo: video.titulo, url: video.url, descricao: video.descricao || '',
-          fonte: video.fonte || '', aprovado: video.aprovado, prioridade: video.prioridade }
-      : { titulo: '', url: '', descricao: '', fonte: '', aprovado: true, prioridade: 0 }
-    );
-    setAbaVideo('url');
-    setArquivo(null);
-    setUploadPct(0);
-    setModalVideo(true);
-  };
-
-  const handleArquivo = (file) => {
-    if (!file) return;
-    const tipos = ['video/mp4','video/webm','video/ogg','video/quicktime','video/x-msvideo'];
-    if (!tipos.includes(file.type)) return mostrarErro('Formato inválido. Use MP4, WebM, OGG, MOV ou AVI.');
-    if (file.size > 500 * 1024 * 1024) return mostrarErro('Arquivo muito grande. Máximo 500 MB.');
-    setArquivo(file);
-    if (!formVideo.titulo) setFormVideo(p => ({ ...p, titulo: file.name.replace(/\.[^.]+$/, '') }));
-  };
-
-  const salvarVideo = async () => {
-    if (!formVideo.titulo.trim()) return mostrarErro('Título é obrigatório.');
-    try {
-      setEnviando(true);
-      if (abaVideo === 'upload' && arquivo && !videoEditando) {
-        const fd = new FormData();
-        fd.append('file', arquivo);
-        fd.append('titulo', formVideo.titulo);
-        fd.append('descricao', formVideo.descricao);
-        fd.append('fonte', formVideo.fonte);
-        fd.append('aprovado', formVideo.aprovado);
-        fd.append('prioridade', formVideo.prioridade);
-        fd.append('epi_type_id', epiIdSelecionado);
-        await api.post('/api/training/videos/upload', fd, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-          onUploadProgress: (ev) => {
-            if (ev.total) setUploadPct(Math.round((ev.loaded / ev.total) * 100));
-          },
-        });
-        mostrarSucesso('Vídeo enviado com sucesso!');
-      } else {
-        if (!formVideo.url.trim()) return mostrarErro('URL do vídeo é obrigatória.');
-        if (videoEditando) {
-          await api.patch(`/api/training/videos/${videoEditando.id}`, formVideo);
-          mostrarSucesso('Vídeo atualizado!');
-        } else {
-          await api.post('/api/training/videos', { ...formVideo, epi_type_id: epiIdSelecionado });
-          mostrarSucesso('Vídeo adicionado!');
-        }
-      }
-      setModalVideo(false);
-      carregarEpis();
-    } catch (e) {
-      mostrarErro(e.response?.data?.detail || 'Erro ao salvar vídeo.');
-    } finally {
-      setEnviando(false);
-      setUploadPct(0);
-    }
-  };
-
-  const deletarVideo = async (videoId) => {
+      const { epiId, video } = modalVideo;
+      const isNovo = !video;
+      const url    = isNovo
+        ? `${API_BASE}/api/training/epis/${epiId}/videos`
+        : `${API_BASE}/api/training/videos/${video.id}`;
+      await fetch(url, {
+        method:  isNovo ? 'POST' : 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body:    JSON.stringify(isNovo ? { ...formVideo, epi_type_id: epiId } : formVideo),
+      });
+      setModalVideo(null);
+      await carregar();
+    } finally { setSalvando(false); }
+  }
+  async function deletarVideo(id) {
     if (!confirm('Excluir este vídeo?')) return;
-    try {
-      await api.delete(`/api/training/videos/${videoId}`);
-      mostrarSucesso('Vídeo excluído.');
-      carregarEpis();
-    } catch { mostrarErro('Erro ao excluir vídeo.'); }
-  };
+    await fetch(`${API_BASE}/api/training/videos/${id}`, {
+      method: 'DELETE', headers: authHeaders(),
+    });
+    await carregar();
+  }
 
-  const toggleExpandido = (id) => setExpandido(expandido === id ? null : id);
-
-  if (loading) return (
-    <div className="tv-loading">
-      <div className="tv-spinner" />
-    </div>
-  );
-
+  // ─ Render ──────────────────────────────────────────────────────
   return (
-    <div className="tv-page">
-      <div className="tv-header">
+    <div className="max-w-3xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="tv-header__title">
-            <BookOpen size={22} /> Vídeos Educativos de EPIs
-          </h2>
-          <p className="tv-header__subtitle">Gerencie os vídeos que o chatbot recomendará aos trabalhadores</p>
+          <h1 className="text-2xl font-bold text-gray-900">Vídeos Educativos</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Gerencie EPIs, instruções e vídeos de treinamento
+          </p>
         </div>
-        <button onClick={() => abrirModalEpi()} className="btn-primary tv-header__btn">
-          <Plus size={16} /> Novo EPI
+        <button
+          onClick={abrirCriarEpi}
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+        >
+          <PlusCircle className="w-4 h-4" /> Novo EPI
         </button>
       </div>
 
-      {erro    && <div className="tv-alert tv-alert--error"><AlertCircle size={16}/>{erro}</div>}
-      {sucesso && <div className="tv-alert tv-alert--success"><CheckCircle size={16}/>{sucesso}</div>}
-
-      {epiTypes.length === 0 ? (
-        <div className="tv-empty">
-          <Shield size={40} className="tv-empty__icon" />
-          <p className="tv-empty__title">Nenhum EPI cadastrado ainda</p>
-          <p className="tv-empty__hint">Clique em "Novo EPI" para começar</p>
+      {carregando ? (
+        <div className="space-y-3">
+          {[1,2,3].map(i => <div key={i} className="h-16 rounded-xl bg-gray-100 animate-pulse" />)}
+        </div>
+      ) : epis.length === 0 ? (
+        <div className="text-center py-16 text-gray-400">
+          <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-40" />
+          <p>Nenhum EPI cadastrado ainda.</p>
+          <button onClick={abrirCriarEpi} className="mt-3 text-blue-600 text-sm">Cadastrar agora</button>
         </div>
       ) : (
-        <div className="tv-list">
-          {epiTypes.map(epi => (
-            <div key={epi.id} className="tv-card">
-              <div className="tv-card__row">
-                <button onClick={() => toggleExpandido(epi.id)} className="tv-card__toggle">
-                  <div className="tv-card__icon">
-                    <Shield size={18} />
+        <div className="space-y-3">
+          {epis.map(epi => (
+            <div key={epi.id} className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden">
+              {/* Cabeçalho do EPI */}
+              <div className="flex items-center gap-3 px-4 py-3">
+                <button
+                  onClick={() => setExpandido(expandido === epi.id ? null : epi.id)}
+                  className="flex-1 flex items-center gap-3 text-left"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                    <BookOpen className="w-4 h-4 text-blue-600" />
                   </div>
-                  <div className="tv-card__info">
-                    <p className="tv-card__name">{epi.nome}</p>
-                    <p className="tv-card__meta">{epi.videos?.length ?? 0} vídeo(s)</p>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-900 truncate">{epi.nome}</p>
+                    <p className="text-xs text-gray-400">
+                      {(epi.videos || []).length} vídeo{(epi.videos || []).length !== 1 ? 's' : ''}
+                      {epi.palavras_chave && (
+                        <span className="ml-2 text-blue-500">• palavras-chave cadastradas</span>
+                      )}
+                    </p>
                   </div>
                   {expandido === epi.id
-                    ? <ChevronUp size={18} className="tv-card__chevron" />
-                    : <ChevronDown size={18} className="tv-card__chevron" />}
+                    ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" />
+                    : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />}
                 </button>
-                <div className="tv-card__actions">
-                  <button onClick={() => abrirModalEpi(epi)} className="btn-icon" title="Editar EPI"><Pencil size={15}/></button>
-                  <button onClick={() => deletarEpi(epi.id)} className="btn-icon btn-danger" title="Excluir EPI"><Trash2 size={15}/></button>
-                </div>
+                <button onClick={() => abrirEditarEpi(epi)}
+                  className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button onClick={() => deletarEpi(epi.id)}
+                  className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
 
+              {/* Detalhes expandidos */}
               {expandido === epi.id && (
-                <div className="tv-card__expanded">
-                  {(epi.quando_usar || epi.como_usar || epi.erros_comuns) && (
-                    <div className="tv-instructions">
-                      {epi.quando_usar && (
-                        <div className="tv-instruction tv-instruction--blue">
-                          <p className="tv-instruction__label">📅 Quando usar</p>
-                          <p className="tv-instruction__text">{epi.quando_usar}</p>
-                        </div>
-                      )}
-                      {epi.como_usar && (
-                        <div className="tv-instruction tv-instruction--green">
-                          <p className="tv-instruction__label">✅ Como usar</p>
-                          <p className="tv-instruction__text">{epi.como_usar}</p>
-                        </div>
-                      )}
-                      {epi.erros_comuns && (
-                        <div className="tv-instruction tv-instruction--red">
-                          <p className="tv-instruction__label">⚠️ Erros comuns</p>
-                          <p className="tv-instruction__text">{epi.erros_comuns}</p>
-                        </div>
-                      )}
+                <div className="border-t border-gray-100 px-4 py-4 space-y-3">
+
+                  {/* Badges de palavras-chave */}
+                  {epi.palavras_chave && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 flex items-center gap-1">
+                        <Tag className="w-3 h-3" /> Palavras-chave (RAG)
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {epi.palavras_chave.split(',').map(k => k.trim()).filter(Boolean).map(k => (
+                          <span key={k} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs">{k}</span>
+                        ))}
+                      </div>
                     </div>
                   )}
 
-                  <div className="tv-videos">
-                    <div className="tv-videos__header">
-                      <p className="tv-videos__title"><Video size={14}/> Vídeos</p>
-                      <button onClick={() => abrirModalVideo(epi.id)} className="btn-secondary tv-videos__add">
-                        <Plus size={13}/> Adicionar vídeo
+                  {epi.quando_usar && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Quando usar</p>
+                      <p className="text-sm text-gray-700">{epi.quando_usar}</p>
+                    </div>
+                  )}
+                  {epi.como_usar && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Como usar</p>
+                      <p className="text-sm text-gray-700">{epi.como_usar}</p>
+                    </div>
+                  )}
+                  {epi.erros_comuns && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Erros comuns</p>
+                      <p className="text-sm text-gray-700">{epi.erros_comuns}</p>
+                    </div>
+                  )}
+                  {epi.nr6_ref && (
+                    <p className="text-xs text-gray-400 bg-gray-50 rounded px-2 py-1">{epi.nr6_ref}</p>
+                  )}
+
+                  {/* Vídeos */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Vídeos</p>
+                      <button
+                        onClick={() => abrirCriarVideo(epi.id)}
+                        className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                      >
+                        <PlusCircle className="w-3.5 h-3.5" /> Adicionar
                       </button>
                     </div>
-
-                    {epi.videos?.length === 0 ? (
-                      <p className="tv-videos__empty">Nenhum vídeo cadastrado para este EPI.</p>
+                    {(epi.videos || []).length === 0 ? (
+                      <p className="text-xs text-gray-400">Nenhum vídeo ainda.</p>
                     ) : (
-                      <div className="tv-videos__list">
+                      <div className="space-y-2">
                         {epi.videos.map(v => (
-                          <div key={v.id} className={`tv-video-item ${!v.aprovado ? 'tv-video-item--hidden' : ''}`}>
-                            <div className="tv-video-item__info">
-                              <Play size={14} className="tv-video-item__icon" />
-                              <div>
-                                <p className="tv-video-item__title">{v.titulo}</p>
-                                {v.fonte && <p className="tv-video-item__fonte">{v.fonte}</p>}
-                                {!v.aprovado && <span className="tv-video-item__badge">Oculto do chatbot</span>}
+                          <div key={v.id}
+                            className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 border border-gray-100">
+                            <PlayCircle className="w-4 h-4 text-blue-500 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-800 truncate">{v.titulo}</p>
+                              <div className="flex items-center gap-2">
+                                {v.fonte && <span className="text-xs text-gray-400">{v.fonte}</span>}
+                                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                                  v.aprovado ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                                }`}>
+                                  {v.aprovado ? 'Visível' : 'Oculto'}
+                                </span>
                               </div>
                             </div>
-                            <div className="tv-video-item__actions">
-                              <a href={v.url} target="_blank" rel="noopener noreferrer" className="btn-icon" title="Abrir vídeo"><ExternalLink size={14}/></a>
-                              <button onClick={() => abrirModalVideo(epi.id, v)} className="btn-icon" title="Editar"><Pencil size={14}/></button>
-                              <button onClick={() => deletarVideo(v.id)} className="btn-icon btn-danger" title="Excluir"><Trash2 size={14}/></button>
-                            </div>
+                            <a href={v.url} target="_blank" rel="noopener noreferrer"
+                              className="p-1 text-gray-400 hover:text-blue-600 rounded">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                            <button onClick={() => abrirEditarVideo(epi.id, v)}
+                              className="p-1 text-gray-400 hover:text-blue-600 rounded">
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => deletarVideo(v.id)}
+                              className="p-1 text-gray-400 hover:text-red-500 rounded">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -270,213 +281,104 @@ export default function TrainingVideos() {
         </div>
       )}
 
+      {/* ── Modal EPI ── */}
       {modalEpi && (
-        <div className="tv-overlay" onClick={() => setModalEpi(false)}>
-          <div className="tv-modal tv-modal--lg" onClick={e => e.stopPropagation()}>
-            <div className="tv-modal__header">
-              <h3 className="tv-modal__title">
-                <Shield size={18} />
-                {epiEditando ? 'Editar EPI' : 'Novo Tipo de EPI'}
-              </h3>
-              <button className="tv-modal__close" onClick={() => setModalEpi(false)}>
-                <X size={20} />
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="px-5 py-4 border-b border-gray-100">
+              <h2 className="font-bold text-gray-900">
+                {modalEpi === 'criar' ? 'Novo EPI' : `Editar: ${modalEpi.nome}`}
+              </h2>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              {[
+                { label: 'Nome do EPI *', key: 'nome', placeholder: 'ex: Capacete de Segurança' },
+                { label: 'Descrição', key: 'descricao', placeholder: 'Breve descrição...' },
+                { label: 'Quando usar', key: 'quando_usar', placeholder: 'Situações de uso obrigatório...' },
+                { label: 'Como usar corretamente', key: 'como_usar', placeholder: 'Passo a passo...' },
+                { label: 'Erros comuns', key: 'erros_comuns', placeholder: 'Erros frequentes dos trabalhadores...' },
+                { label: 'Referência NR-6', key: 'nr6_ref', placeholder: 'ex: NR-6 item 6.3' },
+                {
+                  label: 'Palavras-chave (RAG)',
+                  key: 'palavras_chave',
+                  placeholder: 'ex: capacete, protetor de cabeça, elmo (separadas por vírgula)',
+                  help: 'O chatbot usa essas palavras para encontrar este EPI mesmo quando o trabalhador não usa o nome exato.',
+                },
+              ].map(({ label, key, placeholder, help }) => (
+                <div key={key}>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
+                  <textarea
+                    rows={key === 'palavras_chave' ? 2 : 3}
+                    value={formEpi[key]}
+                    onChange={e => setFormEpi(f => ({ ...f, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  />
+                  {help && <p className="text-xs text-blue-600 mt-0.5">{help}</p>}
+                </div>
+              ))}
+            </div>
+            <div className="px-5 py-4 border-t border-gray-100 flex gap-2 justify-end">
+              <button onClick={() => setModalEpi(null)}
+                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
+              <button onClick={salvarEpi} disabled={salvando || !formEpi.nome.trim()}
+                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                {salvando ? 'Salvando...' : 'Salvar'}
               </button>
-            </div>
-
-            <div className="tv-modal__body">
-              <div className="tv-section">
-                <div className="tv-section__label"><Info size={13}/> Identificação</div>
-                <div className="tv-section__body">
-                  <div className="tv-field">
-                    <label className="tv-label">Nome do EPI *</label>
-                    <input className="tv-input" value={formEpi.nome}
-                      onChange={e => setFormEpi(p => ({...p, nome: e.target.value}))}
-                      placeholder="ex: Capacete de Segurança" />
-                  </div>
-                  <div className="tv-field">
-                    <label className="tv-label">Descrição</label>
-                    <input className="tv-input" value={formEpi.descricao}
-                      onChange={e => setFormEpi(p => ({...p, descricao: e.target.value}))}
-                      placeholder="Breve descrição" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="tv-section">
-                <div className="tv-section__label"><BookOpen size={13}/> Instruções de uso</div>
-                <div className="tv-section__body">
-                  <div className="tv-field">
-                    <label className="tv-label">Quando usar</label>
-                    <textarea className="tv-input" rows={2} value={formEpi.quando_usar}
-                      onChange={e => setFormEpi(p => ({...p, quando_usar: e.target.value}))}
-                      placeholder="Descreva as ocasiões de uso" />
-                  </div>
-                  <div className="tv-field">
-                    <label className="tv-label">Como usar corretamente</label>
-                    <textarea className="tv-input" rows={2} value={formEpi.como_usar}
-                      onChange={e => setFormEpi(p => ({...p, como_usar: e.target.value}))}
-                      placeholder="Passo a passo de uso correto" />
-                  </div>
-                  <div className="tv-field">
-                    <label className="tv-label">Erros comuns</label>
-                    <textarea className="tv-input" rows={2} value={formEpi.erros_comuns}
-                      onChange={e => setFormEpi(p => ({...p, erros_comuns: e.target.value}))}
-                      placeholder="Erros frequentes que o chatbot deve alertar" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="tv-modal__footer">
-              <button onClick={() => setModalEpi(false)} className="btn-secondary">Cancelar</button>
-              <button onClick={salvarEpi} className="btn-primary">{epiEditando ? 'Salvar alterações' : 'Criar EPI'}</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* ── Modal Vídeo ── */}
       {modalVideo && (
-        <div className="tv-overlay" onClick={() => setModalVideo(false)}>
-          <div className="tv-modal" onClick={e => e.stopPropagation()}>
-            <div className="tv-modal__header">
-              <h3 className="tv-modal__title">
-                <Video size={18} />
-                {videoEditando ? 'Editar Vídeo' : 'Adicionar Vídeo'}
-              </h3>
-              <button className="tv-modal__close" onClick={() => setModalVideo(false)}>
-                <X size={20} />
-              </button>
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md">
+            <div className="px-5 py-4 border-b border-gray-100">
+              <h2 className="font-bold text-gray-900">
+                {modalVideo.video ? 'Editar Vídeo' : 'Novo Vídeo'}
+              </h2>
             </div>
-
-            <div className="tv-modal__body">
-              <div className="tv-section">
-                <div className="tv-section__label"><Info size={13}/> Informações básicas</div>
-                <div className="tv-section__body">
-                  <div className="tv-field">
-                    <label className="tv-label">Título *</label>
-                    <input className="tv-input" value={formVideo.titulo}
-                      onChange={e => setFormVideo(p => ({...p, titulo: e.target.value}))}
-                      placeholder="ex: Como usar capacete corretamente" />
-                  </div>
-                  <div className="tv-row">
-                    <div className="tv-field">
-                      <label className="tv-label">Fonte / Produtora</label>
-                      <input className="tv-input" value={formVideo.fonte}
-                        onChange={e => setFormVideo(p => ({...p, fonte: e.target.value}))}
-                        placeholder="ex: SENAI, MTE" />
-                    </div>
-                    <div className="tv-field">
-                      <label className="tv-label">Descrição</label>
-                      <input className="tv-input" value={formVideo.descricao}
-                        onChange={e => setFormVideo(p => ({...p, descricao: e.target.value}))}
-                        placeholder="Breve descrição" />
-                    </div>
-                  </div>
+            <div className="px-5 py-4 space-y-3">
+              {[
+                { label: 'Título *', key: 'titulo', placeholder: 'Nome do vídeo' },
+                { label: 'URL *', key: 'url', placeholder: 'https://youtube.com/...' },
+                { label: 'Fonte', key: 'fonte', placeholder: 'ex: SENAI, Ministério do Trabalho' },
+                { label: 'Descrição', key: 'descricao', placeholder: 'Descrição opcional...' },
+              ].map(({ label, key, placeholder }) => (
+                <div key={key}>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
+                  <input
+                    value={formVideo[key]}
+                    onChange={e => setFormVideo(f => ({ ...f, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  />
                 </div>
-              </div>
-
-              {!videoEditando && (
-                <div className="tv-section">
-                  <div className="tv-section__label"><FileVideo size={13}/> Origem do vídeo</div>
-                  <div className="tv-section__body">
-                    <div className="tv-tabs">
-                      <button className={`tv-tab ${abaVideo === 'url' ? 'tv-tab--active' : ''}`} onClick={() => setAbaVideo('url')}>
-                        <Link2 size={14}/> Link (URL)
-                      </button>
-                      <button className={`tv-tab ${abaVideo === 'upload' ? 'tv-tab--active' : ''}`} onClick={() => setAbaVideo('upload')}>
-                        <Upload size={14}/> Upload de arquivo
-                      </button>
-                    </div>
-
-                    {abaVideo === 'url' && (
-                      <div className="tv-field">
-                        <label className="tv-label">URL do vídeo *</label>
-                        <input className="tv-input" value={formVideo.url}
-                          onChange={e => setFormVideo(p => ({...p, url: e.target.value}))}
-                          placeholder="https://youtube.com/watch?v=..." />
-                      </div>
-                    )}
-
-                    {abaVideo === 'upload' && (
-                      <div>
-                        {!arquivo ? (
-                          <div
-                            className={`tv-dropzone ${dragOver ? 'tv-dropzone--active' : ''}`}
-                            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-                            onDragLeave={() => setDragOver(false)}
-                            onDrop={e => { e.preventDefault(); setDragOver(false); handleArquivo(e.dataTransfer.files[0]); }}
-                            onClick={() => fileInputRef.current?.click()}
-                          >
-                            <input ref={fileInputRef} type="file"
-                              accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo"
-                              onChange={e => handleArquivo(e.target.files[0])} />
-                            <div className="tv-dropzone__icon"><FileVideo size={32} /></div>
-                            <p className="tv-dropzone__text"><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
-                            <p className="tv-dropzone__hint">MP4, WebM, OGG, MOV, AVI · Máx. 500 MB</p>
-                          </div>
-                        ) : (
-                          <div>
-                            <div className="tv-file-selected">
-                              <FileVideo size={16} className="tv-file-selected__icon" />
-                              <span className="tv-file-selected__name">{arquivo.name}</span>
-                              <span className="tv-file-selected__size">{(arquivo.size / 1024 / 1024).toFixed(1)} MB</span>
-                              <button className="tv-file-selected__remove" onClick={() => setArquivo(null)}><X size={14}/></button>
-                            </div>
-                            {uploadPct > 0 && (
-                              <div className="tv-progress">
-                                <div className="tv-progress__bar" style={{ width: `${uploadPct}%` }} />
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {videoEditando && (
-                <div className="tv-section">
-                  <div className="tv-section__label"><Link2 size={13}/> Link do vídeo</div>
-                  <div className="tv-section__body">
-                    <div className="tv-field">
-                      <label className="tv-label">URL *</label>
-                      <input className="tv-input" value={formVideo.url}
-                        onChange={e => setFormVideo(p => ({...p, url: e.target.value}))}
-                        placeholder="https://youtube.com/watch?v=..." />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="tv-section">
-                <div className="tv-section__label"><Settings2 size={13}/> Configurações</div>
-                <div className="tv-section__body">
-                  <div className="tv-row">
-                    <div className="tv-field">
-                      <label className="tv-label">Prioridade (maior = aparece primeiro)</label>
-                      <input type="number" className="tv-input" value={formVideo.prioridade}
-                        onChange={e => setFormVideo(p => ({...p, prioridade: Number(e.target.value)}))} />
-                    </div>
-                    <div className="tv-field tv-field--center">
-                      <label className="tv-toggle">
-                        <input type="checkbox" checked={formVideo.aprovado}
-                          onChange={e => setFormVideo(p => ({...p, aprovado: e.target.checked}))} />
-                        <span className="tv-toggle__track" />
-                        Visível no chatbot
-                      </label>
-                    </div>
-                  </div>
-                </div>
+              ))}
+              <div className="flex items-center gap-3">
+                <label className="text-xs font-semibold text-gray-600">Prioridade</label>
+                <input type="number" min={0} max={10}
+                  value={formVideo.prioridade}
+                  onChange={e => setFormVideo(f => ({ ...f, prioridade: Number(e.target.value) }))}
+                  className="w-20 border border-gray-200 rounded-lg px-2 py-1 text-sm"
+                />
+                <label className="flex items-center gap-2 ml-auto text-xs font-semibold text-gray-600 cursor-pointer">
+                  <input type="checkbox" checked={formVideo.aprovado}
+                    onChange={e => setFormVideo(f => ({ ...f, aprovado: e.target.checked }))}
+                    className="accent-blue-600"
+                  />
+                  Visível para trabalhadores
+                </label>
               </div>
             </div>
-
-            <div className="tv-modal__footer">
-              <button onClick={() => setModalVideo(false)} className="btn-secondary" disabled={enviando}>Cancelar</button>
-              <button onClick={salvarVideo} className="btn-primary" disabled={enviando}>
-                {enviando
-                  ? (uploadPct > 0 ? `Enviando ${uploadPct}%…` : 'Salvando…')
-                  : videoEditando ? 'Salvar alterações' : 'Adicionar'}
+            <div className="px-5 py-4 border-t border-gray-100 flex gap-2 justify-end">
+              <button onClick={() => setModalVideo(null)}
+                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
+              <button onClick={salvarVideo}
+                disabled={salvando || !formVideo.titulo.trim() || !formVideo.url.trim()}
+                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                {salvando ? 'Salvando...' : 'Salvar'}
               </button>
             </div>
           </div>
