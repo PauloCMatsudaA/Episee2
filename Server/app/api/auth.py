@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from app.core.database import get_db
 from app.core.security import (
@@ -22,7 +22,11 @@ async def login(
     db: AsyncSession = Depends(get_db),
 ):
     """Authenticate user and return JWT access token."""
-    result = await db.execute(select(User).where(User.email == form_data.username))
+    # Busca ignorando maiúsculas/minúsculas no email
+    email_lower = form_data.username.strip().lower()
+    result = await db.execute(
+        select(User).where(func.lower(User.email) == email_lower)
+    )
     user = result.scalar_one_or_none()
 
     if not user or not verify_password(form_data.password, user.hashed_password):
@@ -46,17 +50,20 @@ async def register(
     db: AsyncSession = Depends(get_db),
 ):
     """Register a new user."""
-    result = await db.execute(select(User).where(User.email == user_in.email))
+    email_lower = user_in.email.strip().lower()
+    result = await db.execute(
+        select(User).where(func.lower(User.email) == email_lower)
+    )
     existing = result.scalar_one_or_none()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email já cadastrado",
+            detail="Email j\u00e1 cadastrado",
         )
 
     user = User(
         name=user_in.name,
-        email=user_in.email,
+        email=email_lower,  # salva sempre em minúsculo
         hashed_password=get_password_hash(user_in.password),
         role=user_in.role,
         sector_id=user_in.sector_id,
