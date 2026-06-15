@@ -10,7 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 import LoginScreen        from '../screens/LoginScreen';
 import HomeScreen         from '../screens/HomeScreen';
-import NR6Screen          from '../screens/NR6Screen';
+import TrainingScreen     from '../screens/TrainingScreen';
 import EpiRequestScreen   from '../screens/EpiRequestScreen';
 import MyRequestsScreen   from '../screens/MyRequestsScreen';
 import ProfileScreen      from '../screens/ProfileScreen';
@@ -28,11 +28,11 @@ const Stack = createStackNavigator();
 const Tab   = createBottomTabNavigator();
 
 const ICONES_ABA = {
-  Home:               { ativo: 'home',  inativo: 'home-outline' },
-  NR6:                { ativo: 'book', inativo: 'book-outline'  },
-  SolicitarEPI: { ativo: 'clipboard', inativo: 'clipboard-outline' },
-  MinhasSolicitacoes: { ativo: 'list',  inativo: 'list-outline' },
-  Chat:               { ativo: 'chatbubble-ellipses',inativo: 'chatbubble-ellipses-outline'},
+  Home:               { ativo: 'home',             inativo: 'home-outline'             },
+  Treinamentos:       { ativo: 'play-circle',       inativo: 'play-circle-outline'      },
+  SolicitarEPI:       { ativo: 'clipboard',         inativo: 'clipboard-outline'        },
+  MinhasSolicitacoes: { ativo: 'list',              inativo: 'list-outline'             },
+  Chat:               { ativo: 'chatbubble-ellipses', inativo: 'chatbubble-ellipses-outline' },
 };
 
 function BotaoCentral({ children, onPress }) {
@@ -65,8 +65,8 @@ function TabNavigator() {
         },
       })}
     >
-      <Tab.Screen name="Home"               component={HomeScreen}       options={{ tabBarLabel: 'Início'      }} />
-      <Tab.Screen name="NR6"                component={NR6Screen}        options={{ tabBarLabel: 'NR-6'        }} />
+      <Tab.Screen name="Home"               component={HomeScreen}       options={{ tabBarLabel: 'Início'        }} />
+      <Tab.Screen name="Treinamentos"        component={TrainingScreen}   options={{ tabBarLabel: 'Treinamentos'  }} />
       <Tab.Screen
         name="SolicitarEPI"
         component={EpiRequestScreen}
@@ -76,7 +76,7 @@ function TabNavigator() {
         }}
       />
       <Tab.Screen name="MinhasSolicitacoes" component={MyRequestsScreen} options={{ tabBarLabel: 'Solicitações' }} />
-      <Tab.Screen name="Chat"               component={ChatScreen}       options={{ tabBarLabel: 'Chatbot'     }} />
+      <Tab.Screen name="Chat"               component={ChatScreen}       options={{ tabBarLabel: 'Chatbot'      }} />
     </Tab.Navigator>
   );
 }
