@@ -53,7 +53,7 @@ export const loginApi = async (email, senha) => {
 };
 
 export const getMeuPerfil = async () => {
-  const response = await api.get('/auth/me');   // sem barra final
+  const response = await api.get('/auth/me');
   return response.data;
 };
 
@@ -63,7 +63,7 @@ export const logoutApi = async () => {
 
 // ── Solicitações de EPI ───────────────────────────────────────────────────
 export const criarSolicitacao = async (dados) => {
-  const response = await api.post('/epi-requests', {   // sem barra final
+  const response = await api.post('/epi-requests', {
     epi_type: dados.epi_type,
     sector_id: Number(dados.sector_id),
     reason: dados.reason || null,
@@ -72,18 +72,18 @@ export const criarSolicitacao = async (dados) => {
 };
 
 export const minhasSolicitacoes = async () => {
-  const response = await api.get('/epi-requests/my');  // sem barra final
+  const response = await api.get('/epi-requests/my');
   return response.data;
 };
 
 export const todasSolicitacoes = async () => {
-  const response = await api.get('/epi-requests');     // sem barra final
+  const response = await api.get('/epi-requests');
   return response.data;
 };
 
 // ── Setores ───────────────────────────────────────────────────────────────
 export const getSetores = async () => {
-  const response = await api.get('/sectors');          // sem barra final
+  const response = await api.get('/sectors');
   return response.data;
 };
 
@@ -94,16 +94,10 @@ export const getVideosWorker = async () => {
 };
 
 // ── Chatbot ───────────────────────────────────────────────────────────────
-const chatbotCliente = axios.create({
-  baseURL: 'http://10.0.0.246:8001',
-  timeout: 30000,
-  headers: { 'Content-Type': 'application/json' },
-});
-
+// Usa a mesma instância 'api' com EXPO_PUBLIC_API_URL — sem IP fixo hardcodado
 export const chatbotApi = async (mensagem, telefone = 'app-user') => {
-  const response = await chatbotCliente.post('/chat', {
-    message: mensagem,
-    phone: telefone,
+  const response = await api.post('/chatbot/texto', {
+    mensagem: mensagem,
   });
   return response.data;
 };
