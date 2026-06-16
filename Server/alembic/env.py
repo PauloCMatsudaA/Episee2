@@ -20,8 +20,23 @@ import app.models  # noqa: F401 — registers all models
 
 config = context.config
 
-# Override sqlalchemy.url from application settings
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+
+def _make_async_url(url: str) -> str:
+    """Garante que a URL use driver async compatível com SQLAlchemy asyncio."""
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+asyncpg://", 1)
+    if url.startswith("postgresql://") and "+asyncpg" not in url:
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    if url.startswith("sqlite:///") and "+aiosqlite" not in url:
+        return url.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
+    if url.startswith("sqlite://") and "+aiosqlite" not in url:
+        return url.replace("sqlite://", "sqlite+aiosqlite://", 1)
+    return url
+
+
+# Override sqlalchemy.url com driver async correto
+async_url = _make_async_url(settings.DATABASE_URL)
+config.set_main_option("sqlalchemy.url", async_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
