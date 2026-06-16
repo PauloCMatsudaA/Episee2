@@ -4,8 +4,6 @@ import os
 import asyncio
 import logging
 import queue
-import cv2
-import numpy as np
 from datetime import datetime
 from threading import Thread
 from app.services.telegram_service import enviar_alerta_telegram
@@ -26,7 +24,7 @@ if not os.path.exists(VIDEO_FALLBACK):
 
 # ── Classes do SH17 ──────────────────────────────────────────────────────────
 CLASSE_PESSOA  = {"person"}
-CLASSE_CABECA  = {"head"}       # classe Head do SH17 — chave para interseção
+CLASSE_CABECA  = {"head"}
 CLASSE_CAPACETE = {"helmet"}
 CLASSES_EPI = {
     "glasses", "face-mask-medical", "face-guard",
@@ -37,8 +35,6 @@ CLASSES_EPI = {
 CONFIANCA_MINIMA  = 0.45
 INTERVALO_SALVAR  = 30
 YOLO_INTERVALO    = 0.3
-
-# Limiar de sobreposição capacete/cabeça para considerar "vestido"
 IOUI_HELMET_HEAD  = 0.25
 
 processos_ffmpeg: dict[int, subprocess.Popen] = {}
@@ -52,10 +48,20 @@ FFMPEG_BIN = (
 )
 
 
+# ── Lazy imports ─────────────────────────────────────────────────────────────
+
+def _cv2():
+    import cv2
+    return cv2
+
+def _np():
+    import numpy as np
+    return np
+
+
 # ── Helpers de geometria ─────────────────────────────────────────────────────
 
 def _iou_area(boxA: list, boxB: list) -> float:
-    """Retorna a fração da área de boxB coberta por boxA (interseção / área_B)."""
     ax1, ay1, ax2, ay2 = boxA
     bx1, by1, bx2, by2 = boxB
     ix1 = max(ax1, bx1)
@@ -74,11 +80,6 @@ def capacete_esta_na_cabeca(
     head_boxes: list[list],
     threshold: float = IOUI_HELMET_HEAD,
 ) -> bool:
-    """
-    Retorna True se o capacete sobrepõe ao menos `threshold` da área
-    de alguma cabeça detectada — indicando uso correto.
-    Retorna False se o capacete está na mão, pendurado ou carregado.
-    """
     for hd in head_boxes:
         if _iou_area(helmet_box, hd) >= threshold:
             return True
@@ -206,6 +207,7 @@ class FrameReader(Thread):
         self.frame_num = 0
 
     def _open_capture(self):
+        cv2 = _cv2()
         if is_local_webcam_source(self.fonte):
             cap = cv2.VideoCapture(int(self.fonte), cv2.CAP_DSHOW)
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -219,6 +221,7 @@ class FrameReader(Thread):
 
     def run(self):
         import time
+        cv2 = _cv2()
         cap = self._open_capture()
         if not cap.isOpened():
             if is_local_webcam_source(self.fonte):
@@ -262,9 +265,9 @@ class FrameReader(Thread):
         self.running = False
 
 
-# ── Inferência com lógica de interseção ─────────────────────────────────────
+# ── Inferência ───────────────────────────────────────────────────────────────
 
-def inferir_frame(frame: np.ndarray) -> list[dict]:
+def inferir_frame(frame) -> list[dict]:
     model = get_model()
     if model is None:
         return []
@@ -274,7 +277,7 @@ def inferir_frame(frame: np.ndarray) -> list[dict]:
         iou=0.45,
         imgsz=640,
         verbose=False,
-        augment=False,   # TTA desligado na inferência tempo-real para velocidade
+        augment=False,
     )
     deteccoes = []
     for r in results:
@@ -299,18 +302,14 @@ def avaliar_deteccoes(
     pessoa_detectada = bool(classes & CLASSE_PESSOA)
     epis_encontrados = classes & CLASSES_EPI
 
-    # ── Lógica de interseção: helmet só vale se estiver sobre uma cabeça ──────
     if "helmet" in epis_encontrados:
         head_boxes   = [d["bbox"] for d in deteccoes if d["class"] == "head"]
         helmet_boxes = [d["bbox"] for d in deteccoes if d["class"] == "helmet"]
-
-        # Verifica se ao menos um capacete está sobre alguma cabeça
         algum_vestido = any(
             capacete_esta_na_cabeca(hb, head_boxes)
             for hb in helmet_boxes
         )
         if not algum_vestido:
-            # Capacete detectado mas nenhum está sobre uma cabeça → remove da lista de EPIs OK
             epis_encontrados.discard("helmet")
             logger.debug("[DETECÇÃO] Capacete detectado mas não sobre cabeça — desconsiderado")
 
@@ -363,13 +362,14 @@ async def salvar_ocorrencia(
     camera_id: int,
     sector_id: int,
     resultado: dict,
-    frame: np.ndarray,
+    frame,
 ):
     from app.core.database import AsyncSessionLocal
     from app.models.occurrence import Occurrence, OccurrenceStatus
     from app.models.notification import Notification
     from app.models.user import User, UserRole
     from sqlalchemy import select
+    cv2 = _cv2()
 
     image_path = None
     try:
@@ -544,6 +544,8 @@ async def analyze_frame(
     frame_data: bytes,
     sector_id: int | None = None,
 ) -> dict:
+    np = _np()
+    cv2 = _cv2()
     nparr = np.frombuffer(frame_data, np.uint8)
     frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     if frame is None:
@@ -558,7 +560,7 @@ async def analyze_frame(
 
 async def analisar_frame(
     camera_id: int,
-    frame: np.ndarray,
+    frame,
     sector_id: int | None = None,
 ) -> dict:
     epis      = await get_epis_obrigatorios_do_setor(sector_id)
