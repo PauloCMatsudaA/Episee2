@@ -4,6 +4,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
+// DEBUG — remover após confirmar funcionamento
+console.log('[API] BASE_URL =', BASE_URL);
+console.log('[API] Chatbot URL =', BASE_URL + '/chatbot/texto');
+
 const api = axios.create({
   baseURL: BASE_URL,
   timeout: 10000,
@@ -94,7 +98,6 @@ export const getVideosWorker = async () => {
 };
 
 // ── Chatbot ───────────────────────────────────────────────────────────────
-// Usa a mesma instância 'api' com EXPO_PUBLIC_API_URL — sem IP fixo hardcodado
 export const chatbotApi = async (mensagem, telefone = 'app-user') => {
   const response = await api.post('/chatbot/texto', {
     mensagem: mensagem,
