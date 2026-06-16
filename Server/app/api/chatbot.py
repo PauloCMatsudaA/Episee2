@@ -6,6 +6,7 @@ from app.services.chatbot_service import responder_chatbot, transcrever_audio_te
 
 logger = logging.getLogger(__name__)
 
+# prefix removido daqui — é injetado pelo main.py via API_PREFIX + "/chatbot"
 router = APIRouter(prefix="/chatbot", tags=["chatbot"])
 
 
@@ -18,21 +19,21 @@ async def webhook_whatsapp(
     MediaContentType0: str = Form(default=""),
     From: str = Form(default=""),
 ):
-    logger.info(f"[WHATSAPP] Mensagem de {From} | m\u00eddia={NumMedia}")
+    logger.info(f"[WHATSAPP] Mensagem de {From} | mídia={NumMedia}")
 
     texto_usuario = Body.strip()
 
     if NumMedia > 0 and "audio" in MediaContentType0:
-        logger.info("[WHATSAPP] \u00c1udio recebido \u2192 transcrevendo...")
+        logger.info("[WHATSAPP] Áudio recebido → transcrevendo...")
         transcrito = await transcrever_audio_telegram(MediaUrl0)
         if transcrito:
             texto_usuario = transcrito
-            logger.info(f"[WHATSAPP] Transcri\u00e7\u00e3o: {transcrito}")
+            logger.info(f"[WHATSAPP] Transcrição: {transcrito}")
         else:
-            texto_usuario = "N\u00e3o consegui entender o \u00e1udio. Pode repetir por texto?"
+            texto_usuario = "Não consegui entender o áudio. Pode repetir por texto?"
 
     if not texto_usuario:
-        texto_usuario = "Ol\u00e1"
+        texto_usuario = "Olá"
 
     resposta = await responder_chatbot(texto_usuario)
 
