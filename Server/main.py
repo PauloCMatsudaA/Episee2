@@ -143,7 +143,7 @@ app.include_router(detection.router,      prefix=API_PREFIX)
 app.include_router(reports.router,        prefix=API_PREFIX)
 app.include_router(notifications.router,  prefix=API_PREFIX)
 app.include_router(training_router,       prefix=API_PREFIX)
-app.include_router(chatbot_router,        prefix=API_PREFIX)  # fix: era sem prefixo
+app.include_router(chatbot_router, prefix=API_PREFIX)
 app.include_router(telegram_router,       prefix=API_PREFIX)
 
 
