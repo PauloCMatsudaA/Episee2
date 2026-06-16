@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import tempfile
+from typing import Optional
 
 import httpx
 from openai import AsyncOpenAI
@@ -25,49 +26,42 @@ def _get_deepseek_client() -> AsyncOpenAI:
 
 
 SYSTEM_PROMPT = """
-Você é o EPIsee Bot, um assistente especializado em segurança do trabalho e EPIs
-(Equipamentos de Proteção Individual).
+Voc\u00ea \u00e9 o EPIsee Bot, um assistente especializado em seguran\u00e7a do trabalho e EPIs
+(Equipamentos de Prote\u00e7\u00e3o Individual).
 
-Você ajuda trabalhadores a:
-- Saber quais EPIs são obrigatórios para cada função/setor
-- Entender a NR-6 (Norma Regulamentadora nº 6)
-- Conhecer seus direitos trabalhistas em relação aos EPIs
-- Verificar se a empresa está cumprindo suas obrigações legais
-- Solicitar substituição de EPIs danificados
+Voc\u00ea ajuda trabalhadores a:
+- Saber quais EPIs s\u00e3o obrigat\u00f3rios para cada fun\u00e7\u00e3o/setor
+- Entender a NR-6 (Norma Regulamentadora n\u00ba 6)
+- Conhecer seus direitos trabalhistas em rela\u00e7\u00e3o aos EPIs
+- Verificar se a empresa est\u00e1 cumprindo suas obriga\u00e7\u00f5es legais
+- Solicitar substitui\u00e7\u00e3o de EPIs danificados
 - Entender como usar corretamente cada equipamento
-- Receber indicações de vídeos educativos sobre o uso correto de EPIs
+- Receber indica\u00e7\u00f5es de v\u00eddeos educativos sobre o uso correto de EPIs
 
-Regras de formato (OBRIGATÓRIAS):
+Regras de formato (OBRIGAT\u00d3RIAS):
 - Responda em texto puro, sem markdown
-- NUNCA use asteriscos (**), cerquilhas (#), underlines (_) ou qualquer formatação markdown
+- NUNCA use asteriscos (**), cerquilhas (#), underlines (_) ou qualquer formata\u00e7\u00e3o markdown
 - Use listas numeradas simples (1. 2. 3.) quando precisar listar itens
-- Não comece a resposta com "Olá" ou cumprimentos — vá direto ao ponto
-- Use emojis com moderacão apenas quando ajudar a clareza
+- N\u00e3o comece a resposta com "Ol\u00e1" ou cumprimentos \u2014 v\u00e1 direto ao ponto
+- Use emojis com modera\u00e7\u00e3o apenas quando ajudar a clareza
 - Mantenha respostas objetivas e concisas
 
-Regras de conteúdo:
-- Responda sempre em português do Brasil
-- Use linguagem simples, acessível ao trabalhador
+Regras de conte\u00fado:
+- Responda sempre em portugu\u00eas do Brasil
+- Use linguagem simples, acess\u00edvel ao trabalhador
 - Nunca invente normas, baseie-se apenas na NR-6 e CLT
-- Se não souber algo, diga claramente que não tem essa informação
-- Quando o trabalhador perguntar sobre um EPI específico, inclua as ocasiões
+- Se n\u00e3o souber algo, diga claramente que n\u00e3o tem essa informa\u00e7\u00e3o
+- Quando o trabalhador perguntar sobre um EPI espec\u00edfico, inclua as ocasi\u00f5es
   de uso, como usar corretamente e erros comuns
 """
 
 
 def _limpar_markdown(texto: str) -> str:
-    """Remove markdown residual da resposta do modelo."""
-    # Remove **negrito** e *italico*
     texto = re.sub(r'\*{1,3}(.*?)\*{1,3}', r'\1', texto)
-    # Remove __negrito__ e _italico_
     texto = re.sub(r'_{1,2}(.*?)_{1,2}', r'\1', texto)
-    # Remove # cabecalhos
     texto = re.sub(r'^#{1,6}\s+', '', texto, flags=re.MULTILINE)
-    # Remove linhas separadoras ---
     texto = re.sub(r'^[-*_]{3,}\s*$', '', texto, flags=re.MULTILINE)
-    # Remove saudacoes no inicio (Ola!, Olá!, Oi!)
-    texto = re.sub(r'^(olá[!,.]?|ola[!,.]?|oi[!,.]?)\s*', '', texto, flags=re.IGNORECASE)
-    # Remove linhas em branco duplas
+    texto = re.sub(r'^(ol\u00e1[!,.]?|ola[!,.]?|oi[!,.]?)\s*', '', texto, flags=re.IGNORECASE)
     texto = re.sub(r'\n{3,}', '\n\n', texto)
     return texto.strip()
 
@@ -110,9 +104,8 @@ async def _buscar_contexto_epi(mensagem: str) -> str:
                     continue
 
                 parte = f"\n---\nEPI: {epi.nome}"
-
                 if tem_palavras_chave and getattr(epi, 'palavras_chave', None):
-                    parte += f"\nTambém conhecido como: {epi.palavras_chave}"
+                    parte += f"\nTamb\u00e9m conhecido como: {epi.palavras_chave}"
                 if epi.quando_usar:
                     parte += f"\nQuando usar: {epi.quando_usar}"
                 if epi.como_usar:
@@ -120,11 +113,11 @@ async def _buscar_contexto_epi(mensagem: str) -> str:
                 if epi.erros_comuns:
                     parte += f"\nErros comuns: {epi.erros_comuns}"
                 if epi.nr6_ref:
-                    parte += f"\nReferência NR-6: {epi.nr6_ref}"
+                    parte += f"\nRefer\u00eancia NR-6: {epi.nr6_ref}"
 
                 videos_aprovados = [v for v in epi.videos if v.aprovado]
                 if videos_aprovados:
-                    parte += "\nVídeos recomendados:"
+                    parte += "\nV\u00eddeos recomendados:"
                     for v in sorted(videos_aprovados, key=lambda x: -x.prioridade)[:3]:
                         fonte = f" ({v.fonte})" if v.fonte else ""
                         parte += f"\n  - {v.titulo}{fonte}: {v.url}"
@@ -165,19 +158,35 @@ async def transcrever_audio_telegram(file_id: str) -> str:
         return transcricao.text
 
     except Exception as e:
-        logger.error(f"[CHATBOT] Erro ao transcrever áudio Telegram: {e}")
+        logger.error(f"[CHATBOT] Erro ao transcrever \u00e1udio Telegram: {e}")
         return ""
 
 
-async def responder_chatbot(mensagem: str) -> str:
+async def responder_chatbot(
+    mensagem: str,
+    nome_usuario: Optional[str] = None,
+    setor_usuario: Optional[str] = None,
+) -> str:
     try:
         contexto_db = await _buscar_contexto_epi(mensagem)
 
         system_content = SYSTEM_PROMPT
+
+        # Injeta contexto do usuario logado
+        if nome_usuario or setor_usuario:
+            system_content += "\n\nContexto do usu\u00e1rio atual:"
+            if nome_usuario:
+                system_content += f"\n- Nome: {nome_usuario}"
+            if setor_usuario:
+                system_content += (
+                    f"\n- Setor: {setor_usuario}"
+                    f"\n- Ao responder sobre EPIs obrigat\u00f3rios, priorize os do setor '{setor_usuario}'."
+                )
+
         if contexto_db:
             system_content += (
-                "\n\nInformações da base de dados da empresa sobre os EPIs "
-                "mencionados (use estas informações prioritariamente):\n"
+                "\n\nInforma\u00e7\u00f5es da base de dados da empresa sobre os EPIs "
+                "mencionados (use estas informa\u00e7\u00f5es prioritariamente):\n"
                 + contexto_db
             )
 
