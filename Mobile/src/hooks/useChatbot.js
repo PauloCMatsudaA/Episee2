@@ -5,7 +5,7 @@ import { chatbotApi } from '../api/api';
 const WELCOME_MESSAGE = {
   id: '0',
   role: 'bot',
-  text: 'Olá! Sou o assistente EPIsee \nPosso ajudar com dúvidas sobre EPIs e segurança do trabalho. O que você precisa saber?',
+  text: 'Sou o assistente EPIsee. Posso ajudar com dúvidas sobre EPIs e segurança do trabalho. O que você precisa saber?',
   timestamp: new Date(),
 };
 
@@ -16,11 +16,7 @@ const QUICK_QUESTIONS = [
   'Prazo de vida útil do capacete',
 ];
 
-/**
- * Manages chatbot conversation state.
- * @param {string} userPhone  — unique user identifier for conversation history
- */
-export function useChatbot(userPhone = 'app-user') {
+export function useChatbot() {
   const [messages, setMessages]   = useState([WELCOME_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError]         = useState(null);
@@ -45,23 +41,32 @@ export function useChatbot(userPhone = 'app-user') {
     if (!trimmed || isLoading) return;
 
     const userMsg = buildUserMessage(trimmed);
-    setMessages((prev) => [...prev, userMsg]);
-    setIsLoading(true);
-    setError(null);
 
-    try {
-      const data       = await chatbotApi(trimmed, userPhone);
-      const replyText  = data?.resposta ?? data?.reply ?? data?.message ?? 'Sem resposta do servidor.';
-      const botMsg     = buildBotMessage(replyText);
-      setMessages((prev) => [...prev, botMsg]);
-    } catch (err) {
-      console.warn('[useChatbot] Erro:', err.message);
-      setError(err.message);
-      setMessages((prev) => [...prev, buildErrorMessage()]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isLoading, userPhone]);
+    // Captura o historico ANTES de adicionar a mensagem atual
+    setMessages((prev) => {
+      const historicoAtual = prev;
+
+      // Dispara a chamada com o historico capturado
+      setIsLoading(true);
+      setError(null);
+
+      chatbotApi(trimmed, historicoAtual)
+        .then((data) => {
+          const replyText = data?.resposta ?? data?.reply ?? data?.message ?? 'Sem resposta do servidor.';
+          setMessages((msgs) => [...msgs, buildBotMessage(replyText)]);
+        })
+        .catch((err) => {
+          console.warn('[useChatbot] Erro:', err.message);
+          setError(err.message);
+          setMessages((msgs) => [...msgs, buildErrorMessage()]);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+
+      return [...historicoAtual, userMsg];
+    });
+  }, [isLoading]);
 
   const clearHistory = useCallback(() => {
     messageCounter.current = 1;

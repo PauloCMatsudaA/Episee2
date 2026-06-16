@@ -2,7 +2,7 @@ import logging
 import os
 import re
 import tempfile
-from typing import Optional
+from typing import List, Optional
 
 import httpx
 from openai import AsyncOpenAI
@@ -26,8 +26,7 @@ def _get_deepseek_client() -> AsyncOpenAI:
 
 
 SYSTEM_PROMPT = """
-Voc\u00ea \u00e9 o EPIsee Bot, um assistente especializado em seguran\u00e7a do trabalho e EPIs
-(Equipamentos de Prote\u00e7\u00e3o Individual).
+Voc\u00ea \u00e9 o EPIsee Bot, assistente especializado em seguran\u00e7a do trabalho e EPIs.
 
 Voc\u00ea ajuda trabalhadores a:
 - Saber quais EPIs s\u00e3o obrigat\u00f3rios para cada fun\u00e7\u00e3o/setor
@@ -38,21 +37,24 @@ Voc\u00ea ajuda trabalhadores a:
 - Entender como usar corretamente cada equipamento
 - Receber indica\u00e7\u00f5es de v\u00eddeos educativos sobre o uso correto de EPIs
 
-Regras de formato (OBRIGAT\u00d3RIAS):
+Regras de FORMATO (OBRIGAT\u00d3RIAS):
 - Responda em texto puro, sem markdown
 - NUNCA use asteriscos (**), cerquilhas (#), underlines (_) ou qualquer formata\u00e7\u00e3o markdown
-- Use listas numeradas simples (1. 2. 3.) quando precisar listar itens
-- N\u00e3o comece a resposta com "Ol\u00e1" ou cumprimentos \u2014 v\u00e1 direto ao ponto
-- Use emojis com modera\u00e7\u00e3o apenas quando ajudar a clareza
-- Mantenha respostas objetivas e concisas
+- Use listas numeradas simples (1. 2. 3.) ou h\u00edfen simples (-) quando precisar listar
+- N\u00e3o comece com "Ol\u00e1" ou cumprimentos — v\u00e1 direto ao ponto
+- Respostas objetivas e concisas
 
-Regras de conte\u00fado:
+Regras de CONTE\u00daDO:
 - Responda sempre em portugu\u00eas do Brasil
 - Use linguagem simples, acess\u00edvel ao trabalhador
-- Nunca invente normas, baseie-se apenas na NR-6 e CLT
-- Se n\u00e3o souber algo, diga claramente que n\u00e3o tem essa informa\u00e7\u00e3o
-- Quando o trabalhador perguntar sobre um EPI espec\u00edfico, inclua as ocasi\u00f5es
-  de uso, como usar corretamente e erros comuns
+- Nunca invente normas — baseie-se apenas na NR-6 e CLT
+- Se n\u00e3o souber algo, diga claramente
+- Ao citar EPIs, mencione o nome completo do equipamento
+- Ao recomendar EPIs, inclua exemplos de modelos/marcas conhecidos no Brasil quando poss\u00edvel
+  (exemplos: capacete 3M H-700, luva de raspa Volk, \u00f3culos Carbografite, protetor auditivo 3M 1100,
+   bota de seguran\u00e7a Bracol, m\u00e1scara PFF2 3M 9820, avental de raspa Fujiwara)
+- Quando perguntar sobre um EPI espec\u00edfico: inclua quando usar, como usar corretamente e erros comuns
+- Leve em conta o contexto e as mensagens anteriores da conversa para dar respostas coerentes
 """
 
 
@@ -166,13 +168,14 @@ async def responder_chatbot(
     mensagem: str,
     nome_usuario: Optional[str] = None,
     setor_usuario: Optional[str] = None,
+    historico: Optional[List[dict]] = None,
 ) -> str:
     try:
         contexto_db = await _buscar_contexto_epi(mensagem)
 
         system_content = SYSTEM_PROMPT
 
-        # Injeta contexto do usuario logado
+        # Contexto do usuario logado
         if nome_usuario or setor_usuario:
             system_content += "\n\nContexto do usu\u00e1rio atual:"
             if nome_usuario:
@@ -180,24 +183,33 @@ async def responder_chatbot(
             if setor_usuario:
                 system_content += (
                     f"\n- Setor: {setor_usuario}"
-                    f"\n- Ao responder sobre EPIs obrigat\u00f3rios, priorize os do setor '{setor_usuario}'."
+                    f"\n- Ao citar EPIs obrigat\u00f3rios, priorize os do setor '{setor_usuario}'."
                 )
 
+        # Contexto da base de dados
         if contexto_db:
             system_content += (
-                "\n\nInforma\u00e7\u00f5es da base de dados da empresa sobre os EPIs "
-                "mencionados (use estas informa\u00e7\u00f5es prioritariamente):\n"
-                + contexto_db
+                "\n\nInforma\u00e7\u00f5es do banco de dados sobre EPIs mencionados "
+                "(use prioritariamente):\n" + contexto_db
             )
+
+        # Monta as mensagens: system + historico + mensagem atual
+        messages = [{"role": "system", "content": system_content}]
+
+        if historico:
+            for msg in historico[-10:]:  # limita a 10 mensagens anteriores
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+                if role in ("user", "assistant") and content:
+                    messages.append({"role": role, "content": content})
+
+        messages.append({"role": "user", "content": mensagem})
 
         client_ds = _get_deepseek_client()
         response = await client_ds.chat.completions.create(
             model="deepseek-chat",
-            messages=[
-                {"role": "system", "content": system_content},
-                {"role": "user",   "content": mensagem},
-            ],
-            max_tokens=600,
+            messages=messages,
+            max_tokens=700,
             temperature=0.3,
         )
         texto = response.choices[0].message.content.strip()

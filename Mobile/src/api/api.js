@@ -4,17 +4,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
-// DEBUG — remover após confirmar funcionamento
 console.log('[API] BASE_URL =', BASE_URL);
 console.log('[API] Chatbot URL =', BASE_URL + '/chatbot/texto');
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000,
+  timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Interceptor de request: injeta o token em toda requisição
 api.interceptors.request.use(
   async (config) => {
     try {
@@ -28,7 +26,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor de response: se 401 limpa o storage
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -98,9 +95,24 @@ export const getVideosWorker = async () => {
 };
 
 // ── Chatbot ───────────────────────────────────────────────────────────────
-export const chatbotApi = async (mensagem, telefone = 'app-user') => {
+/**
+ * @param {string} mensagem - mensagem atual do usuario
+ * @param {Array<{role: string, text: string}>} historico - mensagens anteriores da conversa
+ */
+export const chatbotApi = async (mensagem, historico = []) => {
+  // Converte historico do formato interno para formato da API
+  // Exclui a mensagem de boas-vindas (id '0') e limita a 10 mensagens anteriores
+  const historicoFormatado = historico
+    .filter((m) => m.id !== '0')
+    .slice(-10)
+    .map((m) => ({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: m.text,
+    }));
+
   const response = await api.post('/chatbot/texto', {
-    mensagem: mensagem,
+    mensagem,
+    historico: historicoFormatado,
   });
   return response.data;
 };
