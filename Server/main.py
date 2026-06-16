@@ -5,6 +5,7 @@ import concurrent.futures
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
@@ -35,17 +36,51 @@ logger = logging.getLogger(__name__)
 HLS_DIR = Path("hls_streams")
 HLS_DIR.mkdir(exist_ok=True)
 
+MODEL_PATH = Path("best.pt")
+MODEL_URL = "https://huggingface.co/MatsudaPaulo/episeeyolo/resolve/main/best.pt"
+
+
+async def download_model_if_needed():
+    """Baixa o best.pt do Hugging Face se nao existir localmente."""
+    if MODEL_PATH.exists():
+        logger.info(f"[MODEL] best.pt ja existe ({MODEL_PATH.stat().st_size / 1024 / 1024:.1f} MB) - pulando download.")
+        return
+
+    logger.info(f"[MODEL] Baixando best.pt de {MODEL_URL} ...")
+    headers = {}
+    hf_token = os.environ.get("HF_TOKEN", "")
+    if hf_token:
+        headers["Authorization"] = f"Bearer {hf_token}"
+
+    try:
+        async with httpx.AsyncClient(timeout=300, follow_redirects=True) as client:
+            async with client.stream("GET", MODEL_URL, headers=headers) as response:
+                response.raise_for_status()
+                total = int(response.headers.get("content-length", 0))
+                downloaded = 0
+                with open(MODEL_PATH, "wb") as f:
+                    async for chunk in response.aiter_bytes(chunk_size=1024 * 1024):
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if total:
+                            pct = downloaded / total * 100
+                            logger.info(f"[MODEL] Download: {pct:.1f}% ({downloaded // 1024 // 1024}MB / {total // 1024 // 1024}MB)")
+        logger.info(f"[MODEL] best.pt baixado com sucesso! ({MODEL_PATH.stat().st_size / 1024 / 1024:.1f} MB)")
+    except Exception as e:
+        logger.error(f"[MODEL] Falha ao baixar best.pt: {e}")
+        logger.warning("[MODEL] Deteccao por camera pode nao funcionar.")
+
 
 async def create_default_admin():
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(Sector).where(Sector.name == "Geral"))
         default_sector = result.scalar_one_or_none()
         if not default_sector:
-            default_sector = Sector(name="Geral", description="Setor padrão do sistema")
+            default_sector = Sector(name="Geral", description="Setor padrao do sistema")
             db.add(default_sector)
             await db.flush()
             await db.refresh(default_sector)
-            logger.info("Setor padrão 'Geral' criado.")
+            logger.info("Setor padrao 'Geral' criado.")
 
         result = await db.execute(select(User).where(User.email == "admin@episee.com"))
         admin = result.scalar_one_or_none()
@@ -60,7 +95,7 @@ async def create_default_admin():
             )
             db.add(admin)
             await db.flush()
-            logger.info("Usuário padrão admin@episee.com criado.")
+            logger.info("Usuario padrao admin@episee.com criado.")
         await db.commit()
 
 
@@ -69,6 +104,7 @@ async def lifespan(app: FastAPI):
     logger.info("Server iniciando")
     await init_db()
     await create_default_admin()
+    await download_model_if_needed()
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
     loop = asyncio.get_event_loop()
     camera_task = loop.run_in_executor(executor, lambda: asyncio.run(start_camera_streams()))
@@ -93,9 +129,8 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    # Aceita qualquer origem — necessário para Expo Go e redes locais variadas
     allow_origins=["*"],
-    allow_credentials=False,   # deve ser False quando allow_origins=["*"]
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -104,12 +139,12 @@ app.add_middleware(
 @app.get("/hls/{camera_id}/{filename}")
 async def serve_hls(camera_id: str, filename: str):
     if ".." in camera_id or ".." in filename:
-        raise HTTPException(status_code=400, detail="Caminho inválido")
+        raise HTTPException(status_code=400, detail="Caminho invalido")
 
     file_path = HLS_DIR / camera_id / filename
 
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
+        raise HTTPException(status_code=404, detail="Arquivo nao encontrado")
 
     if filename.endswith(".m3u8"):
         media_type = "application/vnd.apple.mpegurl"
@@ -143,7 +178,7 @@ app.include_router(detection.router,      prefix=API_PREFIX)
 app.include_router(reports.router,        prefix=API_PREFIX)
 app.include_router(notifications.router,  prefix=API_PREFIX)
 app.include_router(training_router,       prefix=API_PREFIX)
-app.include_router(chatbot_router, prefix=API_PREFIX)
+app.include_router(chatbot_router,        prefix=API_PREFIX)
 app.include_router(telegram_router,       prefix=API_PREFIX)
 
 
@@ -154,12 +189,11 @@ async def health_check():
 
 @app.get("/", tags=["Health"])
 async def root():
-    return {"message": "EPIsee API está rodando.", "docs": "/docs", "health": "/health"}
+    return {"message": "EPIsee API esta rodando.", "docs": "/docs", "health": "/health"}
 
 
 @app.on_event("startup")
 async def registrar_webhook_telegram():
-    import httpx
     from app.core.config import settings
 
     token       = getattr(settings, "TELEGRAM_BOT_TOKEN", "")

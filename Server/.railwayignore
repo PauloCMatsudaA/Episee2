@@ -1,0 +1,11 @@
+*.mp4
+hls_streams/
+testar_deteccao.py
+train_sh17.py
+limpar.py
+verificar_db.py
+migrar_manual.py
+migrate_add_telegram.py
+migrate_keywords.py
+migrate_training_videos.py
+criar_notif.py

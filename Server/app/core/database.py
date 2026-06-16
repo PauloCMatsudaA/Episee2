@@ -2,10 +2,31 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.orm import declarative_base
 from app.core.config import settings
 
+
+def _build_async_url(url: str) -> str:
+    """
+    Garante que a DATABASE_URL use driver async correto:
+    - postgresql://   -> postgresql+asyncpg://
+    - postgres://     -> postgresql+asyncpg://  (formato Heroku/Railway)
+    - sqlite:///      -> sqlite+aiosqlite:///
+    """
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql://") and "+" not in url.split("://")[0]:
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif url.startswith("sqlite:///") and "+" not in url.split("://")[0]:
+        url = url.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
+    return url
+
+
+_async_url = _build_async_url(settings.DATABASE_URL)
+
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    _async_url,
     echo=False,
     future=True,
+    pool_pre_ping=True,
+    pool_recycle=300,
 )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -20,7 +41,7 @@ Base = declarative_base()
 
 
 async def get_db() -> AsyncSession:
-    """Dependency that provides an async database session."""
+    """Dependency que fornece uma sessao async do banco."""
     async with AsyncSessionLocal() as session:
         try:
             yield session
@@ -33,6 +54,6 @@ async def get_db() -> AsyncSession:
 
 
 async def init_db():
-    """Create all tables in the database."""
+    """Cria todas as tabelas no banco (usado em dev/SQLite)."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
