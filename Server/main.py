@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-import concurrent.futures
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -41,7 +40,6 @@ MODEL_URL = "https://huggingface.co/MatsudaPaulo/episeeyolo/resolve/main/best.pt
 
 
 async def download_model_if_needed():
-    """Baixa o best.pt do Hugging Face se nao existir localmente."""
     if MODEL_PATH.exists():
         logger.info(f"[MODEL] best.pt ja existe ({MODEL_PATH.stat().st_size / 1024 / 1024:.1f} MB) - pulando download.")
         return
@@ -105,11 +103,13 @@ async def lifespan(app: FastAPI):
     await init_db()
     await create_default_admin()
     await download_model_if_needed()
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-    loop = asyncio.get_event_loop()
-    camera_task = loop.run_in_executor(executor, lambda: asyncio.run(start_camera_streams()))
+
+    # Inicia cameras no mesmo loop asyncio do FastAPI
+    camera_task = asyncio.create_task(start_camera_streams())
     logger.info("Server de cameras iniciando.")
+
     yield
+
     logger.info("Encerrando.")
     camera_task.cancel()
     try:
@@ -194,8 +194,6 @@ async def root():
 
 @app.on_event("startup")
 async def registrar_webhook_telegram():
-    from app.core.config import settings
-
     token       = getattr(settings, "TELEGRAM_BOT_TOKEN", "")
     url_webhook = getattr(settings, "APP_URL", "")
 
