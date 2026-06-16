@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const cliente = axios.create({
-  baseURL: "",
+  baseURL: import.meta.env.VITE_API_URL || "",
   timeout: 30000,
   headers: { "Content-Type": "application/json" },
 });
@@ -42,13 +42,12 @@ export const autenticacaoApi = {
 export const usuariosApi = {
   listar:    (filtros)   => cliente.get("/api/users/", { params: filtros }),
   buscarPor: (id)        => cliente.get(`/api/users/${id}`),
-  // ✅ criar aponta para /api/auth/register (única rota de criação no backend)
   criar:     (dados)     => cliente.post("/api/auth/register", dados),
   editar:    (id, dados) => cliente.patch(`/api/users/${id}`, dados),
   excluir:   (id)        => cliente.delete(`/api/users/${id}`),
 };
 
-// ── Ocorrências — ✅ barra final obrigatória ──────────────────────────────────
+// ── Ocorrências ───────────────────────────────────────────────────────────────
 export const ocorrenciasApi = {
   listar:    (filtros) => cliente.get("/api/occurrences/", { params: filtros }),
   buscarPor: (id)      => cliente.get(`/api/occurrences/${id}`),
@@ -94,9 +93,9 @@ export const camerasApi = {
 export const setoresApi = {
   listar:  ()          => cliente.get("/api/sectors/"),
   buscar:  (id)        => cliente.get(`/api/sectors/${id}`),
-  stats:   (id)        => cliente.get(`/api/sectors/${id}/stats`),     // ← novo
+  stats:   (id)        => cliente.get(`/api/sectors/${id}/stats`),
   criar:   (dados)     => cliente.post("/api/sectors/", dados),
-  editar:  (id, dados) => cliente.patch(`/api/sectors/${id}`, dados),  // ← corrigido
+  editar:  (id, dados) => cliente.patch(`/api/sectors/${id}`, dados),
   excluir: (id)        => cliente.delete(`/api/sectors/${id}`),
 };
 
