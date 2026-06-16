@@ -4,21 +4,22 @@ import tempfile
 
 import httpx
 from openai import AsyncOpenAI
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import selectinload
 
+from app.core.config import settings
 from app.core.database import AsyncSessionLocal
 from app.models.training_video import EpiType
 
 logger = logging.getLogger(__name__)
 
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN
 
 
 def _get_deepseek_client() -> AsyncOpenAI:
-    """Cria cliente DeepSeek sempre com a chave atual do ambiente."""
+    """Cria cliente DeepSeek sempre com a chave atual das settings."""
     return AsyncOpenAI(
-        api_key=os.getenv("DEEPSEEK_API_KEY", ""),
+        api_key=settings.DEEPSEEK_API_KEY,
         base_url="https://api.deepseek.com/v1",
     )
 
@@ -49,10 +50,20 @@ Regras:
 """
 
 
-def _epi_relevante(epi: EpiType, mensagem_lower: str) -> bool:
+async def _colunas_epi_types() -> set:
+    """Retorna o conjunto de colunas existentes na tabela epi_types."""
+    try:
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(text("PRAGMA table_info(epi_types)"))
+            return {row[1] for row in result.fetchall()}
+    except Exception:
+        return set()
+
+
+def _epi_relevante(epi: EpiType, mensagem_lower: str, tem_palavras_chave: bool) -> bool:
     if epi.nome.lower() in mensagem_lower:
         return True
-    if epi.palavras_chave:
+    if tem_palavras_chave and getattr(epi, 'palavras_chave', None):
         termos = [t.strip().lower() for t in epi.palavras_chave.split(",") if t.strip()]
         if any(termo in mensagem_lower for termo in termos):
             return True
@@ -62,9 +73,12 @@ def _epi_relevante(epi: EpiType, mensagem_lower: str) -> bool:
 async def _buscar_contexto_epi(mensagem: str) -> str:
     """
     RAG: busca EPIs relevantes e monta contexto.
-    Usa selectinload para carregar epi.videos dentro da sessão (evita lazy load async).
+    Detecta dinamicamente se a coluna palavras_chave existe no banco.
     """
     try:
+        colunas = await _colunas_epi_types()
+        tem_palavras_chave = "palavras_chave" in colunas
+
         async with AsyncSessionLocal() as db:
             result = await db.execute(
                 select(EpiType).options(selectinload(EpiType.videos))
@@ -75,12 +89,12 @@ async def _buscar_contexto_epi(mensagem: str) -> str:
             contexto_parts = []
 
             for epi in epis:
-                if not _epi_relevante(epi, mensagem_lower):
+                if not _epi_relevante(epi, mensagem_lower, tem_palavras_chave):
                     continue
 
                 parte = f"\n---\nEPI: {epi.nome}"
 
-                if epi.palavras_chave:
+                if tem_palavras_chave and getattr(epi, 'palavras_chave', None):
                     parte += f"\nTambém conhecido como: {epi.palavras_chave}"
                 if epi.quando_usar:
                     parte += f"\nQuando usar: {epi.quando_usar}"
