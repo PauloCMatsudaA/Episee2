@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import tempfile
 
 import httpx
@@ -17,7 +18,6 @@ TELEGRAM_BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN
 
 
 def _get_deepseek_client() -> AsyncOpenAI:
-    """Cria cliente DeepSeek sempre com a chave atual das settings."""
     return AsyncOpenAI(
         api_key=settings.DEEPSEEK_API_KEY,
         base_url="https://api.deepseek.com/v1",
@@ -37,21 +37,42 @@ Você ajuda trabalhadores a:
 - Entender como usar corretamente cada equipamento
 - Receber indicações de vídeos educativos sobre o uso correto de EPIs
 
-Regras:
+Regras de formato (OBRIGATÓRIAS):
+- Responda em texto puro, sem markdown
+- NUNCA use asteriscos (**), cerquilhas (#), underlines (_) ou qualquer formatação markdown
+- Use listas numeradas simples (1. 2. 3.) quando precisar listar itens
+- Não comece a resposta com "Olá" ou cumprimentos — vá direto ao ponto
+- Use emojis com moderacão apenas quando ajudar a clareza
+- Mantenha respostas objetivas e concisas
+
+Regras de conteúdo:
 - Responda sempre em português do Brasil
-- Seja direto e objetivo
 - Use linguagem simples, acessível ao trabalhador
 - Nunca invente normas, baseie-se apenas na NR-6 e CLT
 - Se não souber algo, diga claramente que não tem essa informação
 - Quando o trabalhador perguntar sobre um EPI específico, inclua as ocasiões
   de uso, como usar corretamente e erros comuns
-- Suas respostas serão enviadas via app mobile; evite markdown pesado,
-  prefira texto limpo com emojis quando útil
 """
 
 
+def _limpar_markdown(texto: str) -> str:
+    """Remove markdown residual da resposta do modelo."""
+    # Remove **negrito** e *italico*
+    texto = re.sub(r'\*{1,3}(.*?)\*{1,3}', r'\1', texto)
+    # Remove __negrito__ e _italico_
+    texto = re.sub(r'_{1,2}(.*?)_{1,2}', r'\1', texto)
+    # Remove # cabecalhos
+    texto = re.sub(r'^#{1,6}\s+', '', texto, flags=re.MULTILINE)
+    # Remove linhas separadoras ---
+    texto = re.sub(r'^[-*_]{3,}\s*$', '', texto, flags=re.MULTILINE)
+    # Remove saudacoes no inicio (Ola!, Olá!, Oi!)
+    texto = re.sub(r'^(olá[!,.]?|ola[!,.]?|oi[!,.]?)\s*', '', texto, flags=re.IGNORECASE)
+    # Remove linhas em branco duplas
+    texto = re.sub(r'\n{3,}', '\n\n', texto)
+    return texto.strip()
+
+
 async def _colunas_epi_types() -> set:
-    """Retorna o conjunto de colunas existentes na tabela epi_types."""
     try:
         async with AsyncSessionLocal() as db:
             result = await db.execute(text("PRAGMA table_info(epi_types)"))
@@ -71,10 +92,6 @@ def _epi_relevante(epi: EpiType, mensagem_lower: str, tem_palavras_chave: bool) 
 
 
 async def _buscar_contexto_epi(mensagem: str) -> str:
-    """
-    RAG: busca EPIs relevantes e monta contexto.
-    Detecta dinamicamente se a coluna palavras_chave existe no banco.
-    """
     try:
         colunas = await _colunas_epi_types()
         tem_palavras_chave = "palavras_chave" in colunas
@@ -122,7 +139,6 @@ async def _buscar_contexto_epi(mensagem: str) -> str:
 
 
 async def transcrever_audio_telegram(file_id: str) -> str:
-    """Baixa áudio do Telegram e transcreve via Whisper."""
     try:
         telegram_api = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
         async with httpx.AsyncClient(timeout=30) as client:
@@ -154,7 +170,6 @@ async def transcrever_audio_telegram(file_id: str) -> str:
 
 
 async def responder_chatbot(mensagem: str) -> str:
-    """Recebe mensagem de texto, injeta contexto RAG e consulta o DeepSeek."""
     try:
         contexto_db = await _buscar_contexto_epi(mensagem)
 
@@ -176,7 +191,8 @@ async def responder_chatbot(mensagem: str) -> str:
             max_tokens=600,
             temperature=0.3,
         )
-        return response.choices[0].message.content.strip()
+        texto = response.choices[0].message.content.strip()
+        return _limpar_markdown(texto)
 
     except Exception as e:
         logger.error(f"[CHATBOT] Erro DeepSeek: {e}")
