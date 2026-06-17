@@ -24,9 +24,8 @@ export default function TrainingVideos() {
   const [expandido, setExpandido] = useState(null);
   const [carregando, setCarregando] = useState(true);
 
-  // Modais
-  const [modalEpi, setModalEpi]     = useState(null); // null | 'criar' | epi
-  const [modalVideo, setModalVideo] = useState(null); // null | { epiId, video? }
+  const [modalEpi, setModalEpi]     = useState(null);
+  const [modalVideo, setModalVideo] = useState(null);
   const [formEpi, setFormEpi]       = useState(EPI_VAZIO);
   const [formVideo, setFormVideo]   = useState(VIDEO_VAZIO);
   const [salvando, setSalvando]     = useState(false);
@@ -45,11 +44,7 @@ export default function TrainingVideos() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  // ─ EPI handlers ──────────────────────────────────────────────
-  function abrirCriarEpi() {
-    setFormEpi(EPI_VAZIO);
-    setModalEpi('criar');
-  }
+  function abrirCriarEpi() { setFormEpi(EPI_VAZIO); setModalEpi('criar'); }
   function abrirEditarEpi(epi) {
     setFormEpi({
       nome: epi.nome || '', descricao: epi.descricao || '',
@@ -84,11 +79,7 @@ export default function TrainingVideos() {
     await carregar();
   }
 
-  // ─ Vídeo handlers ───────────────────────────────────────────
-  function abrirCriarVideo(epiId) {
-    setFormVideo(VIDEO_VAZIO);
-    setModalVideo({ epiId });
-  }
+  function abrirCriarVideo(epiId) { setFormVideo(VIDEO_VAZIO); setModalVideo({ epiId }); }
   function abrirEditarVideo(epiId, video) {
     setFormVideo({
       titulo: video.titulo || '', url: video.url || '',
@@ -123,20 +114,14 @@ export default function TrainingVideos() {
     await carregar();
   }
 
-  // ─ Render ──────────────────────────────────────────────────────
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Vídeos Educativos</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Gerencie EPIs, instruções e vídeos de treinamento
-          </p>
+          <h1 className="page-title">Vídeos Educativos</h1>
+          <p className="page-subtitle">Gerencie EPIs, instruções e vídeos de treinamento</p>
         </div>
-        <button
-          onClick={abrirCriarEpi}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-        >
+        <button onClick={abrirCriarEpi} className="btn btn-primary">
           <PlusCircle className="w-4 h-4" /> Novo EPI
         </button>
       </div>
@@ -149,27 +134,26 @@ export default function TrainingVideos() {
         <div className="text-center py-16 text-gray-400">
           <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-40" />
           <p>Nenhum EPI cadastrado ainda.</p>
-          <button onClick={abrirCriarEpi} className="mt-3 text-blue-600 text-sm">Cadastrar agora</button>
+          <button onClick={abrirCriarEpi} className="mt-3 text-sm" style={{ color: 'var(--brand)' }}>Cadastrar agora</button>
         </div>
       ) : (
         <div className="space-y-3">
           {epis.map(epi => (
-            <div key={epi.id} className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden">
-              {/* Cabeçalho do EPI */}
+            <div key={epi.id} className="card overflow-hidden">
               <div className="flex items-center gap-3 px-4 py-3">
                 <button
                   onClick={() => setExpandido(expandido === epi.id ? null : epi.id)}
                   className="flex-1 flex items-center gap-3 text-left"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                    <BookOpen className="w-4 h-4 text-blue-600" />
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--brand-light, #fff4ec)' }}>
+                    <BookOpen className="w-4 h-4" style={{ color: 'var(--brand)' }} />
                   </div>
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-900 truncate">{epi.nome}</p>
                     <p className="text-xs text-gray-400">
                       {(epi.videos || []).length} vídeo{(epi.videos || []).length !== 1 ? 's' : ''}
                       {epi.palavras_chave && (
-                        <span className="ml-2 text-blue-500">• palavras-chave cadastradas</span>
+                        <span className="ml-2" style={{ color: 'var(--brand)' }}>• palavras-chave cadastradas</span>
                       )}
                     </p>
                   </div>
@@ -178,28 +162,27 @@ export default function TrainingVideos() {
                     : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />}
                 </button>
                 <button onClick={() => abrirEditarEpi(epi)}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+                  className="btn btn-ghost btn-sm btn-icon">
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button onClick={() => deletarEpi(epi.id)}
-                  className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
+                  className="btn btn-danger btn-sm btn-icon">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Detalhes expandidos */}
               {expandido === epi.id && (
                 <div className="border-t border-gray-100 px-4 py-4 space-y-3">
 
-                  {/* Badges de palavras-chave */}
+                  {/* Palavras-chave sem fundo colorido */}
                   {epi.palavras_chave && (
                     <div>
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 flex items-center gap-1">
                         <Tag className="w-3 h-3" /> Palavras-chave (RAG)
                       </p>
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-2">
                         {epi.palavras_chave.split(',').map(k => k.trim()).filter(Boolean).map(k => (
-                          <span key={k} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs">{k}</span>
+                          <span key={k} className="text-xs text-gray-500">{k}</span>
                         ))}
                       </div>
                     </div>
@@ -224,13 +207,12 @@ export default function TrainingVideos() {
                     </div>
                   )}
 
-                  {/* Vídeos */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Vídeos</p>
                       <button
                         onClick={() => abrirCriarVideo(epi.id)}
-                        className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                        className="flex items-center gap-1 text-xs font-medium" style={{ color: 'var(--brand)' }}
                       >
                         <PlusCircle className="w-3.5 h-3.5" /> Adicionar
                       </button>
@@ -242,7 +224,7 @@ export default function TrainingVideos() {
                         {epi.videos.map(v => (
                           <div key={v.id}
                             className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 border border-gray-100">
-                            <PlayCircle className="w-4 h-4 text-blue-500 shrink-0" />
+                            <PlayCircle className="w-4 h-4 text-gray-400 shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-gray-800 truncate">{v.titulo}</p>
                               <div className="flex items-center gap-2">
@@ -255,15 +237,15 @@ export default function TrainingVideos() {
                               </div>
                             </div>
                             <a href={v.url} target="_blank" rel="noopener noreferrer"
-                              className="p-1 text-gray-400 hover:text-blue-600 rounded">
+                              className="p-1 text-gray-400 hover:text-gray-600 rounded">
                               <ExternalLink className="w-3.5 h-3.5" />
                             </a>
                             <button onClick={() => abrirEditarVideo(epi.id, v)}
-                              className="p-1 text-gray-400 hover:text-blue-600 rounded">
+                              className="btn btn-ghost btn-sm btn-icon">
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button onClick={() => deletarVideo(v.id)}
-                              className="p-1 text-gray-400 hover:text-red-500 rounded">
+                              className="btn btn-danger btn-sm btn-icon">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -278,16 +260,16 @@ export default function TrainingVideos() {
         </div>
       )}
 
-      {/* ── Modal EPI ── */}
+      {/* Modal EPI */}
       {modalEpi && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h2 className="font-bold text-gray-900">
+        <div className="overlay" onClick={() => setModalEpi(null)}>
+          <div className="modal modal-lg fade-in" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">
                 {modalEpi === 'criar' ? 'Novo EPI' : `Editar: ${modalEpi.nome}`}
               </h2>
             </div>
-            <div className="px-5 py-4 space-y-3">
+            <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {[
                 { label: 'Nome do EPI *', key: 'nome', placeholder: 'ex: Capacete de Segurança' },
                 { label: 'Descrição', key: 'descricao', placeholder: 'Breve descrição...' },
@@ -298,27 +280,26 @@ export default function TrainingVideos() {
                   label: 'Palavras-chave (RAG)',
                   key: 'palavras_chave',
                   placeholder: 'ex: capacete, protetor de cabeça, elmo (separadas por vírgula)',
-                  help: 'Obs: O chatbot usa essas palavras para encontrar este EPI mesmo quando o trabalhador não usa o nome exato.',
+                  help: 'O chatbot usa essas palavras para encontrar este EPI mesmo quando o trabalhador não usa o nome exato.',
                 },
               ].map(({ label, key, placeholder, help }) => (
-                <div key={key}>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
+                <div key={key} className="field">
+                  <label className="label">{label}</label>
                   <textarea
                     rows={key === 'palavras_chave' ? 2 : 3}
                     value={formEpi[key]}
                     onChange={e => setFormEpi(f => ({ ...f, [key]: e.target.value }))}
                     placeholder={placeholder}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    className="input"
+                    style={{ resize: 'none' }}
                   />
-                  {help && <p className="text-xs text-gray-700 mt-0.5">{help}</p>}
+                  {help && <p className="text-xs text-gray-500 mt-0.5">{help}</p>}
                 </div>
               ))}
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 flex gap-2 justify-end">
-              <button onClick={() => setModalEpi(null)}
-                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
-              <button onClick={salvarEpi} disabled={salvando || !formEpi.nome.trim()}
-                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+            <div className="modal-footer">
+              <button onClick={() => setModalEpi(null)} className="btn btn-secondary">Cancelar</button>
+              <button onClick={salvarEpi} disabled={salvando || !formEpi.nome.trim()} className="btn btn-primary">
                 {salvando ? 'Salvando...' : 'Salvar'}
               </button>
             </div>
@@ -326,54 +307,53 @@ export default function TrainingVideos() {
         </div>
       )}
 
-      {/* ── Modal Vídeo ── */}
+      {/* Modal Vídeo */}
       {modalVideo && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h2 className="font-bold text-gray-900">
+        <div className="overlay" onClick={() => setModalVideo(null)}>
+          <div className="modal fade-in" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">
                 {modalVideo.video ? 'Editar Vídeo' : 'Novo Vídeo'}
               </h2>
             </div>
-            <div className="px-5 py-4 space-y-3">
+            <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {[
                 { label: 'Título *', key: 'titulo', placeholder: 'Nome do vídeo' },
                 { label: 'URL *', key: 'url', placeholder: 'https://youtube.com/...' },
                 { label: 'Fonte', key: 'fonte', placeholder: 'ex: SENAI, Ministério do Trabalho' },
                 { label: 'Descrição', key: 'descricao', placeholder: 'Descrição opcional...' },
               ].map(({ label, key, placeholder }) => (
-                <div key={key}>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
+                <div key={key} className="field">
+                  <label className="label">{label}</label>
                   <input
                     value={formVideo[key]}
                     onChange={e => setFormVideo(f => ({ ...f, [key]: e.target.value }))}
                     placeholder={placeholder}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    className="input"
                   />
                 </div>
               ))}
               <div className="flex items-center gap-3">
-                <label className="text-xs font-semibold text-gray-600">Prioridade</label>
+                <label className="label" style={{ margin: 0 }}>Prioridade</label>
                 <input type="number" min={0} max={10}
                   value={formVideo.prioridade}
                   onChange={e => setFormVideo(f => ({ ...f, prioridade: Number(e.target.value) }))}
-                  className="w-20 border border-gray-200 rounded-lg px-2 py-1 text-sm"
+                  className="input" style={{ width: '5rem' }}
                 />
                 <label className="flex items-center gap-2 ml-auto text-xs font-semibold text-gray-600 cursor-pointer">
                   <input type="checkbox" checked={formVideo.aprovado}
                     onChange={e => setFormVideo(f => ({ ...f, aprovado: e.target.checked }))}
-                    className="accent-blue-600"
+                    style={{ accentColor: 'var(--brand)' }}
                   />
                   Visível para trabalhadores
                 </label>
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 flex gap-2 justify-end">
-              <button onClick={() => setModalVideo(null)}
-                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
+            <div className="modal-footer">
+              <button onClick={() => setModalVideo(null)} className="btn btn-secondary">Cancelar</button>
               <button onClick={salvarVideo}
                 disabled={salvando || !formVideo.titulo.trim() || !formVideo.url.trim()}
-                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                className="btn btn-primary">
                 {salvando ? 'Salvando...' : 'Salvar'}
               </button>
             </div>
