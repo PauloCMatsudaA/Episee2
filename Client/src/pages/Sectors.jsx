@@ -162,7 +162,6 @@ export default function Setores() {
         </div>
       </div>
 
-      {/* ── Subtítulo ─────────────────────────────────────────────────────── */}
       <p className="sec-sub">{setores.length} setores cadastrados</p>
 
       {/* ── Grid de cards ─────────────────────────────────────────────────── */}
@@ -174,7 +173,6 @@ export default function Setores() {
 
           return (
             <div key={setor.id} className="card card-hover p-5">
-              {/* Cabeçalho do card */}
               <div className="row gap-3 mb-3">
                 <Building2 size={20} className="text-slate-400" />
                 <div>
@@ -185,29 +183,23 @@ export default function Setores() {
                 </div>
               </div>
 
-              {/* Stats */}
               <div className="grid grid-cols-2 gap-2 mb-3">
                 <div className="rounded-lg bg-slate-50 px-3 py-2">
                   <div className="row gap-1.5 mb-0.5">
                     <Camera size={12} className="text-slate-400" />
                     <span className="sec-sub text-[11px]">Total Ocorrências</span>
                   </div>
-                  <p className="text-sm font-semibold text-slate-700">
-                    {stats?.total_ocorrencias ?? "—"}
-                  </p>
+                  <p className="text-sm font-semibold text-slate-700">{stats?.total_ocorrencias ?? "—"}</p>
                 </div>
                 <div className="rounded-lg bg-slate-50 px-3 py-2">
                   <div className="row gap-1.5 mb-0.5">
                     <ShieldCheck size={12} className="text-slate-400" />
                     <span className="sec-sub text-[11px]">Não conformes</span>
                   </div>
-                  <p className="text-sm font-semibold text-slate-700">
-                    {stats?.nao_conformes ?? "—"}
-                  </p>
+                  <p className="text-sm font-semibold text-slate-700">{stats?.nao_conformes ?? "—"}</p>
                 </div>
               </div>
 
-              {/* EPIs obrigatórios */}
               <div className="mb-3">
                 <p className="sec-sub text-[11px] mb-1.5">EPIs obrigatórios</p>
                 {epis.length === 0 ? (
@@ -223,7 +215,6 @@ export default function Setores() {
                 )}
               </div>
 
-              {/* EPIs mais ausentes */}
               {stats?.epis_mais_ausentes?.length > 0 && (
                 <div className="mb-3">
                   <p className="sec-sub text-[11px] mb-1.5">Mais ausentes</p>
@@ -237,7 +228,6 @@ export default function Setores() {
                 </div>
               )}
 
-              {/* Barra conformidade */}
               {conformidade !== null && (
                 <div className="mb-4">
                   <p className="sec-sub text-[11px] mb-1">Conformidade</p>
@@ -245,7 +235,6 @@ export default function Setores() {
                 </div>
               )}
 
-              {/* Ações */}
               <div className="row gap-2 border-t border-slate-100 pt-3">
                 <button onClick={() => abrirEditar(setor)} className="btn btn-full btn-sm btn-ghost">
                   <Edit2 size={13} /> Editar
@@ -259,7 +248,7 @@ export default function Setores() {
         })}
       </div>
 
-      {/* ── FAB – botão flutuante no canto inferior direito ───────────────── */}
+      {/* ── FAB ─────────────────────────────────────────────────────────────── */}
       <button
         onClick={abrirAdicionar}
         title="Adicionar Setor"
@@ -348,20 +337,20 @@ export default function Setores() {
       {/* ── Modal confirmar exclusão ──────────────────────────────────────── */}
       {confirmarDel && (
         <div className="overlay">
-          <div className="modal-sm fade-in">
-            <div className="row gap-3 mb-4">
-              <div className="icon-box-lg bg-red-100">
-                <Trash2 size={20} className="text-err" />
+          <div className="modal modal-sm fade-in">
+            <div className="flex flex-col items-center text-center gap-3 pb-2">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                <Trash2 size={22} className="text-red-500" />
               </div>
               <div>
                 <h3 className="font-semibold text-slate-800">Remover Setor</h3>
-                <p className="sec-sub">Esta ação não pode ser desfeita.</p>
+                <p className="sec-sub text-sm mt-0.5">Esta ação não pode ser desfeita.</p>
               </div>
             </div>
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setConfirmarDel(null)} className="btn-ghost">Cancelar</button>
-              <button onClick={() => excluir(confirmarDel)} className="btn bg-err text-white hover:bg-red-600">
-                Remover
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button onClick={() => setConfirmarDel(null)} className="btn btn-sm btn-ghost">Cancelar</button>
+              <button onClick={() => excluir(confirmarDel)} className="btn btn-sm btn-danger">
+                <Trash2 size={13} /> Remover
               </button>
             </div>
           </div>
