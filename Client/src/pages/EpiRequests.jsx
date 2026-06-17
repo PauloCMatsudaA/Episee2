@@ -19,9 +19,9 @@ export default function EpiRequests() {
   const [processando,  setProcessando]  = useState(false);
   const [erro,         setErro]         = useState('');
 
-  const [modalAprovar,    setModalAprovar]    = useState(null);
-  const [modalRejeitar,   setModalRejeitar]   = useState(null);
-  const [motivoRejeicao,  setMotivoRejeicao]  = useState('');
+  const [modalAprovar,   setModalAprovar]   = useState(null);
+  const [modalRejeitar,  setModalRejeitar]  = useState(null);
+  const [motivoRejeicao, setMotivoRejeicao] = useState('');
 
   const carregarSolicitacoes = useCallback(async () => {
     setErro('');
@@ -37,10 +37,10 @@ export default function EpiRequests() {
 
   useEffect(() => { carregarSolicitacoes(); }, [carregarSolicitacoes]);
 
-  // Atualiza um item na lista local sem precisar de re-fetch
-  function atualizarItem(atualizado) {
+  // Mescla campos no item local — garante status correto independente da resposta da API
+  function patchItem(id, campos) {
     setSolicitacoes((prev) =>
-      prev.map((s) => (s.id === atualizado.id ? atualizado : s))
+      prev.map((s) => (s.id === id ? { ...s, ...campos } : s))
     );
   }
 
@@ -53,13 +53,18 @@ export default function EpiRequests() {
 
   async function confirmarAprovacao() {
     if (!modalAprovar) return;
+    const id = modalAprovar.id;
     setProcessando(true);
+    // Atualiza o estado imediatamente, antes mesmo da resposta
+    patchItem(id, { status: 'aprovada' });
+    setAbaAtiva('aprovada');
+    setModalAprovar(null);
     try {
-      const res = await epiRequestsApi.aprovar(modalAprovar.id);
-      atualizarItem(res.data);
-      setAbaAtiva('aprovada');
-      setModalAprovar(null);
+      await epiRequestsApi.aprovar(id);
     } catch {
+      // Se falhou, reverte
+      patchItem(id, { status: 'pendente' });
+      setAbaAtiva('pendente');
       setErro('Erro ao aprovar a solicitacao. Tente novamente.');
     } finally {
       setProcessando(false);
@@ -68,14 +73,20 @@ export default function EpiRequests() {
 
   async function confirmarRejeicao() {
     if (!modalRejeitar || !motivoRejeicao.trim()) return;
+    const id = modalRejeitar.id;
+    const motivo = motivoRejeicao.trim();
     setProcessando(true);
+    // Atualiza o estado imediatamente
+    patchItem(id, { status: 'rejeitada', motivo_rejeicao: motivo });
+    setAbaAtiva('rejeitada');
+    setModalRejeitar(null);
+    setMotivoRejeicao('');
     try {
-      const res = await epiRequestsApi.rejeitar(modalRejeitar.id, motivoRejeicao.trim());
-      atualizarItem(res.data);
-      setAbaAtiva('rejeitada');
-      setModalRejeitar(null);
-      setMotivoRejeicao('');
+      await epiRequestsApi.rejeitar(id, motivo);
     } catch {
+      // Se falhou, reverte
+      patchItem(id, { status: 'pendente', motivo_rejeicao: null });
+      setAbaAtiva('pendente');
       setErro('Erro ao rejeitar a solicitacao. Tente novamente.');
     } finally {
       setProcessando(false);
@@ -84,10 +95,11 @@ export default function EpiRequests() {
 
   async function marcarEntrega(id, entregue) {
     setProcessando(true);
+    patchItem(id, { entregue });
     try {
-      const res = await epiRequestsApi.entrega(id, entregue);
-      atualizarItem(res.data);
+      await epiRequestsApi.entrega(id, entregue);
     } catch {
+      patchItem(id, { entregue: !entregue });
       setErro('Erro ao registrar entrega. Tente novamente.');
     } finally {
       setProcessando(false);
@@ -186,13 +198,15 @@ export default function EpiRequests() {
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => setModalAprovar({ id: sol.id })}
-                            className="flex items-center gap-1 rounded-lg bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100"
+                            disabled={processando}
+                            className="flex items-center gap-1 rounded-lg bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 disabled:opacity-50"
                           >
                             <Check size={14} /> Aprovar
                           </button>
                           <button
                             onClick={() => { setModalRejeitar({ id: sol.id }); setMotivoRejeicao(''); }}
-                            className="flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100"
+                            disabled={processando}
+                            className="flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
                           >
                             <X size={14} /> Rejeitar
                           </button>
