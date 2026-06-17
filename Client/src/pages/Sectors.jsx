@@ -152,7 +152,7 @@ export default function Setores() {
     <div className="pg-wide relative">
 
       {/* Card total de setores */}
-      <div className="card row gap-3 p-4 w-fit">
+      <div className="card row gap-3 p-4 w-fit mb-6">
         <Building2 size={20} className="text-slate-500" />
         <div>
           <p className="sec-sub">Total de Setores</p>
