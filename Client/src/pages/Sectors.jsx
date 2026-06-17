@@ -175,23 +175,14 @@ export default function Setores() {
           return (
             <div key={setor.id} className="card card-hover p-5">
               {/* Cabeçalho do card */}
-              <div className="row-between mb-3">
-                <div className="row gap-3">
-                  <Building2 size={20} className="text-slate-400" />
-                  <div>
-                    <h4 className="font-semibold text-slate-800">{setor.name}</h4>
-                    <p className="sec-sub text-xs max-w-[160px] truncate">
-                      {setor.description || "Sem descrição"}
-                    </p>
-                  </div>
+              <div className="row gap-3 mb-3">
+                <Building2 size={20} className="text-slate-400" />
+                <div>
+                  <h4 className="font-semibold text-slate-800">{setor.name}</h4>
+                  <p className="sec-sub text-xs max-w-[200px] truncate">
+                    {setor.description || "Sem descrição"}
+                  </p>
                 </div>
-                {conformidade !== null && (
-                  <span className={clsx("badge",
-                    conformidade >= 95 ? "badge-ok" : conformidade >= 90 ? "badge-warn" : "badge-err"
-                  )}>
-                    {conformidade}%
-                  </span>
-                )}
               </div>
 
               {/* Stats */}
