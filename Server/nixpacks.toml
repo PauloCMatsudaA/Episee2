@@ -1,8 +1,6 @@
-providers = ["...", "python"]
-
 [phases.setup]
-aptPkgs = ["...", "ffmpeg"]
-nixLibs = ["...", "xorg.libxcb", "xorg.libX11", "xorg.libXext", "xorg.libSM", "glib", "mesa", "stdenv.cc.cc.lib"]
+apt = ["ffmpeg"]
+nixLibs = ["xorg.libxcb", "xorg.libX11", "xorg.libXext", "xorg.libSM", "glib", "mesa", "stdenv.cc.cc.lib"]
 
 [start]
 cmd = "uvicorn main:app --host 0.0.0.0 --port $PORT"
