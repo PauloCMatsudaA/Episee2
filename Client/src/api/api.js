@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const BASE_URL = import.meta.env.VITE_API_URL || "https://episee2-production.up.railway.app";
+
 const cliente = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "",
+  baseURL: BASE_URL,
   timeout: 30000,
   headers: { "Content-Type": "application/json" },
 });
@@ -38,7 +40,6 @@ export const autenticacaoApi = {
   me: () => cliente.get("/api/auth/me"),
 };
 
-// ── Usuários ──────────────────────────────────────────────────────────────────
 export const usuariosApi = {
   listar:    (filtros)   => cliente.get("/api/users/", { params: filtros }),
   buscarPor: (id)        => cliente.get(`/api/users/${id}`),
@@ -47,7 +48,6 @@ export const usuariosApi = {
   excluir:   (id)        => cliente.delete(`/api/users/${id}`),
 };
 
-// ── Ocorrências ───────────────────────────────────────────────────────────────
 export const ocorrenciasApi = {
   listar:    (filtros) => cliente.get("/api/occurrences/", { params: filtros }),
   buscarPor: (id)      => cliente.get(`/api/occurrences/${id}`),
