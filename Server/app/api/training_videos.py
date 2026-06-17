@@ -173,7 +173,9 @@ async def adicionar_video_por_epi(
     result = await db.execute(select(EpiType).where(EpiType.id == epi_id))
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="EPI não encontrado.")
-    video = TrainingVideo(epi_type_id=epi_id, **dados.model_dump())
+    # exclude 'epi_type_id' do model_dump para evitar conflito com o parâmetro da URL
+    dados_dict = dados.model_dump(exclude={"epi_type_id"})
+    video = TrainingVideo(epi_type_id=epi_id, **dados_dict)
     db.add(video)
     await db.commit()
     await db.refresh(video)
