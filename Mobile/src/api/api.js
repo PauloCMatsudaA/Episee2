@@ -1,6 +1,7 @@
 // src/api/api.js
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import authEvents, { AUTH_EVENTS } from '../utils/authEvents';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -13,6 +14,7 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Injeta token em toda requisição
 api.interceptors.request.use(
   async (config) => {
     try {
@@ -26,11 +28,13 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Trata respostas — emite evento de logout ao receber 401
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
       await AsyncStorage.multiRemove(['@episee:token', '@episee:user']);
+      authEvents.emit(AUTH_EVENTS.UNAUTHORIZED);
     }
     return Promise.reject(error);
   }
@@ -95,13 +99,7 @@ export const getVideosWorker = async () => {
 };
 
 // ── Chatbot ───────────────────────────────────────────────────────────────
-/**
- * @param {string} mensagem - mensagem atual do usuario
- * @param {Array<{role: string, text: string}>} historico - mensagens anteriores da conversa
- */
 export const chatbotApi = async (mensagem, historico = []) => {
-  // Converte historico do formato interno para formato da API
-  // Exclui a mensagem de boas-vindas (id '0') e limita a 10 mensagens anteriores
   const historicoFormatado = historico
     .filter((m) => m.id !== '0')
     .slice(-10)
