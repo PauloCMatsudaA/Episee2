@@ -17,3 +17,7 @@ email-validator==2.2.0
 openai>=1.40.0
 twilio>=9.0.0
 aiofiles==23.2.1
+# Visão computacional
+opencv-python-headless==4.10.0.84
+ultralytics==8.3.40
+numpy>=1.24.0
