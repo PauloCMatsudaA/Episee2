@@ -9,66 +9,43 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 
-// ── Constantes ────────────────────────────────────────────────────────────────
+// ── Constantes ────────────────────────────────────────────────────────────────────────────
 const CORES = {
-  primaria:   '#F97316',
+  primaria:       '#F97316',
   primariaEscura: '#EA6C0A',
-  escura:     '#0F172A',
-  slate700:   '#1E293B',
-  slate600:   '#334155',
-  slate400:   '#94A3B8',
-  branco:     '#FFFFFF',
-  erro:       '#EF4444',
-  erroFundo:  '#FEE2E2',
-  bordaCinza: '#E2E8F0',
+  escura:         '#0F172A',
+  slate400:       '#94A3B8',
+  branco:         '#FFFFFF',
+  erro:           '#EF4444',
 };
 
 export default function LoginScreen() {
   const { login } = useAuth();
 
-  // Estado do formulário
-  const [email, setEmail]         = useState('');
-  const [senha, setSenha]         = useState('');
+  const [email, setEmail]               = useState('');
+  const [senha, setSenha]               = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
-  const [carregando, setCarregando] = useState(false);
-  const [erro, setErro]           = useState('');
+  const [carregando, setCarregando]     = useState(false);
+  const [erro, setErro]                 = useState('');
 
-  // ── Validação e envio ─────────────────────────────────────────────────────
   const handleLogin = async () => {
     setErro('');
-
-    if (!email.trim()) {
-      setErro('Informe seu e-mail para continuar.');
-      return;
-    }
-    if (!senha.trim()) {
-      setErro('Informe sua senha para continuar.');
-      return;
-    }
-
+    if (!email.trim()) { setErro('Informe seu e-mail para continuar.'); return; }
+    if (!senha.trim()) { setErro('Informe sua senha para continuar.'); return; }
     setCarregando(true);
     try {
-      // Envia o email exatamente como digitado — o servidor normaliza internamente
       await login(email.trim(), senha);
     } catch (err) {
       setErro(err.message || 'Credenciais inválidas. Tente novamente.');
     } finally {
       setCarregando(false);
     }
-  };
-
-  // ── Preenche credenciais de demo ──────────────────────────────────────────
-  const preencherDemo = () => {
-    setEmail('admin@episee.com');
-    setSenha('admin123');
-    setErro('');
   };
 
   return (
@@ -86,18 +63,12 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ── Logo ─────────────────────────────────────────────────────── */}
+          {/* ── Logo (apenas texto) ───────────────────────────────────── */}
           <View style={estilos.logoContainer}>
-            <View style={estilos.logoAnel}>
-              <View style={estilos.logoAnelInterno}>
-                <Ionicons name="shield-checkmark" size={56} color={CORES.primaria} />
-              </View>
-            </View>
             <Text style={estilos.logoTexto}>EPIsee</Text>
-            <Text style={estilos.tagline}>Sua segurança em primeiro lugar</Text>
           </View>
 
-          {/* ── Card do formulário ────────────────────────────────────────── */}
+          {/* ── Card do formulário ──────────────────────────────────────────── */}
           <View style={estilos.card}>
             <Text style={estilos.cardTitulo}>Acessar minha conta</Text>
 
@@ -180,33 +151,15 @@ export default function LoginScreen() {
               </LinearGradient>
             </TouchableOpacity>
           </View>
-
-          {/* ── Credenciais de demo ───────────────────────────────────────── */}
-          <TouchableOpacity
-            style={estilos.demoContainer}
-            onPress={preencherDemo}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="information-circle-outline" size={15} color={CORES.slate400} />
-            <Text style={estilos.demoTexto}>
-              Demo: <Text style={estilos.demoCredencial}>admin@episee.com</Text>
-              {' / '}
-              <Text style={estilos.demoCredencial}>admin123</Text>
-              {' — Toque para preencher'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Rodapé */}
-          <Text style={estilos.rodape}>EPIsee v1.0.0 · Segurança do Trabalho</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
+// ── Estilos ────────────────────────────────────────────────────────────────────────────────
 const estilos = StyleSheet.create({
-  gradiente: { flex: 1 },
+  gradiente:     { flex: 1 },
   keyboardAvoid: { flex: 1 },
   scroll: {
     flexGrow: 1,
@@ -216,52 +169,33 @@ const estilos = StyleSheet.create({
     paddingBottom: 40,
   },
   logoContainer: { alignItems: 'center', marginBottom: 40 },
-  logoAnel: {
-    width: 110, height: 110, borderRadius: 55,
-    backgroundColor: 'rgba(249, 115, 22, 0.12)',
-    justifyContent: 'center', alignItems: 'center', marginBottom: 16,
-  },
-  logoAnelInterno: {
-    width: 82, height: 82, borderRadius: 41,
-    backgroundColor: 'rgba(249, 115, 22, 0.18)',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  logoTexto: { fontSize: 38, fontWeight: '800', color: '#FFFFFF', letterSpacing: 1, marginBottom: 8 },
-  tagline: { fontSize: 15, color: '#94A3B8', letterSpacing: 0.3 },
+  logoTexto: { fontSize: 38, fontWeight: '800', color: '#FFFFFF', letterSpacing: 1 },
   card: {
     backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24,
     shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15, shadowRadius: 24, elevation: 12, marginBottom: 20,
+    shadowOpacity: 0.15, shadowRadius: 24, elevation: 12,
   },
-  cardTitulo: { fontSize: 18, fontWeight: '700', color: '#0F172A', marginBottom: 20 },
+  cardTitulo:    { fontSize: 18, fontWeight: '700', color: '#0F172A', marginBottom: 20 },
   campoContainer: { marginBottom: 16 },
-  campoLabel: { fontSize: 13, fontWeight: '600', color: '#475569', marginBottom: 6, marginLeft: 2 },
+  campoLabel:    { fontSize: 13, fontWeight: '600', color: '#475569', marginBottom: 6, marginLeft: 2 },
   inputWrapper: {
     flexDirection: 'row', alignItems: 'center',
     borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8,
     backgroundColor: '#FAFAFA', paddingHorizontal: 12, height: 50,
   },
-  inputIcone: { marginRight: 8 },
-  input: { flex: 1, fontSize: 15, color: '#0F172A', height: 50 },
-  inputSenha: { flex: 1 },
+  inputIcone:  { marginRight: 8 },
+  input:       { flex: 1, fontSize: 15, color: '#0F172A', height: 50 },
+  inputSenha:  { flex: 1 },
   erroContainer: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#FEE2E2', borderRadius: 8,
     paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12, gap: 8,
   },
-  erroTexto: { fontSize: 13, color: '#EF4444', flex: 1, fontWeight: '500' },
+  erroTexto:   { fontSize: 13, color: '#EF4444', flex: 1, fontWeight: '500' },
   botaoWrapper: { marginTop: 4, borderRadius: 12, overflow: 'hidden' },
   botao: {
     flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
     padding: 16, gap: 8, borderRadius: 12,
   },
-  botaoTexto: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
-  demoContainer: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 10, gap: 6,
-  },
-  demoTexto: { fontSize: 12, color: '#94A3B8', textAlign: 'center' },
-  demoCredencial: { color: '#F97316', fontWeight: '600' },
-  rodape: { textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 24 },
+  botaoTexto:  { color: '#FFFFFF', fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
 });
