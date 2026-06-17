@@ -223,9 +223,6 @@ export default function TrainingVideos() {
                       <p className="text-sm text-gray-700">{epi.erros_comuns}</p>
                     </div>
                   )}
-                  {epi.nr6_ref && (
-                    <p className="text-xs text-gray-400 bg-gray-50 rounded px-2 py-1">{epi.nr6_ref}</p>
-                  )}
 
                   {/* Vídeos */}
                   <div>
@@ -297,12 +294,11 @@ export default function TrainingVideos() {
                 { label: 'Quando usar', key: 'quando_usar', placeholder: 'Situações de uso obrigatório...' },
                 { label: 'Como usar corretamente', key: 'como_usar', placeholder: 'Passo a passo...' },
                 { label: 'Erros comuns', key: 'erros_comuns', placeholder: 'Erros frequentes dos trabalhadores...' },
-                { label: 'Referência NR-6', key: 'nr6_ref', placeholder: 'ex: NR-6 item 6.3' },
                 {
                   label: 'Palavras-chave (RAG)',
                   key: 'palavras_chave',
                   placeholder: 'ex: capacete, protetor de cabeça, elmo (separadas por vírgula)',
-                  help: 'O chatbot usa essas palavras para encontrar este EPI mesmo quando o trabalhador não usa o nome exato.',
+                  help: 'Obs: O chatbot usa essas palavras para encontrar este EPI mesmo quando o trabalhador não usa o nome exato.',
                 },
               ].map(({ label, key, placeholder, help }) => (
                 <div key={key}>
@@ -314,7 +310,7 @@ export default function TrainingVideos() {
                     placeholder={placeholder}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
                   />
-                  {help && <p className="text-xs text-blue-600 mt-0.5">{help}</p>}
+                  {help && <p className="text-xs text-gray-700 mt-0.5">{help}</p>}
                 </div>
               ))}
             </div>
