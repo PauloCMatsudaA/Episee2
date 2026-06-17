@@ -13,14 +13,12 @@ logger = logging.getLogger(__name__)
 HLS_DIR = "hls_streams"
 os.makedirs(HLS_DIR, exist_ok=True)
 
-_base = os.path.dirname(__file__)
-MODEL_PATH = os.path.join(_base, "..", "..", "best.pt")
-if not os.path.exists(MODEL_PATH):
-    MODEL_PATH = os.path.join(_base, "..", "..", "..", "best.pt")
+# Caminho absoluto do modelo — mesmo diretório de trabalho usado pelo main.py (/app)
+MODEL_PATH = os.path.join(os.getcwd(), "best.pt")
 
-VIDEO_FALLBACK = os.path.join(os.getcwd(), "..", "teste.mp4")
+VIDEO_FALLBACK = os.path.join(os.getcwd(), "teste.mp4")
 if not os.path.exists(VIDEO_FALLBACK):
-    VIDEO_FALLBACK = os.path.join(os.getcwd(), "teste.mp4")
+    VIDEO_FALLBACK = os.path.join(os.getcwd(), "..", "teste.mp4")
 
 # ── Classes do SH17 ──────────────────────────────────────────────────────────
 CLASSE_PESSOA   = {"person"}
@@ -57,12 +55,10 @@ _model = None
 
 def _find_ffmpeg() -> str | None:
     """Localiza o binário ffmpeg de forma multiplataforma."""
-    # 1. Busca no PATH do sistema (funciona no Linux/Railway e no Windows com PATH correto)
     found = shutil.which("ffmpeg")
     if found:
         return found
 
-    # 2. Caminhos comuns no Linux (Railway, Ubuntu, Debian)
     linux_paths = [
         "/usr/bin/ffmpeg",
         "/usr/local/bin/ffmpeg",
@@ -72,7 +68,6 @@ def _find_ffmpeg() -> str | None:
         if os.path.isfile(p):
             return p
 
-    # 3. Caminhos comuns no Windows (fallback local)
     windows_paths = [
         r"C:\ProgramData\chocolatey\bin\ffmpeg.exe",
         r"C:\ffmpeg\bin\ffmpeg.exe",
@@ -351,21 +346,11 @@ def _validar_epis_por_intersecao(
     epis_encontrados: set,
     deteccoes: list[dict],
 ) -> set:
-    """
-    Filtra EPIs que precisam de validação por sobreposição espacial.
-
-    Regras:
-    - EPIs faciais (helmet, glasses, face-mask-medical, face-guard, earmuffs):
-      precisam estar sobre uma bbox 'head' com IoU >= IOUI_HELMET_HEAD.
-    - safety-vest: precisa estar sobre uma bbox 'person' com IoU >= IOUI_VEST_PERSON.
-    - gloves, medical-suit, safety-suit: isentos (cobrem totalmente o membro).
-    """
     epis_validos = set(epis_encontrados)
 
     head_boxes   = [d["bbox"] for d in deteccoes if d["class"] == "head"]
     person_boxes = [d["bbox"] for d in deteccoes if d["class"] == "person"]
 
-    # ── EPIs faciais → interseção com cabeça ─────────────────────────────────
     epis_faciais_presentes = epis_validos & EPIS_FACIAIS
     for epi in epis_faciais_presentes:
         epi_boxes = [d["bbox"] for d in deteccoes if d["class"] == epi]
@@ -379,7 +364,6 @@ def _validar_epis_por_intersecao(
                 f"[DETECÇÃO] '{epi}' detectado mas não sobre cabeça — desconsiderado"
             )
 
-    # ── safety-vest → interseção com pessoa ──────────────────────────────────
     if "safety-vest" in epis_validos and person_boxes:
         vest_boxes = [d["bbox"] for d in deteccoes if d["class"] == "safety-vest"]
         algum_vestido = any(
@@ -391,9 +375,6 @@ def _validar_epis_por_intersecao(
             logger.debug(
                 "[DETECÇÃO] 'safety-vest' detectado mas não sobre pessoa — desconsiderado"
             )
-
-    # ── EPIs isentos (gloves, medical-suit, safety-suit) → aceitos direto ────
-    # Nenhuma ação necessária — já estão em epis_validos se detectados.
 
     return epis_validos
 
