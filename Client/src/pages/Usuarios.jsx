@@ -148,10 +148,6 @@ export default function Usuarios() {
     return ROLES.find((r) => r.value === role)?.label || role;
   }
 
-  function classePapel(role) {
-    return role === 'gestor' ? 'badge badge-info' : 'badge badge-ok';
-  }
-
   if (carregando) return <div className="page"><LoadingSpinner /></div>;
 
   return (
@@ -232,8 +228,8 @@ export default function Usuarios() {
                     </td>
                     <td style={{ color: 'var(--text-muted)' }}>{u.email}</td>
                     <td>
-                      <span className={classePapel(u.role)}>
-                        {u.role === 'gestor' && <ShieldCheck size={11} />}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                        {u.role === 'gestor' && <ShieldCheck size={13} />}
                         {labelPapel(u.role)}
                       </span>
                     </td>
@@ -243,9 +239,11 @@ export default function Usuarios() {
                         <button className="btn btn-ghost btn-sm btn-icon" onClick={() => abrirEdicao(u)} title="Editar">
                           <Pencil size={14} />
                         </button>
-                        <button className="btn btn-danger btn-sm btn-icon" onClick={() => excluir(u.id)} title="Excluir">
-                          <Trash2 size={14} />
-                        </button>
+                        {u.role !== 'trabalhador' && (
+                          <button className="btn btn-danger btn-sm btn-icon" onClick={() => excluir(u.id)} title="Excluir">
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
