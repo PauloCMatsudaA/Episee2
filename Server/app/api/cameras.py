@@ -30,10 +30,10 @@ MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "best.pt"
 async def list_cameras(db: AsyncSession = Depends(get_db), _=Depends(get_current_user)):
     result = await db.execute(
         select(Camera)
-        .options(joinedload(Camera.sector)) 
+        .options(joinedload(Camera.sector))
         .order_by(Camera.name)
     )
-    cameras = result.scalars().all()
+    cameras = result.unique().scalars().all()
     return [CameraResponse.model_validate(c) for c in cameras]
 
 
@@ -52,7 +52,15 @@ async def create_camera(
     )
     db.add(camera)
     await db.flush()
-    await db.refresh(camera)
+    await db.commit()
+
+    # Reconsulta com sector carregado para evitar MissingGreenlet no Pydantic
+    result = await db.execute(
+        select(Camera)
+        .options(joinedload(Camera.sector))
+        .where(Camera.id == camera.id)
+    )
+    camera = result.unique().scalar_one()
     return CameraResponse.model_validate(camera)
 
 
@@ -72,7 +80,15 @@ async def update_camera(
         setattr(camera, field, value)
 
     await db.flush()
-    await db.refresh(camera)
+    await db.commit()
+
+    # Reconsulta com sector carregado para evitar MissingGreenlet no Pydantic
+    result = await db.execute(
+        select(Camera)
+        .options(joinedload(Camera.sector))
+        .where(Camera.id == camera.id)
+    )
+    camera = result.unique().scalar_one()
     return CameraResponse.model_validate(camera)
 
 
