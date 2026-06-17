@@ -143,7 +143,7 @@ async def lifespan(app: FastAPI):
     await init_db()
     await create_default_admin()
     await download_model_if_needed()
-    await registrar_webhook_telegram()  # <-- movido para dentro do lifespan
+    await registrar_webhook_telegram()
 
     camera_task = asyncio.create_task(start_camera_streams())
     logger.info("Server de cameras iniciando.")
@@ -165,6 +165,7 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
+    redirect_slashes=False,   # evita 307 quando barra final está ausente/presente
 )
 
 app.add_middleware(
