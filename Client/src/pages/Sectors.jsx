@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Plus, Edit2, Trash2, X, Building2, Users, Camera, BarChart3,
-  ShieldCheck, Loader2, AlertTriangle,
+  Plus, Edit2, Trash2, X, Building2, Camera, ShieldCheck,
+  Loader2, AlertTriangle,
 } from "lucide-react";
 import clsx from "clsx";
 import { setoresApi } from "../api/api";
@@ -21,7 +21,6 @@ const CLASSES_EPI = [
 
 const FORM_VAZIO = { name: "", description: "", workers: "", epis_obrigatorios: [] };
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function labelEpi(id) {
   return CLASSES_EPI.find((e) => e.id === id)?.label ?? id;
 }
@@ -40,24 +39,22 @@ function BarConformidade({ valor }) {
 
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function Setores() {
-  const [setores, setSetores]         = useState([]);
-  const [statsMap, setStatsMap]       = useState({});
-  const [carregando, setCarregando]   = useState(true);
-  const [erro, setErro]               = useState(null);
-  const [salvando, setSalvando]       = useState(false);
-  const [modalAberto, setModalAberto] = useState(false);
-  const [editando, setEditando]       = useState(null);
+  const [setores, setSetores]           = useState([]);
+  const [statsMap, setStatsMap]         = useState({});
+  const [carregando, setCarregando]     = useState(true);
+  const [erro, setErro]                 = useState(null);
+  const [salvando, setSalvando]         = useState(false);
+  const [modalAberto, setModalAberto]   = useState(false);
+  const [editando, setEditando]         = useState(null);
   const [confirmarDel, setConfirmarDel] = useState(null);
-  const [form, setForm]               = useState(FORM_VAZIO);
+  const [form, setForm]                 = useState(FORM_VAZIO);
 
-  // ── Carrega setores da API ──────────────────────────────────────────────────
   const carregar = useCallback(async () => {
     setCarregando(true);
     setErro(null);
     try {
       const { data } = await setoresApi.listar();
       setSetores(data);
-      // Busca stats de cada setor em paralelo
       const resultados = await Promise.allSettled(
         data.map((s) => setoresApi.stats(s.id))
       );
@@ -75,7 +72,6 @@ export default function Setores() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  // ── Modal ──────────────────────────────────────────────────────────────────
   function abrirAdicionar() {
     setEditando(null);
     setForm(FORM_VAZIO);
@@ -135,18 +131,6 @@ export default function Setores() {
     }
   }
 
-  // ── Totais ─────────────────────────────────────────────────────────────────
-  const totalCameras = Object.values(statsMap).reduce(
-    (acc, s) => acc + (s?.total_ocorrencias ? 0 : 0), 0
-  ); // câmeras vêm do setor diretamente
-  const mediaConformidade = Object.values(statsMap).length
-    ? (
-        Object.values(statsMap).reduce((a, s) => a + (s?.taxa_conformidade ?? 0), 0) /
-        Object.values(statsMap).length * 100
-      ).toFixed(1)
-    : "—";
-
-  // ── Render ─────────────────────────────────────────────────────────────────
   if (carregando) {
     return (
       <div className="pg-wide flex items-center justify-center py-24">
@@ -167,33 +151,21 @@ export default function Setores() {
   }
 
   return (
-    <div className="pg-wide">
-      {/* Resumo */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {[
-          { Icon: Building2, cor: "bg-blue-50",   icor: "text-blue-500", rotulo: "Total de Setores",    valor: setores.length },
-          { Icon: Users,     cor: "bg-green-50",  icor: "text-ok",       rotulo: "Setores com EPIs",    valor: setores.filter((s) => s.epis_obrigatorios?.length).length },
-          { Icon: BarChart3, cor: "bg-orange-50", icor: "text-brand",    rotulo: "Conformidade Média",  valor: `${mediaConformidade}%` },
-        ].map(({ Icon, cor, icor, rotulo, valor }) => (
-          <div key={rotulo} className="card row gap-3 p-4">
-            <div className={clsx("icon-box-lg", cor)}><Icon size={18} className={icor} /></div>
-            <div>
-              <p className="sec-sub">{rotulo}</p>
-              <p className="text-xl font-bold text-slate-800">{valor}</p>
-            </div>
-          </div>
-        ))}
+    <div className="pg-wide relative">
+
+      {/* ── Card único: Total de Setores ──────────────────────────────────── */}
+      <div className="card row gap-3 p-4 w-fit">
+        <Building2 size={20} className="text-slate-500" />
+        <div>
+          <p className="sec-sub">Total de Setores</p>
+          <p className="text-2xl font-bold text-slate-800">{setores.length}</p>
+        </div>
       </div>
 
-      {/* Cabeçalho */}
-      <div className="row-between gap-3 flex-wrap">
-        <p className="sec-sub">{setores.length} setores cadastrados</p>
-        <button onClick={abrirAdicionar} className="btn-primary">
-          <Plus size={16} /> Adicionar Setor
-        </button>
-      </div>
+      {/* ── Subtítulo ─────────────────────────────────────────────────────── */}
+      <p className="sec-sub">{setores.length} setores cadastrados</p>
 
-      {/* Grid de cards */}
+      {/* ── Grid de cards ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {setores.map((setor) => {
           const stats = statsMap[setor.id];
@@ -205,9 +177,7 @@ export default function Setores() {
               {/* Cabeçalho do card */}
               <div className="row-between mb-3">
                 <div className="row gap-3">
-                  <div className="icon-box-lg bg-blue-50">
-                    <Building2 size={18} className="text-blue-500" />
-                  </div>
+                  <Building2 size={20} className="text-slate-400" />
                   <div>
                     <h4 className="font-semibold text-slate-800">{setor.name}</h4>
                     <p className="sec-sub text-xs max-w-[160px] truncate">
@@ -224,7 +194,7 @@ export default function Setores() {
                 )}
               </div>
 
-              {/* Stats: câmeras e ocorrências */}
+              {/* Stats */}
               <div className="grid grid-cols-2 gap-2 mb-3">
                 <div className="rounded-lg bg-slate-50 px-3 py-2">
                   <div className="row gap-1.5 mb-0.5">
@@ -298,6 +268,15 @@ export default function Setores() {
         })}
       </div>
 
+      {/* ── FAB – botão flutuante no canto inferior direito ───────────────── */}
+      <button
+        onClick={abrirAdicionar}
+        title="Adicionar Setor"
+        className="fixed bottom-8 right-8 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-orange-500 text-white shadow-lg hover:bg-orange-600 active:scale-95 transition-all duration-150"
+      >
+        <Plus size={24} />
+      </button>
+
       {/* ── Modal adicionar/editar ─────────────────────────────────────────── */}
       {modalAberto && (
         <div className="overlay">
@@ -308,7 +287,6 @@ export default function Setores() {
             </div>
 
             <div className="space-y-4">
-              {/* Nome */}
               <div className="field">
                 <label className="label">Nome do Setor *</label>
                 <input
@@ -318,8 +296,6 @@ export default function Setores() {
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
               </div>
-
-              {/* Descrição */}
               <div className="field">
                 <label className="label">Descrição</label>
                 <input
@@ -329,8 +305,6 @@ export default function Setores() {
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                 />
               </div>
-
-              {/* EPIs obrigatórios */}
               <div className="field">
                 <label className="label">EPIs Obrigatórios</label>
                 <p className="sec-sub text-xs mb-2">
