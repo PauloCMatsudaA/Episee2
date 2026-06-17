@@ -19,12 +19,9 @@ export default function EpiRequests() {
   const [processando,  setProcessando]  = useState(false);
   const [erro,         setErro]         = useState('');
 
-  // Modal de confirmacao de aprovacao
-  const [modalAprovar, setModalAprovar] = useState(null); // { id }
-
-  // Modal de rejeicao com campo de motivo
-  const [modalRejeitar, setModalRejeitar] = useState(null); // { id }
-  const [motivoRejeicao, setMotivoRejeicao] = useState('');
+  const [modalAprovar,    setModalAprovar]    = useState(null);
+  const [modalRejeitar,   setModalRejeitar]   = useState(null);
+  const [motivoRejeicao,  setMotivoRejeicao]  = useState('');
 
   const carregarSolicitacoes = useCallback(async () => {
     setErro('');
@@ -40,6 +37,13 @@ export default function EpiRequests() {
 
   useEffect(() => { carregarSolicitacoes(); }, [carregarSolicitacoes]);
 
+  // Atualiza um item na lista local sem precisar de re-fetch
+  function atualizarItem(atualizado) {
+    setSolicitacoes((prev) =>
+      prev.map((s) => (s.id === atualizado.id ? atualizado : s))
+    );
+  }
+
   const filtradas = solicitacoes.filter((s) => s.status === abaAtiva);
   const contagem  = {
     pendente:  solicitacoes.filter((s) => s.status === 'pendente').length,
@@ -51,8 +55,8 @@ export default function EpiRequests() {
     if (!modalAprovar) return;
     setProcessando(true);
     try {
-      await epiRequestsApi.aprovar(modalAprovar.id);
-      await carregarSolicitacoes();
+      const res = await epiRequestsApi.aprovar(modalAprovar.id);
+      atualizarItem(res.data);
       setAbaAtiva('aprovada');
       setModalAprovar(null);
     } catch {
@@ -66,8 +70,8 @@ export default function EpiRequests() {
     if (!modalRejeitar || !motivoRejeicao.trim()) return;
     setProcessando(true);
     try {
-      await epiRequestsApi.rejeitar(modalRejeitar.id, motivoRejeicao.trim());
-      await carregarSolicitacoes();
+      const res = await epiRequestsApi.rejeitar(modalRejeitar.id, motivoRejeicao.trim());
+      atualizarItem(res.data);
       setAbaAtiva('rejeitada');
       setModalRejeitar(null);
       setMotivoRejeicao('');
@@ -81,8 +85,8 @@ export default function EpiRequests() {
   async function marcarEntrega(id, entregue) {
     setProcessando(true);
     try {
-      await epiRequestsApi.entrega(id, entregue);
-      await carregarSolicitacoes();
+      const res = await epiRequestsApi.entrega(id, entregue);
+      atualizarItem(res.data);
     } catch {
       setErro('Erro ao registrar entrega. Tente novamente.');
     } finally {
@@ -148,8 +152,8 @@ export default function EpiRequests() {
                 <tr className="border-b border-slate-100">
                   {[
                     'Trabalhador', 'Setor', 'EPI Solicitado', 'Motivo', 'Data', 'Status',
-                    ...(abaAtiva === 'pendente' ? ['Acoes'] : []),
-                    ...(abaAtiva === 'aprovada' ? ['Entrega'] : []),
+                    ...(abaAtiva === 'pendente'  ? ['Acoes']              : []),
+                    ...(abaAtiva === 'aprovada'  ? ['Entrega']            : []),
                     ...(abaAtiva === 'rejeitada' ? ['Motivo da Rejeicao'] : []),
                   ].map((h) => (
                     <th key={h} className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
