@@ -1,6 +1,5 @@
 FROM python:3.12-slim
 
-# Instala dependências de sistema: ffmpeg + todas as libs que o OpenCV precisa
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     libgl1 \
@@ -16,15 +15,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Instala dependências Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia o código
 COPY . .
 
-# best.pt será baixado em /app/best.pt pelo main.py no startup
 EXPOSE 8080
 
-# Shell form (sem colchetes) para expandir $PORT corretamente
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
