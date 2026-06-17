@@ -10,12 +10,35 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { getVideosWorker } from '../api/api';
 
+// Formata data ISO para dd/mm/aaaa
+const formatarData = (iso) => {
+  if (!iso) return null;
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('pt-BR');
+  } catch { return null; }
+};
+
+// Linha de informação com ícone
+function InfoRow({ icone, label, valor }) {
+  if (!valor) return null;
+  return (
+    <View style={estilos.infoRow}>
+      <Ionicons name={icone} size={15} color="#F97316" style={estilos.infoIcone} />
+      <View style={estilos.infoTextos}>
+        <Text style={estilos.infoLabel}>{label}</Text>
+        <Text style={estilos.infoValor}>{valor}</Text>
+      </View>
+    </View>
+  );
+}
+
 export default function TrainingScreen() {
   const [categorias, setCategorias] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [expandido, setExpandido] = useState({});
-  const [erro, setErro] = useState(null);
+  const [expandido, setExpandido]   = useState({});
+  const [erro, setErro]             = useState(null);
 
   const carregarVideos = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -36,13 +59,11 @@ export default function TrainingScreen() {
 
   useFocusEffect(useCallback(() => { carregarVideos(); }, [carregarVideos]));
 
-  const toggleCategoria = (id) => {
+  const toggleCategoria = (id) =>
     setExpandido((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
 
   const abrirVideo = (url) => {
     if (!url) return;
-    // URL interna do servidor → usa Linking apenas se for URL externa
     if (url.startsWith('http://') || url.startsWith('https://')) {
       Linking.openURL(url).catch(() =>
         Alert.alert('Erro', 'Não foi possível abrir o vídeo.')
@@ -112,16 +133,17 @@ export default function TrainingScreen() {
         )}
 
         {/* Categorias */}
-        {categorias.map((categoria) => {
-          const aberto = expandido[categoria.id] ?? false;
-          const videos = (categoria.videos || []).filter((v) => v.aprovado);
+        {categorias.map((cat) => {
+          const aberto = expandido[cat.id] ?? false;
+          const videos = (cat.videos || []).filter((v) => v.aprovado);
 
           return (
-            <View key={categoria.id} style={estilos.categoriaCard}>
-              {/* Header da categoria */}
+            <View key={cat.id} style={estilos.categoriaCard}>
+
+              {/* Header clicavel da categoria */}
               <TouchableOpacity
                 style={estilos.categoriaHeader}
-                onPress={() => toggleCategoria(categoria.id)}
+                onPress={() => toggleCategoria(cat.id)}
                 activeOpacity={0.75}
               >
                 <View style={estilos.categoriaHeaderEsq}>
@@ -129,7 +151,7 @@ export default function TrainingScreen() {
                     <Ionicons name="shield-checkmark" size={20} color="#F97316" />
                   </View>
                   <View>
-                    <Text style={estilos.categoriaNome}>{categoria.nome}</Text>
+                    <Text style={estilos.categoriaNome}>{cat.nome}</Text>
                     <Text style={estilos.categoriaCount}>
                       {videos.length} vídeo{videos.length !== 1 ? 's' : ''}
                     </Text>
@@ -142,14 +164,27 @@ export default function TrainingScreen() {
                 />
               </TouchableOpacity>
 
-              {/* Descrição da categoria */}
-              {categoria.descricao ? (
-                <Text style={estilos.categoriaDesc}>{categoria.descricao}</Text>
-              ) : null}
-
-              {/* Lista de vídeos */}
+              {/* Conteúdo expandido */}
               {aberto && (
-                <View style={estilos.videosLista}>
+                <View style={estilos.expandido}>
+
+                  {/* Informações do EPI (preenchidas pelo gestor) */}
+                  {(cat.descricao || cat.quando_usar || cat.como_usar || cat.erros_comuns || cat.nr6_ref) && (
+                    <View style={estilos.epiInfoCard}>
+                      <Text style={estilos.epiInfoTitulo}>Sobre este EPI</Text>
+
+                      <InfoRow icone="information-circle-outline" label="Descrição"         valor={cat.descricao} />
+                      <InfoRow icone="checkmark-circle-outline"   label="Quando usar"       valor={cat.quando_usar} />
+                      <InfoRow icone="construct-outline"          label="Como usar"         valor={cat.como_usar} />
+                      <InfoRow icone="warning-outline"            label="Erros comuns"      valor={cat.erros_comuns} />
+                      <InfoRow icone="document-text-outline"      label="Referência NR-6"  valor={cat.nr6_ref} />
+                    </View>
+                  )}
+
+                  {/* Divider */}
+                  <View style={estilos.divider} />
+
+                  {/* Lista de vídeos */}
                   {videos.length === 0 ? (
                     <Text style={estilos.semVideos}>Nenhum vídeo aprovado nesta categoria.</Text>
                   ) : (
@@ -158,7 +193,7 @@ export default function TrainingScreen() {
                       .map((video, idx) => (
                         <TouchableOpacity
                           key={video.id || idx}
-                          style={estilos.videoItem}
+                          style={[estilos.videoItem, idx === videos.length - 1 && { borderBottomWidth: 0 }]}
                           onPress={() => abrirVideo(video.url)}
                           activeOpacity={0.75}
                         >
@@ -168,13 +203,22 @@ export default function TrainingScreen() {
                           <View style={estilos.videoTextos}>
                             <Text style={estilos.videoTitulo}>{video.titulo}</Text>
                             {video.descricao ? (
-                              <Text style={estilos.videoDesc} numberOfLines={2}>
-                                {video.descricao}
-                              </Text>
+                              <Text style={estilos.videoDesc}>{video.descricao}</Text>
                             ) : null}
-                            {video.fonte ? (
-                              <Text style={estilos.videoFonte}>Fonte: {video.fonte}</Text>
-                            ) : null}
+                            <View style={estilos.videoMeta}>
+                              {video.fonte ? (
+                                <View style={estilos.metaChip}>
+                                  <Ionicons name="link-outline" size={11} color="#64748B" />
+                                  <Text style={estilos.metaTexto}>{video.fonte}</Text>
+                                </View>
+                              ) : null}
+                              {video.criado_em ? (
+                                <View style={estilos.metaChip}>
+                                  <Ionicons name="calendar-outline" size={11} color="#64748B" />
+                                  <Text style={estilos.metaTexto}>{formatarData(video.criado_em)}</Text>
+                                </View>
+                              ) : null}
+                            </View>
                           </View>
                           <Ionicons name="open-outline" size={16} color="#94A3B8" />
                         </TouchableOpacity>
@@ -182,13 +226,19 @@ export default function TrainingScreen() {
                   )}
                 </View>
               )}
+
+              {/* Descrição resumida quando fechado */}
+              {!aberto && cat.descricao ? (
+                <Text style={estilos.categoriaDescFechada} numberOfLines={2}>
+                  {cat.descricao}
+                </Text>
+              ) : null}
+
             </View>
           );
         })}
 
-        <Text style={estilos.rodape}>
-          Puxe para baixo para atualizar os vídeos
-        </Text>
+        <Text style={estilos.rodape}>Puxe para baixo para atualizar os vídeos</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -197,40 +247,55 @@ export default function TrainingScreen() {
 const estilos = StyleSheet.create({
   container:           { flex: 1, backgroundColor: '#F1F5F9' },
   scroll:              { paddingHorizontal: 16, paddingBottom: 32 },
-
   carregandoContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
   carregandoTexto:     { fontSize: 14, color: '#64748B' },
 
-  header:              { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 20, paddingBottom: 20 },
-  headerIcone:         { width: 48, height: 48, borderRadius: 14, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center' },
-  headerTextos:        { flex: 1 },
-  headerTitulo:        { fontSize: 20, fontWeight: '800', color: '#0F172A' },
-  headerSub:           { fontSize: 13, color: '#64748B', marginTop: 2 },
+  header:        { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 20, paddingBottom: 20 },
+  headerIcone:   { width: 48, height: 48, borderRadius: 14, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center' },
+  headerTextos:  { flex: 1 },
+  headerTitulo:  { fontSize: 20, fontWeight: '800', color: '#0F172A' },
+  headerSub:     { fontSize: 13, color: '#64748B', marginTop: 2 },
 
-  erroCard:            { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FEF2F2', borderRadius: 12, padding: 14, marginBottom: 16 },
-  erroTexto:           { flex: 1, fontSize: 13, color: '#DC2626' },
+  erroCard:  { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FEF2F2', borderRadius: 12, padding: 14, marginBottom: 16 },
+  erroTexto: { flex: 1, fontSize: 13, color: '#DC2626' },
 
-  vazioContainer:      { alignItems: 'center', paddingVertical: 60, gap: 12 },
-  vazioTitulo:         { fontSize: 16, fontWeight: '700', color: '#475569' },
-  vazioSub:            { fontSize: 13, color: '#94A3B8', textAlign: 'center', maxWidth: 260 },
+  vazioContainer: { alignItems: 'center', paddingVertical: 60, gap: 12 },
+  vazioTitulo:    { fontSize: 16, fontWeight: '700', color: '#475569' },
+  vazioSub:       { fontSize: 13, color: '#94A3B8', textAlign: 'center', maxWidth: 260 },
 
+  // Card da categoria
   categoriaCard:       { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2, overflow: 'hidden' },
   categoriaHeader:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
   categoriaHeaderEsq:  { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   categoriaIcone:      { width: 40, height: 40, borderRadius: 10, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center' },
   categoriaNome:       { fontSize: 15, fontWeight: '700', color: '#0F172A' },
   categoriaCount:      { fontSize: 12, color: '#94A3B8', marginTop: 2 },
-  categoriaDesc:       { fontSize: 13, color: '#64748B', paddingHorizontal: 16, paddingBottom: 12, lineHeight: 18 },
+  categoriaDescFechada:{ fontSize: 13, color: '#64748B', paddingHorizontal: 16, paddingBottom: 14, lineHeight: 18 },
 
-  videosLista:         { borderTopWidth: 1, borderTopColor: '#F1F5F9' },
+  // Conteúdo expandido
+  expandido: { borderTopWidth: 1, borderTopColor: '#F1F5F9' },
+
+  // Bloco de informações do EPI
+  epiInfoCard:   { margin: 14, backgroundColor: '#FFFBF5', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#FEE2C8' },
+  epiInfoTitulo: { fontSize: 13, fontWeight: '700', color: '#92400E', marginBottom: 10, letterSpacing: 0.3, textTransform: 'uppercase' },
+  infoRow:       { flexDirection: 'row', gap: 10, marginBottom: 10, alignItems: 'flex-start' },
+  infoIcone:     { marginTop: 1 },
+  infoTextos:    { flex: 1 },
+  infoLabel:     { fontSize: 11, fontWeight: '700', color: '#92400E', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 2 },
+  infoValor:     { fontSize: 13, color: '#374151', lineHeight: 18 },
+
+  divider: { height: 1, backgroundColor: '#F1F5F9', marginHorizontal: 14 },
+
+  // Lista de vídeos
   semVideos:           { fontSize: 13, color: '#94A3B8', textAlign: 'center', padding: 20 },
-
-  videoItem:           { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
+  videoItem:           { flexDirection: 'row', alignItems: 'flex-start', padding: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
   videoIconeContainer: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
   videoTextos:         { flex: 1 },
   videoTitulo:         { fontSize: 14, fontWeight: '600', color: '#0F172A' },
-  videoDesc:           { fontSize: 12, color: '#64748B', marginTop: 2, lineHeight: 16 },
-  videoFonte:          { fontSize: 11, color: '#94A3B8', marginTop: 4 },
+  videoDesc:           { fontSize: 12, color: '#64748B', marginTop: 3, lineHeight: 17 },
+  videoMeta:           { flexDirection: 'row', gap: 8, marginTop: 6, flexWrap: 'wrap' },
+  metaChip:            { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F1F5F9', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
+  metaTexto:           { fontSize: 11, color: '#64748B' },
 
-  rodape:              { fontSize: 11, color: '#CBD5E1', textAlign: 'center', marginTop: 8 },
+  rodape: { fontSize: 11, color: '#CBD5E1', textAlign: 'center', marginTop: 8 },
 });
