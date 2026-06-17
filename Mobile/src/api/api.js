@@ -66,9 +66,21 @@ export const logoutApi = async () => {
 
 // ── Solicitações de EPI ───────────────────────────────────────────────────
 export const criarSolicitacao = async (dados) => {
+  const sectorId = dados.sector_id != null ? Number(dados.sector_id) : null;
+
+  if (!sectorId || isNaN(sectorId)) {
+    throw new Error('Usuário sem setor definido. Contate o administrador.');
+  }
+
+  console.log('[API] criarSolicitacao payload:', {
+    epi_type: dados.epi_type,
+    sector_id: sectorId,
+    reason: dados.reason || null,
+  });
+
   const response = await api.post('/epi-requests', {
     epi_type: dados.epi_type,
-    sector_id: Number(dados.sector_id),
+    sector_id: sectorId,
     reason: dados.reason || null,
   });
   return response.data;
