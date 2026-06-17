@@ -23,9 +23,9 @@ def _to_response(r: EPIRequest) -> EPIRequestResponse:
     """Converte ORM -> schema incluindo nomes do worker e sector."""
     data = EPIRequestResponse.model_validate(r)
     if r.worker:
-        data.worker_name = r.worker.nome or r.worker.email
+        data.worker_name = r.worker.name or r.worker.email
     if r.sector:
-        data.sector_name = r.sector.nome
+        data.sector_name = r.sector.name
     return data
 
 
@@ -115,7 +115,6 @@ async def approve_epi_request(
     epi_request.motivo_rejeicao = None
     epi_request.updated_at = datetime.utcnow()
     await db.flush()
-    await db.refresh(epi_request)
     result2 = await db.execute(
         select(EPIRequest)
         .options(selectinload(EPIRequest.worker), selectinload(EPIRequest.sector))
