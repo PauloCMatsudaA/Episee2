@@ -12,11 +12,9 @@ import RequestCard from '../components/RequestCard';
 
 const traduzirStatus = (status) => {
   const mapa = {
-    // inglês (caso o backend mude futuramente)
     pending:   'Pendente',
     approved:  'Aprovada',
     rejected:  'Rejeitada',
-    // português (o que o backend retorna agora)
     pendente:  'Pendente',
     aprovada:  'Aprovada',
     rejeitada: 'Rejeitada',
@@ -62,7 +60,7 @@ function ContadoresStatus({ solicitacoes }) {
 
 export default function MyRequestsScreen() {
   const [solicitacoes, setSolicitacoes] = useState([]);
-  const [mapaSetores, setMapaSetores]   = useState({});  // { 1: 'Produção', 2: 'Almoxarifado' }
+  const [mapaSetores, setMapaSetores]   = useState({});
   const [carregando, setCarregando]     = useState(true);
   const [refreshing, setRefreshing]     = useState(false);
 
@@ -71,13 +69,11 @@ export default function MyRequestsScreen() {
     else setCarregando(true);
 
     try {
-      // Busca solicitações e setores em paralelo
       const [dados, listaSetores] = await Promise.all([
         minhasSolicitacoes(),
         getSetores(),
       ]);
 
-      // Monta mapa id → nome para lookup rápido
       const mapa = {};
       if (Array.isArray(listaSetores)) {
         listaSetores.forEach((s) => {
@@ -102,7 +98,6 @@ export default function MyRequestsScreen() {
       tipoEpi={item.epi_type || '—'}
       motivo={item.reason || '—'}
       observacoes={item.observacoes || ''}
-      // ✅ Resolve o nome do setor pelo sector_id
       setor={mapaSetores[item.sector_id] || mapaSetores[item.setor_id] || 'Geral'}
       status={traduzirStatus(item.status)}
       dataSolicitacao={item.created_at || item.data_solicitacao}
@@ -131,9 +126,6 @@ export default function MyRequestsScreen() {
           <Text style={estilos.headerSubtitulo}>
             {solicitacoes.length} solicitaç{solicitacoes.length !== 1 ? 'ões' : 'ão'} registrada{solicitacoes.length !== 1 ? 's' : ''}
           </Text>
-        </View>
-        <View style={estilos.headerIcone}>
-          <Ionicons name="list" size={22} color="#3B82F6" />
         </View>
       </View>
 
@@ -164,24 +156,20 @@ export default function MyRequestsScreen() {
 }
 
 const estilos = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F1F5F9' },
+  container:       { flex: 1, backgroundColor: '#F1F5F9' },
   header: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'flex-start', paddingHorizontal: 16,
-    paddingTop: 16, paddingBottom: 12,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
-  headerTitulo: { fontSize: 24, fontWeight: '800', color: '#0F172A' },
+  headerTitulo:    { fontSize: 24, fontWeight: '800', color: '#0F172A' },
   headerSubtitulo: { fontSize: 13, color: '#64748B', marginTop: 3 },
-  headerIcone: {
-    width: 44, height: 44, borderRadius: 12,
-    backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center',
-  },
-  contadoresRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  contadorCard: { flex: 1, borderRadius: 12, padding: 14, alignItems: 'center' },
-  contadorValor: { fontSize: 22, fontWeight: '800' },
-  contadorLabel: { fontSize: 11, fontWeight: '600', marginTop: 2 },
-  listaContent: { paddingHorizontal: 16, paddingBottom: 30 },
-  listaVazia: { flex: 1 },
+  contadoresRow:   { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  contadorCard:    { flex: 1, borderRadius: 12, padding: 14, alignItems: 'center' },
+  contadorValor:   { fontSize: 22, fontWeight: '800' },
+  contadorLabel:   { fontSize: 11, fontWeight: '600', marginTop: 2 },
+  listaContent:    { paddingHorizontal: 16, paddingBottom: 30 },
+  listaVazia:      { flex: 1 },
   vazio: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
     paddingTop: 60, paddingHorizontal: 32,
@@ -191,8 +179,8 @@ const estilos = StyleSheet.create({
     backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center',
     marginBottom: 20, borderWidth: 2, borderColor: '#E2E8F0', borderStyle: 'dashed',
   },
-  vazioTitulo: { fontSize: 18, fontWeight: '700', color: '#334155', marginBottom: 10, textAlign: 'center' },
-  vazioSubtitulo: { fontSize: 14, color: '#94A3B8', textAlign: 'center', lineHeight: 21 },
+  vazioTitulo:       { fontSize: 18, fontWeight: '700', color: '#334155', marginBottom: 10, textAlign: 'center' },
+  vazioSubtitulo:    { fontSize: 14, color: '#94A3B8', textAlign: 'center', lineHeight: 21 },
   carregandoContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
-  carregandoTexto: { fontSize: 15, color: '#64748B' },
+  carregandoTexto:   { fontSize: 15, color: '#64748B' },
 });
