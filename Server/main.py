@@ -38,6 +38,22 @@ HLS_DIR.mkdir(exist_ok=True)
 MODEL_PATH = Path("best.pt")
 MODEL_URL = "https://huggingface.co/MatsudaPaulo/episeeyolo/resolve/main/best.pt"
 
+# Origens permitidas — adicione aqui os dominios do seu frontend no Railway
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://lucid-rejoicing-production-d2f8.up.railway.app",
+    "https://episee2-production.up.railway.app",
+]
+
+# Lê origens extras via variável de ambiente (separadas por vírgula)
+_extra = os.environ.get("CORS_ORIGINS", "")
+if _extra:
+    for _o in _extra.split(","):
+        _o = _o.strip()
+        if _o and _o not in ALLOWED_ORIGINS:
+            ALLOWED_ORIGINS.append(_o)
+
 
 async def download_model_if_needed():
     if MODEL_PATH.exists():
@@ -104,7 +120,6 @@ async def lifespan(app: FastAPI):
     await create_default_admin()
     await download_model_if_needed()
 
-    # Inicia cameras no mesmo loop asyncio do FastAPI
     camera_task = asyncio.create_task(start_camera_streams())
     logger.info("Server de cameras iniciando.")
 
@@ -129,8 +144,8 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
