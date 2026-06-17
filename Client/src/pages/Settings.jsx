@@ -190,7 +190,7 @@ export default function Configuracoes() {
                 </button>
               ) : (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-4">
                     <div className="flex-1">
                       <p className="text-xs text-slate-500 font-medium mb-1">
                         Envie este comando no Telegram para <strong className="text-slate-700">{tgCodigo.bot}</strong>:
