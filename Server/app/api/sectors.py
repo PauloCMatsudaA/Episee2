@@ -35,6 +35,8 @@ async def get_sector(
     if not sector:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Setor não encontrado")
     return SectorResponse.model_validate(sector)
+
+
 @router.get("/{sector_id}/stats", response_model=SectorStats)
 async def get_sector_stats(
     sector_id: int,
@@ -46,7 +48,6 @@ async def get_sector_stats(
     if not sector:
         raise HTTPException(status_code=404, detail="Setor não encontrado")
 
-    # Busca ocorrências do setor
     occ_result = await db.execute(
         select(Occurrence).where(Occurrence.sector_id == sector_id)
     )
@@ -57,7 +58,6 @@ async def get_sector_stats(
     total         = len(ocorrencias)
     taxa          = round(conformes / total, 4) if total > 0 else 0.0
 
-    # Conta quais EPIs foram mais vezes detectados como ausentes
     ausencias: list[str] = []
     for o in ocorrencias:
         epis_det = o.epi_detected or []
@@ -98,7 +98,11 @@ async def create_sector(
             detail="Setor com este nome já existe",
         )
 
-    sector = Sector(name=sector_in.name, description=sector_in.description)
+    sector = Sector(
+        name=sector_in.name,
+        description=sector_in.description,
+        epis_obrigatorios=sector_in.epis_obrigatorios or [],
+    )
     db.add(sector)
     await db.flush()
     await db.refresh(sector)
