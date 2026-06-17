@@ -23,8 +23,8 @@ if not os.path.exists(VIDEO_FALLBACK):
     VIDEO_FALLBACK = os.path.join(os.getcwd(), "teste.mp4")
 
 # ── Classes do SH17 ──────────────────────────────────────────────────────────
-CLASSE_PESSOA  = {"person"}
-CLASSE_CABECA  = {"head"}
+CLASSE_PESSOA   = {"person"}
+CLASSE_CABECA   = {"head"}
 CLASSE_CAPACETE = {"helmet"}
 CLASSES_EPI = {
     "glasses", "face-mask-medical", "face-guard",
@@ -32,10 +32,22 @@ CLASSES_EPI = {
     "helmet", "medical-suit", "safety-suit",
 }
 
+# EPIs que cobrem o rosto/cabeça → validados por sobreposição com 'head'
+EPIS_FACIAIS = {"helmet", "glasses", "face-mask-medical", "face-guard", "earmuffs"}
+
+# EPIs que cobrem o torso → validados por sobreposição com 'person'
+EPIS_TORSO = {"safety-vest"}
+
+# EPIs que cobrem totalmente um membro (mão, corpo inteiro) →
+# NÃO aplicamos interseção pois o próprio EPI oclui o membro de referência
+# Exemplos: gloves (mão), medical-suit (corpo), safety-suit (corpo)
+EPIS_SEM_INTERSECAO = {"gloves", "medical-suit", "safety-suit"}
+
 CONFIANCA_MINIMA  = 0.45
 INTERVALO_SALVAR  = 30
 YOLO_INTERVALO    = 0.3
-IOUI_HELMET_HEAD  = 0.25
+IOUI_HELMET_HEAD  = 0.25   # limiar para EPIs faciais sobre cabeça
+IOUI_VEST_PERSON  = 0.15   # limiar para colete sobre pessoa (bbox maior, limiar menor)
 
 processos_ffmpeg: dict[int, subprocess.Popen] = {}
 tarefas_deteccao: dict[int, asyncio.Task]      = {}
@@ -62,6 +74,7 @@ def _np():
 # ── Helpers de geometria ─────────────────────────────────────────────────────
 
 def _iou_area(boxA: list, boxB: list) -> float:
+    """Retorna a proporção da área de boxB coberta por boxA."""
     ax1, ay1, ax2, ay2 = boxA
     bx1, by1, bx2, by2 = boxB
     ix1 = max(ax1, bx1)
@@ -75,15 +88,26 @@ def _iou_area(boxA: list, boxB: list) -> float:
     return inter / area_b
 
 
+def epi_esta_sobre_alvo(
+    epi_box: list,
+    alvo_boxes: list[list],
+    threshold: float,
+) -> bool:
+    """Retorna True se epi_box se sobrepõe a pelo menos um alvo acima do limiar."""
+    for alvo in alvo_boxes:
+        if _iou_area(epi_box, alvo) >= threshold:
+            return True
+    return False
+
+
+# ── Retrocompatibilidade ──────────────────────────────────────────────────────
+
 def capacete_esta_na_cabeca(
     helmet_box: list,
     head_boxes: list[list],
     threshold: float = IOUI_HELMET_HEAD,
 ) -> bool:
-    for hd in head_boxes:
-        if _iou_area(helmet_box, hd) >= threshold:
-            return True
-    return False
+    return epi_esta_sobre_alvo(helmet_box, head_boxes, threshold)
 
 
 # ── Modelo ───────────────────────────────────────────────────────────────────
@@ -291,6 +315,57 @@ def inferir_frame(frame) -> list[dict]:
     return deteccoes
 
 
+def _validar_epis_por_intersecao(
+    epis_encontrados: set,
+    deteccoes: list[dict],
+) -> set:
+    """
+    Filtra EPIs que precisam de validação por sobreposição espacial.
+
+    Regras:
+    - EPIs faciais (helmet, glasses, face-mask-medical, face-guard, earmuffs):
+      precisam estar sobre uma bbox 'head' com IoU >= IOUI_HELMET_HEAD.
+    - safety-vest: precisa estar sobre uma bbox 'person' com IoU >= IOUI_VEST_PERSON.
+    - gloves, medical-suit, safety-suit: isentos (cobrem totalmente o membro).
+    """
+    epis_validos = set(epis_encontrados)
+
+    head_boxes   = [d["bbox"] for d in deteccoes if d["class"] == "head"]
+    person_boxes = [d["bbox"] for d in deteccoes if d["class"] == "person"]
+
+    # ── EPIs faciais → interseção com cabeça ─────────────────────────────────
+    epis_faciais_presentes = epis_validos & EPIS_FACIAIS
+    for epi in epis_faciais_presentes:
+        epi_boxes = [d["bbox"] for d in deteccoes if d["class"] == epi]
+        algum_vestido = any(
+            epi_esta_sobre_alvo(eb, head_boxes, IOUI_HELMET_HEAD)
+            for eb in epi_boxes
+        )
+        if not algum_vestido:
+            epis_validos.discard(epi)
+            logger.debug(
+                f"[DETECÇÃO] '{epi}' detectado mas não sobre cabeça — desconsiderado"
+            )
+
+    # ── safety-vest → interseção com pessoa ──────────────────────────────────
+    if "safety-vest" in epis_validos and person_boxes:
+        vest_boxes = [d["bbox"] for d in deteccoes if d["class"] == "safety-vest"]
+        algum_vestido = any(
+            epi_esta_sobre_alvo(vb, person_boxes, IOUI_VEST_PERSON)
+            for vb in vest_boxes
+        )
+        if not algum_vestido:
+            epis_validos.discard("safety-vest")
+            logger.debug(
+                "[DETECÇÃO] 'safety-vest' detectado mas não sobre pessoa — desconsiderado"
+            )
+
+    # ── EPIs isentos (gloves, medical-suit, safety-suit) → aceitos direto ────
+    # Nenhuma ação necessária — já estão em epis_validos se detectados.
+
+    return epis_validos
+
+
 def avaliar_deteccoes(
     deteccoes: list[dict],
     epis_obrigatorios: set[str] | None = None,
@@ -302,16 +377,7 @@ def avaliar_deteccoes(
     pessoa_detectada = bool(classes & CLASSE_PESSOA)
     epis_encontrados = classes & CLASSES_EPI
 
-    if "helmet" in epis_encontrados:
-        head_boxes   = [d["bbox"] for d in deteccoes if d["class"] == "head"]
-        helmet_boxes = [d["bbox"] for d in deteccoes if d["class"] == "helmet"]
-        algum_vestido = any(
-            capacete_esta_na_cabeca(hb, head_boxes)
-            for hb in helmet_boxes
-        )
-        if not algum_vestido:
-            epis_encontrados.discard("helmet")
-            logger.debug("[DETECÇÃO] Capacete detectado mas não sobre cabeça — desconsiderado")
+    epis_encontrados = _validar_epis_por_intersecao(epis_encontrados, deteccoes)
 
     epis_ausentes = epis_obrigatorios - epis_encontrados
 
@@ -325,13 +391,13 @@ def avaliar_deteccoes(
     confianca = max((d["confidence"] for d in deteccoes), default=0.0)
 
     return {
-        "status":           status,
-        "epi_detected":     list(epis_encontrados),
-        "epis_ausentes":    list(epis_ausentes),
+        "status":            status,
+        "epi_detected":      list(epis_encontrados),
+        "epis_ausentes":     list(epis_ausentes),
         "epis_obrigatorios": list(epis_obrigatorios),
-        "pessoa_detectada": pessoa_detectada,
-        "confidence":       confianca,
-        "detections":       deteccoes,
+        "pessoa_detectada":  pessoa_detectada,
+        "confidence":        confianca,
+        "detections":        deteccoes,
     }
 
 
