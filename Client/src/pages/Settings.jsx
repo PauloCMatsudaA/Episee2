@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { User, Save, Eye, EyeOff, Check, Copy, Send, Link } from 'lucide-react';
-import { setoresApi } from '../api/api';
 import api from '../api/api';
 
 export default function Configuracoes() {
@@ -16,7 +15,6 @@ export default function Configuracoes() {
   const [perfilSalvo,    setPerfilSalvo]    = useState(false);
   const [senhaSalva,     setSenhaSalva]     = useState(false);
 
-  // Telegram
   const [tgVinculado,  setTgVinculado]  = useState(false);
   const [tgCodigo,     setTgCodigo]     = useState(null);
   const [tgCarregando, setTgCarregando] = useState(false);
@@ -94,9 +92,11 @@ export default function Configuracoes() {
             </div>
           </div>
           <div className="flex justify-end">
-            <button onClick={salvarPerfil} className="btn-primary">
-              {perfilSalvo ? <Check size={16} /> : <Save size={16} />}
-              {perfilSalvo ? 'Salvo!' : 'Salvar'}
+            <button onClick={salvarPerfil} className="btn btn-primary gap-2">
+              {perfilSalvo
+                ? <><Check size={15} /> Salvo!</>
+                : <><Save size={15} /> Salvar dados</>
+              }
             </button>
           </div>
 
@@ -119,7 +119,7 @@ export default function Configuracoes() {
               </button>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <input className="input" type={tiposInput} value={novaSenha}      onChange={(e) => setNovaSenha(e.target.value)}      placeholder="Nova senha"      />
+              <input className="input" type={tiposInput} value={novaSenha}      onChange={(e) => setNovaSenha(e.target.value)}      placeholder="Nova senha" />
               <input className="input" type={tiposInput} value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} placeholder="Confirmar senha" />
             </div>
             {senhasNaoCoincidem && <p className="text-xs text-err">As senhas não coincidem.</p>}
@@ -127,10 +127,12 @@ export default function Configuracoes() {
               <button
                 onClick={alterarSenha}
                 disabled={!senhaAtual || !novaSenha || novaSenha !== confirmarSenha}
-                className="btn bg-slate-700 text-white hover:bg-slate-800 disabled:opacity-50"
+                className="btn gap-2 bg-slate-700 text-white hover:bg-slate-800 disabled:opacity-50"
               >
-                {senhaSalva ? <Check size={16} /> : <Save size={16} />}
-                {senhaSalva ? 'Senha alterada!' : 'Alterar Senha'}
+                {senhaSalva
+                  ? <><Check size={15} /> Senha alterada!</>
+                  : <><Save size={15} /> Alterar Senha</>
+                }
               </button>
             </div>
           </div>
@@ -141,12 +143,9 @@ export default function Configuracoes() {
       <div className="card mt-6">
         <div className="card-header">
           <div className="icon-box bg-sky-50"><Send size={16} className="text-sky-500" /></div>
-          <div className="flex-1">
-            <h3 className="sec-title">Alertas via Telegram</h3>
-            <p className="sec-sub text-xs">Receba alertas de não conformidade diretamente no seu Telegram</p>
-          </div>
+          <h3 className="sec-title ml-1">Alertas via Telegram</h3>
           {tgVinculado && (
-            <span className="badge badge-success text-xs">
+            <span className="badge badge-success text-xs ml-auto">
               <Check size={11} /> Ativo
             </span>
           )}
@@ -165,14 +164,13 @@ export default function Configuracoes() {
           ) : (
             <>
               {/* Instruções */}
-              <div className="rounded-lg bg-slate-50 border border-slate-200 p-4">
+              <div className="rounded-lg border border-slate-200 p-4">
                 <p className="text-sm font-medium text-slate-700 mb-3">Como vincular:</p>
-                <ol className="space-y-2">
+                <ol className="space-y-2.5">
                   {[
                     <>Clique em <strong>"Gerar código"</strong> abaixo</>,
                     <>Abra o Telegram e pesquise por <strong>@episee_bot</strong></>,
-                    <>Envie o comando gerado (ex: <code className="bg-slate-200 px-1.5 py-0.5 rounded text-xs">/vincular EPIS-3FA2C1</code>)</>,
-                    <>Pronto! Seu Telegram ficará vinculado automaticamente ✅</>,
+                    <>Envie o comando gerado (ex: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-xs font-mono">/vincular EPIS-3FA2C1</code>)</>,
                   ].map((texto, i) => (
                     <li key={i} className="flex items-start gap-3 text-sm text-slate-600">
                       <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-700 text-xs font-bold mt-0.5">
@@ -187,7 +185,7 @@ export default function Configuracoes() {
               {tgErro && <p className="text-sm text-red-500">{tgErro}</p>}
 
               {!tgCodigo ? (
-                <button onClick={gerarCodigoTelegram} disabled={tgCarregando} className="btn btn-primary w-full sm:w-auto">
+                <button onClick={gerarCodigoTelegram} disabled={tgCarregando} className="btn btn-primary gap-2">
                   <Link size={15} />
                   {tgCarregando ? 'Gerando...' : 'Gerar código de vinculação'}
                 </button>
