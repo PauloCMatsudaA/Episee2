@@ -30,7 +30,8 @@ async def get_my_requests(
     return [EPIRequestResponse.model_validate(r) for r in result.scalars().all()]
 
 
-@router.get("/", response_model=List[EPIRequestResponse])
+@router.get("", response_model=List[EPIRequestResponse])
+@router.get("/", response_model=List[EPIRequestResponse], include_in_schema=False)
 async def list_epi_requests(
     status: Optional[EPIRequestStatus] = None,
     sector_id: Optional[int] = None,
@@ -52,7 +53,8 @@ async def list_epi_requests(
     return [EPIRequestResponse.model_validate(r) for r in result.scalars().all()]
 
 
-@router.post("/", response_model=EPIRequestResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=EPIRequestResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=EPIRequestResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 async def create_epi_request(
     request_in: EPIRequestCreate,
     db: AsyncSession = Depends(get_db),

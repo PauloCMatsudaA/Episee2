@@ -14,7 +14,8 @@ from app.schemas.sector import SectorCreate, SectorUpdate, SectorResponse, Secto
 router = APIRouter(prefix="/sectors", tags=["Sectors"])
 
 
-@router.get("/", response_model=List[SectorResponse])
+@router.get("", response_model=List[SectorResponse])
+@router.get("/", response_model=List[SectorResponse], include_in_schema=False)
 async def list_sectors(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),
@@ -83,7 +84,8 @@ async def get_sector_stats(
     )
 
 
-@router.post("/", response_model=SectorResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=SectorResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=SectorResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 async def create_sector(
     sector_in: SectorCreate,
     db: AsyncSession = Depends(get_db),
