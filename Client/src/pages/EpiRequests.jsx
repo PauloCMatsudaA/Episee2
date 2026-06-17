@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Check, X, AlertCircle, Clock, CheckCircle, XCircle, RefreshCw, PackageCheck } from 'lucide-react';
-import BadgeStatus from '../components/AlertBadge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { epiRequestsApi } from '../api/api';
@@ -37,7 +36,6 @@ export default function EpiRequests() {
 
   useEffect(() => { carregarSolicitacoes(); }, [carregarSolicitacoes]);
 
-  // Mescla campos no item local — garante status correto independente da resposta da API
   function patchItem(id, campos) {
     setSolicitacoes((prev) =>
       prev.map((s) => (s.id === id ? { ...s, ...campos } : s))
@@ -55,14 +53,12 @@ export default function EpiRequests() {
     if (!modalAprovar) return;
     const id = modalAprovar.id;
     setProcessando(true);
-    // Atualiza o estado imediatamente, antes mesmo da resposta
     patchItem(id, { status: 'aprovada' });
     setAbaAtiva('aprovada');
     setModalAprovar(null);
     try {
       await epiRequestsApi.aprovar(id);
     } catch {
-      // Se falhou, reverte
       patchItem(id, { status: 'pendente' });
       setAbaAtiva('pendente');
       setErro('Erro ao aprovar a solicitacao. Tente novamente.');
@@ -76,7 +72,6 @@ export default function EpiRequests() {
     const id = modalRejeitar.id;
     const motivo = motivoRejeicao.trim();
     setProcessando(true);
-    // Atualiza o estado imediatamente
     patchItem(id, { status: 'rejeitada', motivo_rejeicao: motivo });
     setAbaAtiva('rejeitada');
     setModalRejeitar(null);
@@ -84,7 +79,6 @@ export default function EpiRequests() {
     try {
       await epiRequestsApi.rejeitar(id, motivo);
     } catch {
-      // Se falhou, reverte
       patchItem(id, { status: 'pendente', motivo_rejeicao: null });
       setAbaAtiva('pendente');
       setErro('Erro ao rejeitar a solicitacao. Tente novamente.');
@@ -163,7 +157,7 @@ export default function EpiRequests() {
               <thead>
                 <tr className="border-b border-slate-100">
                   {[
-                    'Trabalhador', 'Setor', 'EPI Solicitado', 'Motivo', 'Data', 'Status',
+                    'Trabalhador', 'Setor', 'EPI Solicitado', 'Motivo', 'Data',
                     ...(abaAtiva === 'pendente'  ? ['Acoes']              : []),
                     ...(abaAtiva === 'aprovada'  ? ['Entrega']            : []),
                     ...(abaAtiva === 'rejeitada' ? ['Motivo da Rejeicao'] : []),
@@ -187,9 +181,6 @@ export default function EpiRequests() {
                     <td className="max-w-xs truncate px-4 py-3 text-slate-500">{sol.reason}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">
                       {format(new Date(sol.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3">
-                      <BadgeStatus status={sol.status} />
                     </td>
 
                     {/* Acoes — pendentes */}
