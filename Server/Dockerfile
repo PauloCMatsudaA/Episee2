@@ -26,4 +26,5 @@ COPY . .
 # best.pt será baixado em /app/best.pt pelo main.py no startup
 EXPOSE 8080
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Shell form (sem colchetes) para expandir $PORT corretamente
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}
