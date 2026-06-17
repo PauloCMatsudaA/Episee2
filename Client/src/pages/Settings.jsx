@@ -173,7 +173,7 @@ export default function Configuracoes() {
                     <>Envie o comando gerado (ex: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-xs font-mono">/vincular EPIS-3FA2C1</code>)</>,
                   ].map((texto, i) => (
                     <li key={i} className="flex items-start gap-3 text-sm text-slate-600">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-700 text-xs font-bold mt-0.5">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 text-xs font-bold mt-0.5">
                         {i + 1}
                       </span>
                       <span>{texto}</span>
@@ -191,12 +191,12 @@ export default function Configuracoes() {
                 </button>
               ) : (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 rounded-lg border border-sky-200 bg-sky-50 p-4">
+                  <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
                     <div className="flex-1">
-                      <p className="text-xs text-sky-600 font-medium mb-1">
-                        Envie este comando no Telegram para <strong>{tgCodigo.bot}</strong>:
+                      <p className="text-xs text-slate-500 font-medium mb-1">
+                        Envie este comando no Telegram para <strong className="text-slate-700">{tgCodigo.bot}</strong>:
                       </p>
-                      <code className="text-base font-bold text-sky-800 tracking-wider">
+                      <code className="text-base font-bold text-slate-800 tracking-wider font-mono">
                         /vincular {tgCodigo.codigo}
                       </code>
                     </div>
@@ -204,7 +204,7 @@ export default function Configuracoes() {
                       {tgCopiado ? <Check size={15} className="text-green-500" /> : <Copy size={15} />}
                     </button>
                   </div>
-                  <p className="text-xs text-slate-500">⚠️ O código é de uso único. Após vincular, esta tela atualizará.</p>
+                  <p className="text-xs text-slate-400">⚠️ O código é de uso único. Após vincular, esta tela atualizará.</p>
                   <button onClick={gerarCodigoTelegram} disabled={tgCarregando} className="btn btn-ghost btn-sm">
                     Gerar novo código
                   </button>
