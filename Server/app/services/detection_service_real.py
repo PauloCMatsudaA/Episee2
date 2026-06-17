@@ -54,10 +54,42 @@ tarefas_deteccao: dict[int, asyncio.Task]      = {}
 
 _model = None
 
-FFMPEG_BIN = (
-    shutil.which("ffmpeg")
-    or r"C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe"
-)
+
+def _find_ffmpeg() -> str | None:
+    """Localiza o binário ffmpeg de forma multiplataforma."""
+    # 1. Busca no PATH do sistema (funciona no Linux/Railway e no Windows com PATH correto)
+    found = shutil.which("ffmpeg")
+    if found:
+        return found
+
+    # 2. Caminhos comuns no Linux (Railway, Ubuntu, Debian)
+    linux_paths = [
+        "/usr/bin/ffmpeg",
+        "/usr/local/bin/ffmpeg",
+        "/opt/homebrew/bin/ffmpeg",
+    ]
+    for p in linux_paths:
+        if os.path.isfile(p):
+            return p
+
+    # 3. Caminhos comuns no Windows (fallback local)
+    windows_paths = [
+        r"C:\ProgramData\chocolatey\bin\ffmpeg.exe",
+        r"C:\ffmpeg\bin\ffmpeg.exe",
+        r"C:\Program Files\ffmpeg\bin\ffmpeg.exe",
+    ]
+    for p in windows_paths:
+        if os.path.isfile(p):
+            return p
+
+    return None
+
+
+FFMPEG_BIN = _find_ffmpeg()
+if FFMPEG_BIN:
+    logger.info(f"[HLS] ffmpeg encontrado: {FFMPEG_BIN}")
+else:
+    logger.warning("[HLS] ffmpeg NÃO encontrado — streams HLS não funcionarão. Instale com: apt-get install ffmpeg")
 
 
 # ── Lazy imports ─────────────────────────────────────────────────────────────
@@ -160,7 +192,7 @@ def iniciar_hls(camera_id: int, source):
         del processos_ffmpeg[camera_id]
 
     if not FFMPEG_BIN:
-        logger.error("[HLS] ffmpeg não encontrado!")
+        logger.error("[HLS] ffmpeg não encontrado! Instale com: apt-get install ffmpeg")
         return
 
     cmd = [
@@ -184,7 +216,7 @@ def iniciar_hls_pipe(camera_id: int, width: int, height: int, fps: int = 15):
     os.makedirs(pasta, exist_ok=True)
     m3u8 = os.path.join(pasta, "index.m3u8")
     if not FFMPEG_BIN:
-        logger.error("[HLS-PIPE] ffmpeg não encontrado!")
+        logger.error("[HLS-PIPE] ffmpeg não encontrado! Instale com: apt-get install ffmpeg")
         return None
     cmd = [
         FFMPEG_BIN, "-y",
