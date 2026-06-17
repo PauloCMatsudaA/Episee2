@@ -1,5 +1,13 @@
 [phases.setup]
-aptPkgs = ["ffmpeg", "libgl1", "libglib2.0-0"]
+aptPkgs = [
+  "ffmpeg",
+  "libgl1",
+  "libglib2.0-0",
+  "libxcb1",
+  "libx11-6",
+  "libxext6",
+  "libsm6"
+]
 
 [start]
 cmd = "uvicorn main:app --host 0.0.0.0 --port $PORT"
