@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PlayCircle, Search, ChevronDown, ChevronUp, ExternalLink, BookOpen, ShieldCheck, AlertTriangle, Info, Tag } from 'lucide-react';
+import { PlayCircle, Search, ChevronDown, ChevronUp, ExternalLink, BookOpen, ShieldCheck, AlertTriangle, Info, Tag, Wrench } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -65,11 +65,11 @@ function CardEpi({ epi }) {
     : [];
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white shadow-sm mb-4 overflow-hidden">
+    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm mb-4 overflow-hidden">
       <button onClick={() => setAberto(a => !a)}
         className="w-full flex items-center gap-3 px-4 py-4 text-left focus:outline-none active:bg-gray-50">
-        <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
-          <ShieldCheck className="w-5 h-5 text-gray-500" />
+        <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+          <ShieldCheck className="w-5 h-5 text-orange-500" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-gray-900 text-base leading-tight truncate">{epi.nome}</p>
@@ -81,45 +81,66 @@ function CardEpi({ epi }) {
       </button>
 
       {aberto && (
-        <div className="px-4 pb-4 space-y-4">
-          {(epi.quando_usar || epi.como_usar || epi.erros_comuns || epi.nr6_ref) && (
-            <div className="space-y-3">
-              {epi.quando_usar && (
-                <div className="flex gap-2">
-                  <Info className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Quando usar</p>
-                    <p className="text-sm text-gray-700 leading-relaxed">{epi.quando_usar}</p>
+        <div className="border-t border-gray-100 px-4 pb-4">
+
+          {/* Card SOBRE ESTE EPI — fundo branco, sem amarelo */}
+          {(epi.descricao || epi.quando_usar || epi.como_usar || epi.erros_comuns || epi.nr6_ref) && (
+            <div className="mt-3 rounded-xl border border-gray-200 bg-white overflow-hidden">
+              <div className="px-4 py-2 border-b border-gray-100">
+                <p className="text-xs font-bold text-orange-500 uppercase tracking-widest">Sobre este EPI</p>
+              </div>
+              <div className="px-4 py-3 space-y-3">
+
+                {epi.descricao && (
+                  <div className="flex gap-2">
+                    <Info className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-0.5">Descrição</p>
+                      <p className="text-sm text-gray-700 leading-relaxed">{epi.descricao}</p>
+                    </div>
                   </div>
-                </div>
-              )}
-              {epi.como_usar && (
-                <div className="flex gap-2">
-                  <BookOpen className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Como usar</p>
-                    <p className="text-sm text-gray-700 leading-relaxed">{epi.como_usar}</p>
+                )}
+
+                {epi.quando_usar && (
+                  <div className="flex gap-2">
+                    <ShieldCheck className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-0.5">Quando usar</p>
+                      <p className="text-sm text-gray-700 leading-relaxed">{epi.quando_usar}</p>
+                    </div>
                   </div>
-                </div>
-              )}
-              {epi.erros_comuns && (
-                <div className="flex gap-2">
-                  <AlertTriangle className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Erros comuns</p>
-                    <p className="text-sm text-gray-700 leading-relaxed">{epi.erros_comuns}</p>
+                )}
+
+                {epi.como_usar && (
+                  <div className="flex gap-2">
+                    <Wrench className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-0.5">Como usar</p>
+                      <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{epi.como_usar}</p>
+                    </div>
                   </div>
-                </div>
-              )}
-              {epi.nr6_ref && (
-                <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">📋 {epi.nr6_ref}</p>
-              )}
+                )}
+
+                {epi.erros_comuns && (
+                  <div className="flex gap-2">
+                    <AlertTriangle className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-0.5">Erros comuns</p>
+                      <p className="text-sm text-gray-700 leading-relaxed">{epi.erros_comuns}</p>
+                    </div>
+                  </div>
+                )}
+
+                {epi.nr6_ref && (
+                  <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">📋 {epi.nr6_ref}</p>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Palavras-chave sem fundo colorido */}
+          {/* Palavras-chave */}
           {keywords.length > 0 && (
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1 mt-3">
               <Tag className="w-3.5 h-3.5 text-gray-400 mt-0.5" />
               {keywords.map(k => (
                 <span key={k} className="text-xs text-gray-500">{k}</span>
@@ -127,15 +148,16 @@ function CardEpi({ epi }) {
             </div>
           )}
 
+          {/* Vídeos */}
           {videosVisiveis.length > 0 ? (
-            <div>
+            <div className="mt-4">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">🎬 Vídeos de treinamento</p>
               {videosVisiveis.sort((a, b) => b.prioridade - a.prioridade).map(v => (
                 <CardVideo key={v.id} video={v} />
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-400 text-center py-2">Nenhum vídeo disponível ainda.</p>
+            <p className="text-sm text-gray-400 text-center py-4">Nenhum vídeo disponível ainda.</p>
           )}
         </div>
       )}
