@@ -38,7 +38,7 @@ HLS_DIR.mkdir(exist_ok=True)
 MODEL_PATH = Path("best.pt")
 MODEL_URL = "https://huggingface.co/MatsudaPaulo/episeeyolo/resolve/main/best.pt"
 
-# Origens permitidas — adicione aqui os dominios do seu frontend no Railway
+# Origens permitidas
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:3000",
@@ -46,7 +46,6 @@ ALLOWED_ORIGINS = [
     "https://episee2-production.up.railway.app",
 ]
 
-# Lê origens extras via variável de ambiente (separadas por vírgula)
 _extra = os.environ.get("CORS_ORIGINS", "")
 if _extra:
     for _o in _extra.split(","):
@@ -113,12 +112,38 @@ async def create_default_admin():
         await db.commit()
 
 
+async def registrar_webhook_telegram():
+    """Registra o webhook do Telegram Bot automaticamente no startup."""
+    token = getattr(settings, "TELEGRAM_BOT_TOKEN", "")
+    app_url = getattr(settings, "APP_URL", "")
+
+    if not token or not app_url:
+        logger.warning("[TELEGRAM] TELEGRAM_BOT_TOKEN ou APP_URL nao configurados — webhook nao registrado.")
+        return
+
+    webhook_url = f"{app_url.rstrip('/')}/api/telegram/webhook"
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(
+                f"https://api.telegram.org/bot{token}/setWebhook",
+                json={"url": webhook_url, "drop_pending_updates": True},
+            )
+            data = resp.json()
+            if resp.status_code == 200 and data.get("ok"):
+                logger.info(f"[TELEGRAM] Webhook registrado com sucesso: {webhook_url}")
+            else:
+                logger.error(f"[TELEGRAM] Falha ao registrar webhook: {data}")
+    except Exception as e:
+        logger.error(f"[TELEGRAM] Erro ao registrar webhook: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Server iniciando")
     await init_db()
     await create_default_admin()
     await download_model_if_needed()
+    await registrar_webhook_telegram()  # <-- movido para dentro do lifespan
 
     camera_task = asyncio.create_task(start_camera_streams())
     logger.info("Server de cameras iniciando.")
@@ -163,7 +188,7 @@ async def serve_hls(camera_id: str, filename: str):
 
     if filename.endswith(".m3u8"):
         media_type = "application/vnd.apple.mpegurl"
-    elif filename.endswith(".ts"):
+    elif filename.endswith(".m3u8"):
         media_type = "video/mp2t"
     else:
         media_type = "application/octet-stream"
@@ -205,23 +230,3 @@ async def health_check():
 @app.get("/", tags=["Health"])
 async def root():
     return {"message": "EPIsee API esta rodando.", "docs": "/docs", "health": "/health"}
-
-
-@app.on_event("startup")
-async def registrar_webhook_telegram():
-    token       = getattr(settings, "TELEGRAM_BOT_TOKEN", "")
-    url_webhook = getattr(settings, "APP_URL", "")
-
-    if not token or not url_webhook:
-        return
-
-    webhook_url = f"{url_webhook}/api/telegram/webhook"
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            f"https://api.telegram.org/bot{token}/setWebhook",
-            json={"url": webhook_url, "drop_pending_updates": True},
-        )
-        if resp.status_code == 200:
-            print(f"[TELEGRAM] Webhook registrado: {webhook_url}")
-        else:
-            print(f"[TELEGRAM] Falha ao registrar webhook: {resp.text}")
