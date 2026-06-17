@@ -6,7 +6,6 @@ import {
 import clsx from "clsx";
 import { setoresApi } from "../api/api";
 
-// ── Constantes ────────────────────────────────────────────────────────────────
 const CLASSES_EPI = [
   { id: "helmet",             label: "Capacete" },
   { id: "safety-vest",        label: "Colete de Segurança" },
@@ -37,7 +36,6 @@ function BarConformidade({ valor }) {
   );
 }
 
-// ── Componente principal ──────────────────────────────────────────────────────
 export default function Setores() {
   const [setores, setSetores]           = useState([]);
   const [statsMap, setStatsMap]         = useState({});
@@ -153,7 +151,7 @@ export default function Setores() {
   return (
     <div className="pg-wide relative">
 
-      {/* ── Card único: Total de Setores ──────────────────────────────────── */}
+      {/* Card total de setores */}
       <div className="card row gap-3 p-4 w-fit">
         <Building2 size={20} className="text-slate-500" />
         <div>
@@ -162,9 +160,7 @@ export default function Setores() {
         </div>
       </div>
 
-      <p className="sec-sub">{setores.length} setores cadastrados</p>
-
-      {/* ── Grid de cards ─────────────────────────────────────────────────── */}
+      {/* Grid de cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {setores.map((setor) => {
           const stats = statsMap[setor.id];
@@ -248,7 +244,7 @@ export default function Setores() {
         })}
       </div>
 
-      {/* ── FAB ─────────────────────────────────────────────────────────────── */}
+      {/* FAB */}
       <button
         onClick={abrirAdicionar}
         title="Adicionar Setor"
@@ -257,7 +253,7 @@ export default function Setores() {
         <Plus size={24} />
       </button>
 
-      {/* ── Modal adicionar/editar ─────────────────────────────────────────── */}
+      {/* Modal adicionar/editar */}
       {modalAberto && (
         <div className="overlay">
           <div className="modal fade-in" style={{ maxHeight: "90vh", overflowY: "auto" }}>
@@ -334,7 +330,7 @@ export default function Setores() {
         </div>
       )}
 
-      {/* ── Modal confirmar exclusão ──────────────────────────────────────── */}
+      {/* Modal confirmar exclusão */}
       {confirmarDel && (
         <div className="overlay">
           <div className="modal modal-sm fade-in">
