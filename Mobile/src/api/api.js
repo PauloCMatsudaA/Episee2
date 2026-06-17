@@ -5,16 +5,15 @@ import authEvents, { AUTH_EVENTS } from '../utils/authEvents';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
-console.log('[API] BASE_URL =', BASE_URL);
-console.log('[API] Chatbot URL =', BASE_URL + '/chatbot/texto');
-
 const api = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
+  // Segue redirects automaticamente (padrão do axios)
+  maxRedirects: 5,
 });
 
-// Injeta token em toda requisição
+// Injeta token em toda requisição, inclusive em redirects
 api.interceptors.request.use(
   async (config) => {
     try {
@@ -58,7 +57,7 @@ export const loginApi = async (email, senha) => {
 };
 
 export const getMeuPerfil = async () => {
-  const response = await api.get('/auth/me');
+  const response = await api.get('/auth/me/');
   return response.data;
 };
 
@@ -68,7 +67,7 @@ export const logoutApi = async () => {
 
 // ── Solicitações de EPI ───────────────────────────────────────────────────
 export const criarSolicitacao = async (dados) => {
-  const response = await api.post('/epi-requests', {
+  const response = await api.post('/epi-requests/', {
     epi_type: dados.epi_type,
     sector_id: Number(dados.sector_id),
     reason: dados.reason || null,
@@ -82,19 +81,19 @@ export const minhasSolicitacoes = async () => {
 };
 
 export const todasSolicitacoes = async () => {
-  const response = await api.get('/epi-requests');
+  const response = await api.get('/epi-requests/');
   return response.data;
 };
 
 // ── Setores ───────────────────────────────────────────────────────────────
 export const getSetores = async () => {
-  const response = await api.get('/sectors');
+  const response = await api.get('/sectors/');
   return response.data;
 };
 
 // ── Vídeos de Treinamento ─────────────────────────────────────────────────
 export const getVideosWorker = async () => {
-  const response = await api.get('/training/worker/epis');
+  const response = await api.get('/training/worker/epis/');
   return response.data;
 };
 
@@ -108,7 +107,7 @@ export const chatbotApi = async (mensagem, historico = []) => {
       content: m.text,
     }));
 
-  const response = await api.post('/chatbot/texto', {
+  const response = await api.post('/chatbot/texto/', {
     mensagem,
     historico: historicoFormatado,
   });
