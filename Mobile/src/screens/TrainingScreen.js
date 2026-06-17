@@ -10,7 +10,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { getVideosWorker } from '../api/api';
 
-// Formata data ISO para dd/mm/aaaa
 const formatarData = (iso) => {
   if (!iso) return null;
   try {
@@ -19,7 +18,6 @@ const formatarData = (iso) => {
   } catch { return null; }
 };
 
-// Linha de informação com ícone
 function InfoRow({ icone, label, valor }) {
   if (!valor) return null;
   return (
@@ -49,7 +47,7 @@ export default function TrainingScreen() {
       setCategorias(Array.isArray(dados) ? dados : []);
     } catch (err) {
       console.warn('[TrainingScreen] Erro:', err.message);
-      setErro('Não foi possível carregar os vídeos. Verifique sua conexão.');
+      setErro('Nao foi possivel carregar os videos. Verifique sua conexao.');
       setCategorias([]);
     } finally {
       setCarregando(false);
@@ -66,10 +64,10 @@ export default function TrainingScreen() {
     if (!url) return;
     if (url.startsWith('http://') || url.startsWith('https://')) {
       Linking.openURL(url).catch(() =>
-        Alert.alert('Erro', 'Não foi possível abrir o vídeo.')
+        Alert.alert('Erro', 'Nao foi possivel abrir o video.')
       );
     } else {
-      Alert.alert('Vídeo', 'Este vídeo está hospedado no servidor da empresa.\nAcesse pelo aplicativo quando disponível.');
+      Alert.alert('Video', 'Este video esta hospedado no servidor da empresa.\nAcesse pelo aplicativo quando disponivel.');
     }
   };
 
@@ -80,7 +78,7 @@ export default function TrainingScreen() {
       <SafeAreaView style={estilos.container}>
         <View style={estilos.carregandoContainer}>
           <ActivityIndicator size="large" color="#F97316" />
-          <Text style={estilos.carregandoTexto}>Carregando vídeos...</Text>
+          <Text style={estilos.carregandoTexto}>Carregando videos...</Text>
         </View>
       </SafeAreaView>
     );
@@ -106,9 +104,9 @@ export default function TrainingScreen() {
             <Ionicons name="play-circle" size={28} color="#F97316" />
           </View>
           <View style={estilos.headerTextos}>
-            <Text style={estilos.headerTitulo}>Vídeos de Treinamento</Text>
+            <Text style={estilos.headerTitulo}>Videos de Treinamento</Text>
             <Text style={estilos.headerSub}>
-              {totalVideos} vídeo{totalVideos !== 1 ? 's' : ''} em {categorias.length} categoria{categorias.length !== 1 ? 's' : ''}
+              {totalVideos} video{totalVideos !== 1 ? 's' : ''} em {categorias.length} categoria{categorias.length !== 1 ? 's' : ''}
             </Text>
           </View>
         </View>
@@ -121,13 +119,13 @@ export default function TrainingScreen() {
           </View>
         )}
 
-        {/* Sem vídeos */}
+        {/* Sem videos */}
         {!erro && categorias.length === 0 && (
           <View style={estilos.vazioContainer}>
             <Ionicons name="videocam-outline" size={52} color="#CBD5E1" />
-            <Text style={estilos.vazioTitulo}>Nenhum vídeo disponível</Text>
+            <Text style={estilos.vazioTitulo}>Nenhum video disponivel</Text>
             <Text style={estilos.vazioSub}>
-              O gestor ainda não adicionou vídeos de treinamento.
+              O gestor ainda nao adicionou videos de treinamento.
             </Text>
           </View>
         )}
@@ -140,7 +138,7 @@ export default function TrainingScreen() {
           return (
             <View key={cat.id} style={estilos.categoriaCard}>
 
-              {/* Header clicavel da categoria */}
+              {/* Header clicavel */}
               <TouchableOpacity
                 style={estilos.categoriaHeader}
                 onPress={() => toggleCategoria(cat.id)}
@@ -153,7 +151,7 @@ export default function TrainingScreen() {
                   <View>
                     <Text style={estilos.categoriaNome}>{cat.nome}</Text>
                     <Text style={estilos.categoriaCount}>
-                      {videos.length} vídeo{videos.length !== 1 ? 's' : ''}
+                      {videos.length} video{videos.length !== 1 ? 's' : ''}
                     </Text>
                   </View>
                 </View>
@@ -164,29 +162,27 @@ export default function TrainingScreen() {
                 />
               </TouchableOpacity>
 
-              {/* Conteúdo expandido */}
+              {/* Conteudo expandido */}
               {aberto && (
                 <View style={estilos.expandido}>
 
-                  {/* Informações do EPI (preenchidas pelo gestor) */}
-                  {(cat.descricao || cat.quando_usar || cat.como_usar || cat.erros_comuns || cat.nr6_ref) && (
+                  {/* Informacoes do EPI */}
+                  {(cat.descricao || cat.quando_usar || cat.como_usar || cat.erros_comuns) && (
                     <View style={estilos.epiInfoCard}>
                       <Text style={estilos.epiInfoTitulo}>Sobre este EPI</Text>
 
-                      <InfoRow icone="information-circle-outline" label="Descrição"         valor={cat.descricao} />
-                      <InfoRow icone="checkmark-circle-outline"   label="Quando usar"       valor={cat.quando_usar} />
-                      <InfoRow icone="construct-outline"          label="Como usar"         valor={cat.como_usar} />
-                      <InfoRow icone="warning-outline"            label="Erros comuns"      valor={cat.erros_comuns} />
-                      <InfoRow icone="document-text-outline"      label="Referência NR-6"  valor={cat.nr6_ref} />
+                      <InfoRow icone="information-circle-outline" label="Descricao"   valor={cat.descricao} />
+                      <InfoRow icone="checkmark-circle-outline"   label="Quando usar" valor={cat.quando_usar} />
+                      <InfoRow icone="construct-outline"          label="Como usar"   valor={cat.como_usar} />
+                      <InfoRow icone="warning-outline"            label="Erros comuns" valor={cat.erros_comuns} />
                     </View>
                   )}
 
-                  {/* Divider */}
                   <View style={estilos.divider} />
 
-                  {/* Lista de vídeos */}
+                  {/* Lista de videos */}
                   {videos.length === 0 ? (
-                    <Text style={estilos.semVideos}>Nenhum vídeo aprovado nesta categoria.</Text>
+                    <Text style={estilos.semVideos}>Nenhum video aprovado nesta categoria.</Text>
                   ) : (
                     videos
                       .sort((a, b) => b.prioridade - a.prioridade)
@@ -227,7 +223,7 @@ export default function TrainingScreen() {
                 </View>
               )}
 
-              {/* Descrição resumida quando fechado */}
+              {/* Descricao resumida quando fechado */}
               {!aberto && cat.descricao ? (
                 <Text style={estilos.categoriaDescFechada} numberOfLines={2}>
                   {cat.descricao}
@@ -238,7 +234,7 @@ export default function TrainingScreen() {
           );
         })}
 
-        <Text style={estilos.rodape}>Puxe para baixo para atualizar os vídeos</Text>
+        <Text style={estilos.rodape}>Puxe para baixo para atualizar os videos</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -263,19 +259,16 @@ const estilos = StyleSheet.create({
   vazioTitulo:    { fontSize: 16, fontWeight: '700', color: '#475569' },
   vazioSub:       { fontSize: 13, color: '#94A3B8', textAlign: 'center', maxWidth: 260 },
 
-  // Card da categoria
-  categoriaCard:       { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2, overflow: 'hidden' },
-  categoriaHeader:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
-  categoriaHeaderEsq:  { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  categoriaIcone:      { width: 40, height: 40, borderRadius: 10, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center' },
-  categoriaNome:       { fontSize: 15, fontWeight: '700', color: '#0F172A' },
-  categoriaCount:      { fontSize: 12, color: '#94A3B8', marginTop: 2 },
-  categoriaDescFechada:{ fontSize: 13, color: '#64748B', paddingHorizontal: 16, paddingBottom: 14, lineHeight: 18 },
+  categoriaCard:        { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2, overflow: 'hidden' },
+  categoriaHeader:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
+  categoriaHeaderEsq:   { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  categoriaIcone:       { width: 40, height: 40, borderRadius: 10, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center' },
+  categoriaNome:        { fontSize: 15, fontWeight: '700', color: '#0F172A' },
+  categoriaCount:       { fontSize: 12, color: '#94A3B8', marginTop: 2 },
+  categoriaDescFechada: { fontSize: 13, color: '#64748B', paddingHorizontal: 16, paddingBottom: 14, lineHeight: 18 },
 
-  // Conteúdo expandido
   expandido: { borderTopWidth: 1, borderTopColor: '#F1F5F9' },
 
-  // Bloco de informações do EPI
   epiInfoCard:   { margin: 14, backgroundColor: '#FFFBF5', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#FEE2C8' },
   epiInfoTitulo: { fontSize: 13, fontWeight: '700', color: '#92400E', marginBottom: 10, letterSpacing: 0.3, textTransform: 'uppercase' },
   infoRow:       { flexDirection: 'row', gap: 10, marginBottom: 10, alignItems: 'flex-start' },
@@ -286,7 +279,6 @@ const estilos = StyleSheet.create({
 
   divider: { height: 1, backgroundColor: '#F1F5F9', marginHorizontal: 14 },
 
-  // Lista de vídeos
   semVideos:           { fontSize: 13, color: '#94A3B8', textAlign: 'center', padding: 20 },
   videoItem:           { flexDirection: 'row', alignItems: 'flex-start', padding: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
   videoIconeContainer: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
