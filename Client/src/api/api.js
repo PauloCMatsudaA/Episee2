@@ -71,14 +71,16 @@ export const solicitacoesApi = {
   listar:   (filtros) => cliente.get("/api/epi-requests/", { params: filtros }),
   criar:    (dados)   => cliente.post("/api/epi-requests/", dados),
   aprovar:  (id)      => cliente.patch(`/api/epi-requests/${id}/approve`),
-  rejeitar: (id)      => cliente.patch(`/api/epi-requests/${id}/reject`),
+  rejeitar: (id, motivo) => cliente.patch(`/api/epi-requests/${id}/reject`, { motivo_rejeicao: motivo }),
+  entrega:  (id, entregue) => cliente.patch(`/api/epi-requests/${id}/entrega`, { entregue }),
 };
 
 export const epiRequestsApi = {
   listar:   (filtros) => cliente.get("/api/epi-requests/", { params: filtros }),
   criar:    (dados)   => cliente.post("/api/epi-requests/", dados),
   aprovar:  (id)      => cliente.patch(`/api/epi-requests/${id}/approve`),
-  rejeitar: (id)      => cliente.patch(`/api/epi-requests/${id}/reject`),
+  rejeitar: (id, motivo) => cliente.patch(`/api/epi-requests/${id}/reject`, { motivo_rejeicao: motivo }),
+  entrega:  (id, entregue) => cliente.patch(`/api/epi-requests/${id}/entrega`, { entregue }),
 };
 
 export const camerasApi = {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Check, X, AlertCircle, Clock, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Check, X, AlertCircle, Clock, CheckCircle, XCircle, RefreshCw, PackageCheck } from 'lucide-react';
 import BadgeStatus from '../components/AlertBadge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -13,12 +13,18 @@ const tabs = [
 ];
 
 export default function EpiRequests() {
-  const [solicitacoes,  setSolicitacoes]  = useState([]);
-  const [abaAtiva,      setAbaAtiva]      = useState('pendente');
-  const [modalConfirm,  setModalConfirm]  = useState(null);
-  const [carregando,    setCarregando]    = useState(true);
-  const [processando,   setProcessando]   = useState(false);
-  const [erro,          setErro]          = useState('');
+  const [solicitacoes, setSolicitacoes] = useState([]);
+  const [abaAtiva,     setAbaAtiva]     = useState('pendente');
+  const [carregando,   setCarregando]   = useState(true);
+  const [processando,  setProcessando]  = useState(false);
+  const [erro,         setErro]         = useState('');
+
+  // Modal de confirmacao de aprovacao
+  const [modalAprovar, setModalAprovar] = useState(null); // { id }
+
+  // Modal de rejeicao com campo de motivo
+  const [modalRejeitar, setModalRejeitar] = useState(null); // { id }
+  const [motivoRejeicao, setMotivoRejeicao] = useState('');
 
   const carregarSolicitacoes = useCallback(async () => {
     setErro('');
@@ -26,15 +32,13 @@ export default function EpiRequests() {
       const res = await epiRequestsApi.listar();
       setSolicitacoes(res.data || []);
     } catch {
-      setErro('Não foi possível carregar as solicitações.');
+      setErro('Nao foi possivel carregar as solicitacoes.');
     } finally {
       setCarregando(false);
     }
   }, []);
 
-  useEffect(() => {
-    carregarSolicitacoes();
-  }, [carregarSolicitacoes]);
+  useEffect(() => { carregarSolicitacoes(); }, [carregarSolicitacoes]);
 
   const filtradas = solicitacoes.filter((s) => s.status === abaAtiva);
   const contagem  = {
@@ -43,29 +47,51 @@ export default function EpiRequests() {
     rejeitada: solicitacoes.filter((s) => s.status === 'rejeitada').length,
   };
 
-  async function confirmarAcao() {
-    if (!modalConfirm) return;
-    const { id, acao } = modalConfirm;
+  async function confirmarAprovacao() {
+    if (!modalAprovar) return;
     setProcessando(true);
     try {
-      if (acao === 'aprovar') {
-        await epiRequestsApi.aprovar(id);
-      } else {
-        await epiRequestsApi.rejeitar(id);
-      }
+      await epiRequestsApi.aprovar(modalAprovar.id);
       await carregarSolicitacoes();
-      setAbaAtiva(acao === 'aprovar' ? 'aprovada' : 'rejeitada');
+      setAbaAtiva('aprovada');
+      setModalAprovar(null);
     } catch {
-      setErro('Erro ao processar a solicitação. Tente novamente.');
+      setErro('Erro ao aprovar a solicitacao. Tente novamente.');
     } finally {
       setProcessando(false);
-      setModalConfirm(null);
     }
   }
 
-  const solicitacaoModal = modalConfirm
-    ? solicitacoes.find((s) => s.id === modalConfirm.id)
-    : null;
+  async function confirmarRejeicao() {
+    if (!modalRejeitar || !motivoRejeicao.trim()) return;
+    setProcessando(true);
+    try {
+      await epiRequestsApi.rejeitar(modalRejeitar.id, motivoRejeicao.trim());
+      await carregarSolicitacoes();
+      setAbaAtiva('rejeitada');
+      setModalRejeitar(null);
+      setMotivoRejeicao('');
+    } catch {
+      setErro('Erro ao rejeitar a solicitacao. Tente novamente.');
+    } finally {
+      setProcessando(false);
+    }
+  }
+
+  async function marcarEntrega(id, entregue) {
+    setProcessando(true);
+    try {
+      await epiRequestsApi.entrega(id, entregue);
+      await carregarSolicitacoes();
+    } catch {
+      setErro('Erro ao registrar entrega. Tente novamente.');
+    } finally {
+      setProcessando(false);
+    }
+  }
+
+  const solAprovarModal  = modalAprovar  ? solicitacoes.find((s) => s.id === modalAprovar.id)  : null;
+  const solRejeitarModal = modalRejeitar ? solicitacoes.find((s) => s.id === modalRejeitar.id) : null;
 
   return (
     <div className="space-y-4">
@@ -78,6 +104,7 @@ export default function EpiRequests() {
         </div>
       )}
 
+      {/* Abas */}
       <div className="flex gap-1 rounded-xl border border-slate-100 bg-white p-1 shadow-sm">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -103,6 +130,7 @@ export default function EpiRequests() {
         })}
       </div>
 
+      {/* Tabela */}
       <div className="rounded-xl border border-slate-100 bg-white shadow-sm">
         {carregando ? (
           <div className="flex justify-center py-12"><LoadingSpinner /></div>
@@ -110,8 +138,7 @@ export default function EpiRequests() {
           <div className="flex flex-col items-center justify-center py-16 text-slate-400">
             <AlertCircle size={40} className="mb-3 text-slate-300" />
             <p className="text-sm">
-              Nenhuma solicitação{' '}
-              {abaAtiva === 'pendente' ? 'pendente' : abaAtiva === 'aprovada' ? 'aprovada' : 'rejeitada'}.
+              Nenhuma solicitacao {abaAtiva === 'pendente' ? 'pendente' : abaAtiva === 'aprovada' ? 'aprovada' : 'rejeitada'}.
             </p>
           </div>
         ) : (
@@ -119,8 +146,13 @@ export default function EpiRequests() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-100">
-                  {['Trabalhador', 'Setor', 'EPI Solicitado', 'Motivo', 'Data', 'Status', ...(abaAtiva === 'pendente' ? ['Ações'] : [])].map((h) => (
-                    <th key={h} className={`whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 ${h === 'Motivo' ? 'hidden md:table-cell' : ''}`}>
+                  {[
+                    'Trabalhador', 'Setor', 'EPI Solicitado', 'Motivo', 'Data', 'Status',
+                    ...(abaAtiva === 'pendente' ? ['Acoes'] : []),
+                    ...(abaAtiva === 'aprovada' ? ['Entrega'] : []),
+                    ...(abaAtiva === 'rejeitada' ? ['Motivo da Rejeicao'] : []),
+                  ].map((h) => (
+                    <th key={h} className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
                       {h}
                     </th>
                   ))}
@@ -136,31 +168,57 @@ export default function EpiRequests() {
                       {sol.sector_name ?? `Setor #${sol.sector_id}`}
                     </td>
                     <td className="px-4 py-3 text-slate-700">{sol.epi_type}</td>
-                    <td className="hidden max-w-xs truncate px-4 py-3 text-slate-500 md:table-cell">
-                      {sol.reason}
-                    </td>
+                    <td className="max-w-xs truncate px-4 py-3 text-slate-500">{sol.reason}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">
                       {format(new Date(sol.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
                       <BadgeStatus status={sol.status} />
                     </td>
+
+                    {/* Acoes — pendentes */}
                     {abaAtiva === 'pendente' && (
                       <td className="whitespace-nowrap px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           <button
-                            onClick={() => setModalConfirm({ id: sol.id, acao: 'aprovar' })}
-                            className="flex items-center gap-1 rounded-lg bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-100"
+                            onClick={() => setModalAprovar({ id: sol.id })}
+                            className="flex items-center gap-1 rounded-lg bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100"
                           >
                             <Check size={14} /> Aprovar
                           </button>
                           <button
-                            onClick={() => setModalConfirm({ id: sol.id, acao: 'rejeitar' })}
-                            className="flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                            onClick={() => { setModalRejeitar({ id: sol.id }); setMotivoRejeicao(''); }}
+                            className="flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100"
                           >
                             <X size={14} /> Rejeitar
                           </button>
                         </div>
+                      </td>
+                    )}
+
+                    {/* Entrega — aprovadas */}
+                    {abaAtiva === 'aprovada' && (
+                      <td className="whitespace-nowrap px-4 py-3">
+                        {sol.entregue ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+                            <PackageCheck size={13} /> EPI Retirado
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => marcarEntrega(sol.id, true)}
+                            disabled={processando}
+                            className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-green-50 hover:text-green-700 disabled:opacity-50"
+                          >
+                            <PackageCheck size={14} /> Confirmar Retirada
+                          </button>
+                        )}
+                      </td>
+                    )}
+
+                    {/* Motivo da rejeicao — rejeitadas */}
+                    {abaAtiva === 'rejeitada' && (
+                      <td className="max-w-xs px-4 py-3 text-xs text-red-600">
+                        {sol.motivo_rejeicao || '-'}
                       </td>
                     )}
                   </tr>
@@ -171,49 +229,92 @@ export default function EpiRequests() {
         )}
       </div>
 
-      {modalConfirm && solicitacaoModal && (
+      {/* Modal de Aprovacao */}
+      {modalAprovar && solAprovarModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div className="mb-4 flex items-center gap-3">
-              <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                modalConfirm.acao === 'aprovar' ? 'bg-green-100' : 'bg-red-100'
-              }`}>
-                {modalConfirm.acao === 'aprovar'
-                  ? <Check size={20} className="text-green-600" />
-                  : <X size={20} className="text-red-600" />}
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                <Check size={20} className="text-green-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-slate-800">
-                  {modalConfirm.acao === 'aprovar' ? 'Aprovar Solicitação' : 'Rejeitar Solicitação'}
-                </h3>
-                <p className="text-sm text-slate-500">Esta ação não pode ser desfeita.</p>
+                <h3 className="text-lg font-semibold text-slate-800">Aprovar Solicitacao</h3>
+                <p className="text-sm text-slate-500">Esta acao nao pode ser desfeita.</p>
               </div>
             </div>
-
             <div className="rounded-lg bg-slate-50 p-3 text-sm space-y-1">
-              <p><span className="font-medium text-slate-600">EPI:</span> {solicitacaoModal.epi_type}</p>
-              <p><span className="font-medium text-slate-600">Motivo:</span> {solicitacaoModal.reason}</p>
+              <p><span className="font-medium text-slate-600">Trabalhador:</span> {solAprovarModal.worker_name ?? `#${solAprovarModal.worker_id}`}</p>
+              <p><span className="font-medium text-slate-600">EPI:</span> {solAprovarModal.epi_type}</p>
+              <p><span className="font-medium text-slate-600">Motivo:</span> {solAprovarModal.reason}</p>
             </div>
-
             <div className="mt-5 flex justify-end gap-2">
               <button
-                onClick={() => setModalConfirm(null)}
+                onClick={() => setModalAprovar(null)}
                 disabled={processando}
                 className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
-                onClick={confirmarAcao}
+                onClick={confirmarAprovacao}
                 disabled={processando}
-                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 ${
-                  modalConfirm.acao === 'aprovar'
-                    ? 'bg-ok hover:bg-green-600'
-                    : 'bg-err hover:bg-red-600'
-                }`}
+                className="flex items-center gap-2 rounded-xl bg-ok px-4 py-2 text-sm font-semibold text-white hover:bg-green-600 disabled:opacity-60"
               >
                 {processando && <RefreshCw size={14} className="animate-spin" />}
-                {modalConfirm.acao === 'aprovar' ? 'Confirmar Aprovação' : 'Confirmar Rejeição'}
+                Confirmar Aprovacao
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Rejeicao */}
+      {modalRejeitar && solRejeitarModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+                <X size={20} className="text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-800">Rejeitar Solicitacao</h3>
+                <p className="text-sm text-slate-500">O trabalhador sera notificado com o motivo.</p>
+              </div>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3 text-sm space-y-1 mb-4">
+              <p><span className="font-medium text-slate-600">Trabalhador:</span> {solRejeitarModal.worker_name ?? `#${solRejeitarModal.worker_id}`}</p>
+              <p><span className="font-medium text-slate-600">EPI:</span> {solRejeitarModal.epi_type}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Motivo da rejeicao <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={motivoRejeicao}
+                onChange={(e) => setMotivoRejeicao(e.target.value)}
+                placeholder="Descreva o motivo da rejeicao..."
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand resize-none"
+              />
+              {!motivoRejeicao.trim() && (
+                <p className="mt-1 text-xs text-red-500">O motivo e obrigatorio.</p>
+              )}
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => { setModalRejeitar(null); setMotivoRejeicao(''); }}
+                disabled={processando}
+                className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarRejeicao}
+                disabled={processando || !motivoRejeicao.trim()}
+                className="flex items-center gap-2 rounded-xl bg-err px-4 py-2 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-60"
+              >
+                {processando && <RefreshCw size={14} className="animate-spin" />}
+                Confirmar Rejeicao
               </button>
             </div>
           </div>

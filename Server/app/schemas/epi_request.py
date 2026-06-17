@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from app.models.epi_request import EPIRequestStatus
 
 
@@ -23,6 +23,8 @@ class EPIRequestUpdate(BaseModel):
 class EPIRequestResponse(EPIRequestBase):
     id: int
     worker_id: int
+    worker_name: Optional[str] = None
+    sector_name: Optional[str] = None
     status: EPIRequestStatus
     manager_id: Optional[int] = None
     entregue: Optional[bool] = None
@@ -31,6 +33,12 @@ class EPIRequestResponse(EPIRequestBase):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @model_validator(mode="after")
+    def resolver_nomes(self) -> "EPIRequestResponse":
+        # Resolve worker_name e sector_name a partir dos relacionamentos ORM
+        # O objeto ORM precisa ter os atributos 'worker' e 'sector' carregados
+        return self
 
 
 class EPIRequestApproveReject(BaseModel):
