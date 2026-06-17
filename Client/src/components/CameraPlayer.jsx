@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js/dist/hls.min.js";
 
+const API_BASE = import.meta.env.VITE_API_URL || "https://episee2-production.up.railway.app";
 
 function buildSrc(baseUrl) {
-  return `http://localhost:8000${baseUrl}?t=${Date.now()}`;
+  return `${API_BASE}${baseUrl}?t=${Date.now()}`;
 }
 
 export default function CameraPlayer({ hlsUrl }) {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
-  const [streamDisponivel, setStreamDisponivel] = useState(null); 
+  const [streamDisponivel, setStreamDisponivel] = useState(null);
 
   useEffect(() => {
     if (!hlsUrl) {
@@ -23,7 +24,7 @@ export default function CameraPlayer({ hlsUrl }) {
     fetch(src, { method: "GET", signal: controller.signal })
       .then((res) => {
         setStreamDisponivel(res.ok);
-        res.body?.cancel(); 
+        res.body?.cancel();
       })
       .catch(() => {
         setStreamDisponivel(false);
@@ -36,7 +37,6 @@ export default function CameraPlayer({ hlsUrl }) {
 
     const video = videoRef.current;
     if (!video || !hlsUrl) return;
-
 
     if (hlsRef.current) {
       hlsRef.current.destroy();
