@@ -145,9 +145,6 @@ export default function TrainingScreen() {
                 activeOpacity={0.75}
               >
                 <View style={estilos.categoriaHeaderEsq}>
-                  <View style={estilos.categoriaIcone}>
-                    <Ionicons name="shield-checkmark" size={20} color="#F97316" />
-                  </View>
                   <View>
                     <Text style={estilos.categoriaNome}>{cat.nome}</Text>
                     <Text style={estilos.categoriaCount}>
@@ -262,19 +259,18 @@ const estilos = StyleSheet.create({
   categoriaCard:        { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2, overflow: 'hidden' },
   categoriaHeader:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
   categoriaHeaderEsq:   { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  categoriaIcone:       { width: 40, height: 40, borderRadius: 10, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center' },
   categoriaNome:        { fontSize: 15, fontWeight: '700', color: '#0F172A' },
   categoriaCount:       { fontSize: 12, color: '#94A3B8', marginTop: 2 },
   categoriaDescFechada: { fontSize: 13, color: '#64748B', paddingHorizontal: 16, paddingBottom: 14, lineHeight: 18 },
 
   expandido: { borderTopWidth: 1, borderTopColor: '#F1F5F9' },
 
-  epiInfoCard:   { margin: 14, backgroundColor: '#FFFBF5', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#FEE2C8' },
-  epiInfoTitulo: { fontSize: 13, fontWeight: '700', color: '#92400E', marginBottom: 10, letterSpacing: 0.3, textTransform: 'uppercase' },
+  epiInfoCard:   { margin: 14, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0' },
+  epiInfoTitulo: { fontSize: 13, fontWeight: '700', color: '#0F172A', marginBottom: 10, letterSpacing: 0.3, textTransform: 'uppercase' },
   infoRow:       { flexDirection: 'row', gap: 10, marginBottom: 10, alignItems: 'flex-start' },
   infoIcone:     { marginTop: 1 },
   infoTextos:    { flex: 1 },
-  infoLabel:     { fontSize: 11, fontWeight: '700', color: '#92400E', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 2 },
+  infoLabel:     { fontSize: 11, fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 2 },
   infoValor:     { fontSize: 13, color: '#374151', lineHeight: 18 },
 
   divider: { height: 1, backgroundColor: '#F1F5F9', marginHorizontal: 14 },
