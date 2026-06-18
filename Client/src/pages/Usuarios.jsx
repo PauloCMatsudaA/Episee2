@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Users, Plus, Pencil, Trash2, ShieldCheck } from 'lucide-react';
+import { Users, Plus, Pencil, Trash2 } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { usuariosApi, setoresApi } from '../api/api';
 
@@ -228,8 +228,8 @@ export default function Usuarios() {
                     </td>
                     <td style={{ color: 'var(--text-muted)' }}>{u.email}</td>
                     <td>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                        {u.role === 'gestor' && <ShieldCheck size={13} />}
+                      {/* Sem ícone — exibe só o texto do papel */}
+                      <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
                         {labelPapel(u.role)}
                       </span>
                     </td>
@@ -239,7 +239,8 @@ export default function Usuarios() {
                         <button className="btn btn-ghost btn-sm btn-icon" onClick={() => abrirEdicao(u)} title="Editar">
                           <Pencil size={14} />
                         </button>
-                        {u.role !== 'trabalhador' && (
+                        {/* Oculta lixeira para o administrador padrão do sistema */}
+                        {!u.is_system_admin && (
                           <button className="btn btn-danger btn-sm btn-icon" onClick={() => excluir(u.id)} title="Excluir">
                             <Trash2 size={14} />
                           </button>

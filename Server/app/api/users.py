@@ -122,4 +122,11 @@ async def delete_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
 
+    # Bloqueia exclusão do administrador padrão do sistema
+    if user.is_system_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="O administrador padrão do sistema não pode ser excluído.",
+        )
+
     await db.delete(user)
