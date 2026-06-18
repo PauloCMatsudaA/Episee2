@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.webhook import router as webhook_router
 from app.api.chat import router as chat_router
+from app.api.telegram_webhook import router as telegram_router
 
 # Logging
 logging.basicConfig(
@@ -18,8 +19,11 @@ logging.basicConfig(
 
 app = FastAPI(
     title="EPIsee Chatbot",
-    description="Chatbot especialista em EPIs via WhatsApp e App Mobile — NR-6, direitos do trabalhador e orientações de segurança.",
-    version="1.0.0",
+    description=(
+        "Chatbot especialista em EPIs via WhatsApp, Telegram e App Mobile — "
+        "NR-6, direitos do trabalhador e orientações de segurança."
+    ),
+    version="1.1.0",
 )
 
 # CORS — necessário para o app mobile e painel web
@@ -33,6 +37,7 @@ app.add_middleware(
 # ── Rotas ─────────────────────────────────────────────────────────────────────
 app.include_router(webhook_router, prefix="/api/v1", tags=["WhatsApp Webhook"])
 app.include_router(chat_router, tags=["Chat App Mobile"])
+app.include_router(telegram_router, prefix="/api/v1", tags=["Telegram Webhook"])
 
 
 @app.get("/", tags=["Health"])
@@ -40,7 +45,7 @@ async def health_check():
     return {
         "status": "online",
         "service": "EPIsee Chatbot",
-        "version": "1.0.0",
+        "version": "1.1.0",
     }
 
 

@@ -1,85 +1,69 @@
 """
-Audio Service — Speech-to-Text via Whisper (OpenAI).
-Converte áudios do WhatsApp (OGG/OGA) em texto para o chatbot processar.
+Audio Service — Transcreve áudios via OpenAI Whisper.
+
+Suporta:
+  - Transcrição via media_id do WhatsApp (fluxo original)
+  - Transcrição via bytes brutos do áudio (Telegram)
 """
+import io
+import logging
 import httpx
-import tempfile
-import os
-from openai import OpenAI
 from app.core.config import get_settings
+from openai import AsyncOpenAI
 
+logger = logging.getLogger(__name__)
 settings = get_settings()
-openai_client = OpenAI(api_key=settings.openai_api_key)
-
-
-async def download_whatsapp_media(media_id: str) -> bytes:
-    """
-    Baixa a mídia do WhatsApp usando o media_id retornado pelo webhook.
-    Retorna os bytes do arquivo de áudio.
-    """
-    headers = {
-        "Authorization": f"Bearer {settings.whatsapp_access_token}",
-    }
-
-    async with httpx.AsyncClient() as client:
-        # 1. Obter URL de download
-        meta_resp = await client.get(
-            f"https://graph.facebook.com/v20.0/{media_id}",
-            headers=headers,
-        )
-        meta_resp.raise_for_status()
-        download_url = meta_resp.json()["url"]
-
-        # 2. Baixar o arquivo de áudio
-        audio_resp = await client.get(download_url, headers=headers)
-        audio_resp.raise_for_status()
-
-    return audio_resp.content
+_client = AsyncOpenAI(api_key=settings.openai_api_key)
 
 
 async def transcribe_audio(media_id: str) -> str:
     """
-    Baixa o áudio do WhatsApp e transcreve via Whisper.
+    Transcreve áudio do WhatsApp a partir do media_id.
+    1. Busca URL de download via Meta Graph API
+    2. Baixa o arquivo de áudio
+    3. Transcreve com Whisper
+    """
+    headers = {"Authorization": f"Bearer {settings.whatsapp_access_token}"}
+
+    # 1. Obtém a URL do arquivo
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.get(
+            f"https://graph.facebook.com/v19.0/{media_id}",
+            headers=headers,
+        )
+        resp.raise_for_status()
+        media_url = resp.json()["url"]
+
+    # 2. Baixa o arquivo de áudio
+    async with httpx.AsyncClient(timeout=60) as client:
+        audio_resp = await client.get(media_url, headers=headers)
+        audio_resp.raise_for_status()
+        audio_bytes = audio_resp.content
+
+    return await transcribe_audio_from_bytes(audio_bytes, filename="audio.ogg")
+
+
+async def transcribe_audio_from_bytes(
+    audio_bytes: bytes,
+    filename: str = "audio.ogg",
+) -> str:
+    """
+    Transcreve áudio a partir de bytes brutos usando OpenAI Whisper.
+    Aceita qualquer formato suportado pelo Whisper (ogg, mp3, wav, etc.).
 
     Args:
-        media_id: ID da mídia retornado pelo webhook do WhatsApp
+        audio_bytes: Bytes do arquivo de áudio.
+        filename: Nome do arquivo com extensão correta para o Whisper.
 
     Returns:
-        Texto transcrito
+        Texto transcrito.
     """
-    audio_bytes = await download_whatsapp_media(media_id)
+    audio_file = io.BytesIO(audio_bytes)
+    audio_file.name = filename
 
-    # Salva em arquivo temporário (Whisper API precisa de arquivo)
-    with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as tmp:
-        tmp.write(audio_bytes)
-        tmp_path = tmp.name
-
-    try:
-        with open(tmp_path, "rb") as audio_file:
-            transcript = openai_client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file,
-                language="pt",  # Força português para maior precisão
-            )
-        return transcript.text
-    finally:
-        os.unlink(tmp_path)  # Remove arquivo temporário
-
-
-async def text_to_speech(text: str) -> bytes:
-    """
-    Converte texto em áudio via OpenAI TTS (para resposta por voz).
-
-    Args:
-        text: Texto a ser convertido
-
-    Returns:
-        Bytes do arquivo MP3
-    """
-    response = openai_client.audio.speech.create(
-        model="tts-1",
-        voice="nova",   # Voz feminina, clara
-        input=text,
-        response_format="mp3",
+    transcript = await _client.audio.transcriptions.create(
+        model="whisper-1",
+        file=audio_file,
+        language="pt",
     )
-    return response.content
+    return transcript.text.strip()
