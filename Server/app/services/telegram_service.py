@@ -60,6 +60,11 @@ def gerar_link_code() -> str:
     return "EPIS-" + secrets.token_hex(3).upper()  # ex: EPIS-3FA2C1
 
 
+# Controle de TTS por sessão (em memória) — True por padrão
+# Usuários que nunca usaram /voz_off recebem áudio automaticamente
+_voz_ativa: dict[str, bool] = {}
+
+
 async def processar_webhook(update: dict) -> None:
     """
     Processa updates recebidos pelo webhook do Telegram Bot.
@@ -67,7 +72,7 @@ async def processar_webhook(update: dict) -> None:
     Fluxos suportados:
     1. /vincular CODIGO  — vincula o chat_id ao gestor no banco
     2. /voz_on | /voz_off — ativa/desativa resposta em áudio (TTS)
-    3. Mensagem de texto — envia ao chatbot DeepSeek e responde com texto + voz (se ativo)
+    3. Mensagem de texto — envia ao chatbot DeepSeek e responde com texto + voz
     4. Mensagem de áudio / voice — transcreve e envia ao chatbot DeepSeek
     """
     from app.core.database import AsyncSessionLocal
@@ -83,14 +88,6 @@ async def processar_webhook(update: dict) -> None:
     chat_id = str(message.get("chat", {}).get("id", ""))
     first_name = message.get("from", {}).get("first_name", "usuário")
     text = message.get("text", "").strip()
-
-    # ────────────────────────────────────────
-    # Controle de TTS por sessão (em memória)
-    # ────────────────────────────────────────
-    if not hasattr(processar_webhook, "_voz_ativa"):
-        processar_webhook._voz_ativa = {}  # type: ignore[attr-defined]
-
-    voz_ativa: dict = processar_webhook._voz_ativa  # type: ignore[attr-defined]
 
     # ────────────────────────────────────────
     # 1. Comando /vincular
@@ -125,7 +122,8 @@ async def processar_webhook(update: dict) -> None:
             f"✅ <b>Vinculado com sucesso, {first_name}!</b>\n\n"
             "Você receberá alertas de não conformidade de EPI por aqui. 🦺\n\n"
             "Pode me fazer perguntas sobre EPIs a qualquer momento!\n"
-            "Use /voz_on para ativar respostas em áudio e /voz_off para desativar."
+            "🔊 Respostas em áudio estão <b>ativadas por padrão</b>.\n"
+            "Use /voz_off para desativar."
         )
         logger.info(f"[TELEGRAM] Usuário vinculado — chat_id: {chat_id}")
         return
@@ -134,16 +132,15 @@ async def processar_webhook(update: dict) -> None:
     # 2. Comandos de controle de voz
     # ────────────────────────────────────────
     if text == "/voz_on":
-        voz_ativa[chat_id] = True
+        _voz_ativa[chat_id] = True
         await enviar_alerta_telegram(chat_id,
             "🔊 Respostas em áudio <b>ativadas</b>!\n"
-            "A partir de agora vou responder com voz + texto.\n"
             "Use /voz_off para desativar."
         )
         return
 
     if text == "/voz_off":
-        voz_ativa[chat_id] = False
+        _voz_ativa[chat_id] = False
         await enviar_alerta_telegram(chat_id,
             "🔇 Respostas em áudio <b>desativadas</b>.\n"
             "Use /voz_on para reativar."
@@ -158,7 +155,7 @@ async def processar_webhook(update: dict) -> None:
             "/voz_on — ativa respostas em áudio (TTS)\n"
             "/voz_off — desativa respostas em áudio\n"
             "/ajuda — exibe esta mensagem\n\n"
-            "Pode me fazer perguntas sobre EPIs e segurança do trabalho a qualquer momento! 🦺"
+            "Pode me fazer perguntas sobre EPIs e segurança do trabalho! 🦺"
         )
         return
 
@@ -185,12 +182,12 @@ async def processar_webhook(update: dict) -> None:
         await enviar_alerta_telegram(chat_id,
             "👋 Olá! Pode me fazer perguntas sobre EPIs e segurança do trabalho.\n"
             "Para vincular sua conta use: <code>/vincular SEU_CODIGO</code>\n"
-            "Para respostas em áudio use: /voz_on"
+            "🔊 Respostas em áudio estão ativas por padrão. Use /voz_off para desativar."
         )
         return
 
     # ────────────────────────────────────────
-    # 5. Texto → chatbot DeepSeek
+    # 5. Texto → chatbot DeepSeek + TTS
     # ────────────────────────────────────────
     try:
         async with httpx.AsyncClient(timeout=3) as client:
@@ -200,11 +197,11 @@ async def processar_webhook(update: dict) -> None:
 
     resposta = await responder_chatbot(text)
 
-    # Sempre envia texto
+    # Sempre envia o texto
     await enviar_alerta_telegram(chat_id, resposta)
 
-    # Se TTS ativo para este chat, envia também o áudio
-    if voz_ativa.get(chat_id, False):
+    # TTS: ativo por padrão — só desativa se o usuário tiver usado /voz_off explicitamente
+    if _voz_ativa.get(chat_id, True):
         try:
             async with httpx.AsyncClient(timeout=3) as client:
                 await client.post(_url("sendChatAction"), json={"chat_id": chat_id, "action": "record_voice"})
@@ -213,9 +210,9 @@ async def processar_webhook(update: dict) -> None:
 
         audio_bytes = await texto_para_audio_ogg(resposta)
         if audio_bytes:
-            # Detecta se é OGG (bytes iniciam com OggS) ou MP3 (fallback)
             is_ogg = audio_bytes[:4] == b"OggS"
             await enviar_audio_telegram(chat_id, audio_bytes, is_ogg=is_ogg)
+            logger.info(f"[TELEGRAM] Áudio TTS enviado para chat_id={chat_id}")
         else:
             logger.warning(f"[TELEGRAM] TTS falhou para chat_id={chat_id}")
 
