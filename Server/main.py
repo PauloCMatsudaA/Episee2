@@ -8,7 +8,7 @@ import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from app.core.config import settings
 from app.core.database import AsyncSessionLocal, init_db
@@ -84,6 +84,23 @@ async def download_model_if_needed():
         logger.warning("[MODEL] Deteccao por camera pode nao funcionar.")
 
 
+async def migrate_add_is_system_admin():
+    """Adiciona a coluna is_system_admin caso ainda nao exista no banco."""
+    async with AsyncSessionLocal() as db:
+        try:
+            await db.execute(text(
+                """
+                ALTER TABLE users
+                ADD COLUMN IF NOT EXISTS is_system_admin BOOLEAN NOT NULL DEFAULT FALSE;
+                """
+            ))
+            await db.commit()
+            logger.info("[MIGRATE] Coluna is_system_admin verificada/adicionada com sucesso.")
+        except Exception as e:
+            await db.rollback()
+            logger.error(f"[MIGRATE] Erro ao adicionar coluna is_system_admin: {e}")
+
+
 async def create_default_admin():
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(Sector).where(Sector.name == "Geral"))
@@ -105,10 +122,16 @@ async def create_default_admin():
                 role=UserRole.gestor,
                 sector_id=default_sector.id,
                 phone="+5511999999999",
+                is_system_admin=True,
             )
             db.add(admin)
             await db.flush()
             logger.info("Usuario padrao admin@episee.com criado.")
+        else:
+            # Garante que o admin existente esteja marcado como system admin
+            if not admin.is_system_admin:
+                admin.is_system_admin = True
+                logger.info("Usuario admin@episee.com marcado como is_system_admin=True.")
         await db.commit()
 
 
@@ -141,6 +164,7 @@ async def registrar_webhook_telegram():
 async def lifespan(app: FastAPI):
     logger.info("Server iniciando")
     await init_db()
+    await migrate_add_is_system_admin()   # <-- migration segura antes do seed
     await create_default_admin()
     await download_model_if_needed()
     await registrar_webhook_telegram()
@@ -165,7 +189,7 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
-    redirect_slashes=False,   # evita 307 quando barra final está ausente/presente
+    redirect_slashes=False,
 )
 
 app.add_middleware(
