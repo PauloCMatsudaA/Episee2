@@ -6,6 +6,13 @@ from pydantic import BaseModel, EmailStr
 from app.models.user import UserRole
 
 
+class SectorBasic(BaseModel):
+    id: int
+    name: str
+
+    model_config = {"from_attributes": True}
+
+
 class UserBase(BaseModel):
     name: str
     email: EmailStr
@@ -29,6 +36,8 @@ class UserUpdate(BaseModel):
 
 class UserResponse(UserBase):
     id: int
+    is_system_admin: bool = False
+    sector: Optional[SectorBasic] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
