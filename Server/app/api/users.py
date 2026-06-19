@@ -3,6 +3,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.deps import get_current_manager, get_current_user
@@ -22,7 +23,7 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_manager),
 ):
-    query = select(User)
+    query = select(User).options(selectinload(User.sector))
     if role:
         query = query.where(User.role == role)
     if sector_id:
@@ -41,7 +42,9 @@ async def get_user(
     if current_user.role != "gestor" and current_user.id != user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
 
-    result = await db.execute(select(User).where(User.id == user_id))
+    result = await db.execute(
+        select(User).options(selectinload(User.sector)).where(User.id == user_id)
+    )
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
@@ -55,10 +58,8 @@ async def create_user(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_manager),
 ):
-    """Cria um novo usuário pelo painel do gestor."""
     email_lower = user_in.email.strip().lower()
 
-    # Verifica duplicidade
     result = await db.execute(
         select(User).where(func.lower(User.email) == email_lower)
     )
@@ -78,7 +79,11 @@ async def create_user(
     )
     db.add(user)
     await db.flush()
-    await db.refresh(user)
+    # Recarrega o objeto com o setor incluido para serializar corretamente
+    result = await db.execute(
+        select(User).options(selectinload(User.sector)).where(User.id == user.id)
+    )
+    user = result.scalar_one()
     return UserResponse.model_validate(user)
 
 
@@ -92,7 +97,9 @@ async def update_user(
     if current_user.role != "gestor" and current_user.id != user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
 
-    result = await db.execute(select(User).where(User.id == user_id))
+    result = await db.execute(
+        select(User).options(selectinload(User.sector)).where(User.id == user_id)
+    )
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
@@ -107,7 +114,11 @@ async def update_user(
         setattr(user, field, value)
 
     await db.flush()
-    await db.refresh(user)
+    # Recarrega com setor atualizado
+    result = await db.execute(
+        select(User).options(selectinload(User.sector)).where(User.id == user_id)
+    )
+    user = result.scalar_one()
     return UserResponse.model_validate(user)
 
 
@@ -122,7 +133,6 @@ async def delete_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
 
-    # Bloqueia exclusão do administrador padrão do sistema
     if user.is_system_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
