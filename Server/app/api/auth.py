@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.security import (
@@ -21,11 +22,11 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
 ):
-    """Authenticate user and return JWT access token."""
-    # Busca ignorando maiúsculas/minúsculas no email
     email_lower = form_data.username.strip().lower()
     result = await db.execute(
-        select(User).where(func.lower(User.email) == email_lower)
+        select(User)
+        .options(selectinload(User.sector))
+        .where(func.lower(User.email) == email_lower)
     )
     user = result.scalar_one_or_none()
 
@@ -49,7 +50,6 @@ async def register(
     user_in: UserCreate,
     db: AsyncSession = Depends(get_db),
 ):
-    """Register a new user."""
     email_lower = user_in.email.strip().lower()
     result = await db.execute(
         select(User).where(func.lower(User.email) == email_lower)
@@ -63,7 +63,7 @@ async def register(
 
     user = User(
         name=user_in.name,
-        email=email_lower,  # salva sempre em minúsculo
+        email=email_lower,
         hashed_password=get_password_hash(user_in.password),
         role=user_in.role,
         sector_id=user_in.sector_id,
@@ -71,11 +71,26 @@ async def register(
     )
     db.add(user)
     await db.flush()
-    await db.refresh(user)
+
+    # Recarrega com setor para serializar corretamente
+    result = await db.execute(
+        select(User).options(selectinload(User.sector)).where(User.id == user.id)
+    )
+    user = result.scalar_one()
     return UserResponse.model_validate(user)
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_me(current_user: User = Depends(get_current_user)):
-    """Return currently authenticated user's information."""
-    return UserResponse.model_validate(current_user)
+async def get_me(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.sector))
+        .where(User.id == current_user.id)
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
+    return UserResponse.model_validate(user)
