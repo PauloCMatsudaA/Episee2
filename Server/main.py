@@ -38,7 +38,6 @@ HLS_DIR.mkdir(exist_ok=True)
 MODEL_PATH = Path("best.pt")
 MODEL_URL = "https://huggingface.co/MatsudaPaulo/episeeyolo/resolve/main/best.pt"
 
-# Origens permitidas
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:3000",
@@ -128,7 +127,6 @@ async def create_default_admin():
             await db.flush()
             logger.info("Usuario padrao admin@episee.com criado.")
         else:
-            # Garante que o admin existente esteja marcado como system admin
             if not admin.is_system_admin:
                 admin.is_system_admin = True
                 logger.info("Usuario admin@episee.com marcado como is_system_admin=True.")
@@ -164,7 +162,7 @@ async def registrar_webhook_telegram():
 async def lifespan(app: FastAPI):
     logger.info("Server iniciando")
     await init_db()
-    await migrate_add_is_system_admin()   # <-- migration segura antes do seed
+    await migrate_add_is_system_admin()
     await create_default_admin()
     await download_model_if_needed()
     await registrar_webhook_telegram()
@@ -213,7 +211,7 @@ async def serve_hls(camera_id: str, filename: str):
 
     if filename.endswith(".m3u8"):
         media_type = "application/vnd.apple.mpegurl"
-    elif filename.endswith(".m3u8"):
+    elif filename.endswith(".ts"):
         media_type = "video/mp2t"
     else:
         media_type = "application/octet-stream"

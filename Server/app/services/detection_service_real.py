@@ -13,14 +13,12 @@ logger = logging.getLogger(__name__)
 HLS_DIR = "hls_streams"
 os.makedirs(HLS_DIR, exist_ok=True)
 
-# Caminho absoluto do modelo — mesmo diretório de trabalho usado pelo main.py (/app)
 MODEL_PATH = os.path.join(os.getcwd(), "best.pt")
 
 VIDEO_FALLBACK = os.path.join(os.getcwd(), "teste.mp4")
 if not os.path.exists(VIDEO_FALLBACK):
     VIDEO_FALLBACK = os.path.join(os.getcwd(), "..", "teste.mp4")
 
-# ── Classes do SH17 ──────────────────────────────────────────────────────────
 CLASSE_PESSOA   = {"person"}
 CLASSE_CABECA   = {"head"}
 CLASSE_CAPACETE = {"helmet"}
@@ -30,22 +28,17 @@ CLASSES_EPI = {
     "helmet", "medical-suit", "safety-suit",
 }
 
-# EPIs que cobrem o rosto/cabeça → validados por sobreposição com 'head'
 EPIS_FACIAIS = {"helmet", "glasses", "face-mask-medical", "face-guard", "earmuffs"}
 
-# EPIs que cobrem o torso → validados por sobreposição com 'person'
 EPIS_TORSO = {"safety-vest"}
 
-# EPIs que cobrem totalmente um membro (mão, corpo inteiro) →
-# NÃO aplicamos interseção pois o próprio EPI oclui o membro de referência
-# Exemplos: gloves (mão), medical-suit (corpo), safety-suit (corpo)
 EPIS_SEM_INTERSECAO = {"gloves", "medical-suit", "safety-suit"}
 
 CONFIANCA_MINIMA  = 0.45
 INTERVALO_SALVAR  = 30
 YOLO_INTERVALO    = 0.3
-IOUI_HELMET_HEAD  = 0.25   # limiar para EPIs faciais sobre cabeça
-IOUI_VEST_PERSON  = 0.15   # limiar para colete sobre pessoa (bbox maior, limiar menor)
+IOUI_HELMET_HEAD  = 0.25
+IOUI_VEST_PERSON  = 0.15
 
 processos_ffmpeg: dict[int, subprocess.Popen] = {}
 tarefas_deteccao: dict[int, asyncio.Task]      = {}
@@ -54,7 +47,6 @@ _model = None
 
 
 def _find_ffmpeg() -> str | None:
-    """Localiza o binário ffmpeg de forma multiplataforma."""
     found = shutil.which("ffmpeg")
     if found:
         return found
@@ -84,10 +76,8 @@ FFMPEG_BIN = _find_ffmpeg()
 if FFMPEG_BIN:
     logger.info(f"[HLS] ffmpeg encontrado: {FFMPEG_BIN}")
 else:
-    logger.warning("[HLS] ffmpeg NÃO encontrado — streams HLS não funcionarão. Instale com: apt-get install ffmpeg")
+    logger.warning("[HLS] ffmpeg NAO encontrado — streams HLS nao funcionarao. Instale com: apt-get install ffmpeg")
 
-
-# ── Lazy imports ─────────────────────────────────────────────────────────────
 
 def _cv2():
     import cv2
@@ -98,10 +88,8 @@ def _np():
     return np
 
 
-# ── Helpers de geometria ─────────────────────────────────────────────────────
-
 def _iou_area(boxA: list, boxB: list) -> float:
-    """Retorna a proporção da área de boxB coberta por boxA."""
+    """Retorna a proporcao da area de boxB coberta por boxA."""
     ax1, ay1, ax2, ay2 = boxA
     bx1, by1, bx2, by2 = boxB
     ix1 = max(ax1, bx1)
@@ -120,14 +108,12 @@ def epi_esta_sobre_alvo(
     alvo_boxes: list[list],
     threshold: float,
 ) -> bool:
-    """Retorna True se epi_box se sobrepõe a pelo menos um alvo acima do limiar."""
+    """Retorna True se epi_box se sobrepoe a pelo menos um alvo acima do limiar."""
     for alvo in alvo_boxes:
         if _iou_area(epi_box, alvo) >= threshold:
             return True
     return False
 
-
-# ── Retrocompatibilidade ──────────────────────────────────────────────────────
 
 def capacete_esta_na_cabeca(
     helmet_box: list,
@@ -136,8 +122,6 @@ def capacete_esta_na_cabeca(
 ) -> bool:
     return epi_esta_sobre_alvo(helmet_box, head_boxes, threshold)
 
-
-# ── Modelo ───────────────────────────────────────────────────────────────────
 
 def get_model():
     global _model
@@ -152,8 +136,6 @@ def get_model():
             _model = None
     return _model
 
-
-# ── Câmera ───────────────────────────────────────────────────────────────────
 
 def is_local_webcam_source(fonte) -> bool:
     if isinstance(fonte, int):
@@ -177,7 +159,7 @@ def iniciar_hls(camera_id: int, source):
     os.makedirs(pasta, exist_ok=True)
 
     if is_local_webcam_source(source):
-        logger.info(f"[HLS] Camera {camera_id} é webcam local — HLS via pipe OpenCV->FFmpeg")
+        logger.info(f"[HLS] Camera {camera_id} e webcam local — HLS via pipe OpenCV->FFmpeg")
         return
 
     m3u8 = os.path.join(pasta, "index.m3u8")
@@ -187,7 +169,7 @@ def iniciar_hls(camera_id: int, source):
         del processos_ffmpeg[camera_id]
 
     if not FFMPEG_BIN:
-        logger.error("[HLS] ffmpeg não encontrado! Instale com: apt-get install ffmpeg")
+        logger.error("[HLS] ffmpeg nao encontrado! Instale com: apt-get install ffmpeg")
         return
 
     cmd = [
@@ -201,7 +183,7 @@ def iniciar_hls(camera_id: int, source):
     try:
         proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         processos_ffmpeg[camera_id] = proc
-        logger.info(f"[HLS] Iniciado câmera {camera_id}")
+        logger.info(f"[HLS] Iniciado camera {camera_id}")
     except Exception as e:
         logger.error(f"[HLS] Erro: {e}")
 
@@ -211,7 +193,7 @@ def iniciar_hls_pipe(camera_id: int, width: int, height: int, fps: int = 15):
     os.makedirs(pasta, exist_ok=True)
     m3u8 = os.path.join(pasta, "index.m3u8")
     if not FFMPEG_BIN:
-        logger.error("[HLS-PIPE] ffmpeg não encontrado! Instale com: apt-get install ffmpeg")
+        logger.error("[HLS-PIPE] ffmpeg nao encontrado! Instale com: apt-get install ffmpeg")
         return None
     cmd = [
         FFMPEG_BIN, "-y",
@@ -229,7 +211,7 @@ def iniciar_hls_pipe(camera_id: int, width: int, height: int, fps: int = 15):
     try:
         proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        logger.info(f"[HLS-PIPE] Iniciado câmera {camera_id} ({width}x{height}@{fps}fps)")
+        logger.info(f"[HLS-PIPE] Iniciado camera {camera_id} ({width}x{height}@{fps}fps)")
         return proc
     except Exception as e:
         logger.error(f"[HLS-PIPE] Erro: {e}")
@@ -243,10 +225,8 @@ def parar_hls(camera_id: int):
     task = tarefas_deteccao.pop(camera_id, None)
     if task:
         task.cancel()
-    logger.info(f"[CAM {camera_id}] Stream e detecção encerrados.")
+    logger.info(f"[CAM {camera_id}] Stream e deteccao encerrados.")
 
-
-# ── FrameReader ──────────────────────────────────────────────────────────────
 
 class FrameReader(Thread):
     def __init__(self, fonte, camera_id: int):
@@ -277,7 +257,7 @@ class FrameReader(Thread):
         if not cap.isOpened():
             if is_local_webcam_source(self.fonte):
                 for t in range(5):
-                    logger.warning(f"[CAM {self.camera_id}] Webcam não abriu, tentativa {t+1}/5...")
+                    logger.warning(f"[CAM {self.camera_id}] Webcam nao abriu, tentativa {t+1}/5...")
                     time.sleep(2)
                     cap = self._open_capture()
                     if cap.isOpened():
@@ -288,7 +268,7 @@ class FrameReader(Thread):
                 self.fonte = fallback
                 cap = cv2.VideoCapture(self.fonte)
         if not cap.isOpened():
-            logger.error(f"[CAM {self.camera_id}] Nenhuma fonte disponível!")
+            logger.error(f"[CAM {self.camera_id}] Nenhuma fonte disponivel!")
             return
 
         while self.running:
@@ -315,8 +295,6 @@ class FrameReader(Thread):
     def stop(self):
         self.running = False
 
-
-# ── Inferência ───────────────────────────────────────────────────────────────
 
 def inferir_frame(frame) -> list[dict]:
     model = get_model()
@@ -361,7 +339,7 @@ def _validar_epis_por_intersecao(
         if not algum_vestido:
             epis_validos.discard(epi)
             logger.debug(
-                f"[DETECÇÃO] '{epi}' detectado mas não sobre cabeça — desconsiderado"
+                f"[DETECCAO] '{epi}' detectado mas nao sobre cabeca — desconsiderado"
             )
 
     if "safety-vest" in epis_validos and person_boxes:
@@ -373,7 +351,7 @@ def _validar_epis_por_intersecao(
         if not algum_vestido:
             epis_validos.discard("safety-vest")
             logger.debug(
-                "[DETECÇÃO] 'safety-vest' detectado mas não sobre pessoa — desconsiderado"
+                "[DETECCAO] 'safety-vest' detectado mas nao sobre pessoa — desconsiderado"
             )
 
     return epis_validos
@@ -414,8 +392,6 @@ def avaliar_deteccoes(
     }
 
 
-# ── Busca EPIs do setor ──────────────────────────────────────────────────────
-
 async def get_epis_obrigatorios_do_setor(sector_id: int | None) -> set[str]:
     if sector_id is None:
         return {"safety-vest"}
@@ -428,14 +404,12 @@ async def get_epis_obrigatorios_do_setor(sector_id: int | None) -> set[str]:
             sector = result.scalar_one_or_none()
             if sector and sector.epis_obrigatorios:
                 epis = set(sector.epis_obrigatorios)
-                logger.info(f"[SETOR {sector_id}] EPIs obrigatórios: {epis}")
+                logger.info(f"[SETOR {sector_id}] EPIs obrigatorios: {epis}")
                 return epis
     except Exception as e:
         logger.error(f"[SETOR {sector_id}] Erro ao buscar EPIs: {e}", exc_info=True)
     return {"safety-vest"}
 
-
-# ── Salvar ocorrência ────────────────────────────────────────────────────────
 
 async def salvar_ocorrencia(
     camera_id: int,
@@ -475,11 +449,11 @@ async def salvar_ocorrencia(
 
             gestores = []
             if resultado["status"] == "nao_conforme":
-                ausentes_str = ", ".join(resultado["epis_ausentes"]) or "EPI não identificado"
+                ausentes_str = ", ".join(resultado["epis_ausentes"]) or "EPI nao identificado"
                 texto = (
-                    f"[ALERTA] Pessoa sem EPI — Câmera {camera_id} | "
+                    f"[ALERTA] Pessoa sem EPI — Camera {camera_id} | "
                     f"Faltando: {ausentes_str} | "
-                    f"Confiança: {resultado['confidence'] * 100:.0f}%"
+                    f"Confianca: {resultado['confidence'] * 100:.0f}%"
                 )
                 res = await db.execute(
                     select(User).where(
@@ -495,25 +469,23 @@ async def salvar_ocorrencia(
                     ))
                     if g.phone:
                         mensagem_tg = (
-                            f"<b>ALERTA de Não Conformidade</b>\n\n"
-                            f"Câmera: <b>{camera_id}</b>\n"
+                            f"<b>ALERTA de Nao Conformidade</b>\n\n"
+                            f"Camera: <b>{camera_id}</b>\n"
                             f"EPIs faltando: <b>{ausentes_str}</b>\n"
-                            f"Confiança: <b>{resultado['confidence'] * 100:.0f}%</b>\n"
-                            f"Horário: <b>{datetime.utcnow().strftime('%d/%m/%Y %H:%M:%S')} UTC</b>"
+                            f"Confianca: <b>{resultado['confidence'] * 100:.0f}%</b>\n"
+                            f"Horario: <b>{datetime.utcnow().strftime('%d/%m/%Y %H:%M:%S')} UTC</b>"
                         )
                         asyncio.create_task(enviar_alerta_telegram(g.phone, mensagem_tg))
 
             await db.commit()
             logger.info(
-                f"[CAM {camera_id}] Ocorrência #{occ.id} | "
+                f"[CAM {camera_id}] Ocorrencia #{occ.id} | "
                 f"status={resultado['status']} | faltando={resultado['epis_ausentes']} | "
                 f"notificados={len(gestores)}"
             )
     except Exception as e:
-        logger.error(f"[CAM {camera_id}] Erro ao salvar ocorrência: {e}", exc_info=True)
+        logger.error(f"[CAM {camera_id}] Erro ao salvar ocorrencia: {e}", exc_info=True)
 
-
-# ── Loop principal de stream ─────────────────────────────────────────────────
 
 async def processar_stream_camera(camera_id: int, fonte, sector_id: int):
     epis_obrigatorios = await get_epis_obrigatorios_do_setor(sector_id)
@@ -564,7 +536,7 @@ async def processar_stream_camera(camera_id: int, fonte, sector_id: int):
             ultimo_save = agora
 
     except asyncio.CancelledError:
-        logger.info(f"[CAM {camera_id}] Detecção cancelada.")
+        logger.info(f"[CAM {camera_id}] Deteccao cancelada.")
     finally:
         reader.stop()
         if hls_pipe_proc and hls_pipe_proc.poll() is None:
@@ -574,8 +546,6 @@ async def processar_stream_camera(camera_id: int, fonte, sector_id: int):
             except Exception:
                 pass
 
-
-# ── Startup ──────────────────────────────────────────────────────────────────
 
 async def start_camera_streams():
     await asyncio.sleep(2)
@@ -589,7 +559,7 @@ async def start_camera_streams():
             result = await db.execute(select(Camera).where(Camera.is_active == True))
             cameras = result.scalars().all()
 
-        logger.info(f"[STARTUP] {len(cameras)} câmera(s) ativa(s)")
+        logger.info(f"[STARTUP] {len(cameras)} camera(s) ativa(s)")
         model_existe = os.path.exists(MODEL_PATH)
         logger.info(f"[STARTUP] best.pt: {model_existe} → {os.path.abspath(MODEL_PATH)}")
 
@@ -598,14 +568,14 @@ async def start_camera_streams():
             fonte = normalize_camera_source(cam.rtsp_url)
             chave = str(fonte)
             if chave in fontes_em_uso:
-                logger.error(f"[STARTUP] Câmera {cam.id} ignorada — fonte '{chave}' já em uso.")
+                logger.error(f"[STARTUP] Camera {cam.id} ignorada — fonte '{chave}' ja em uso.")
                 continue
             fontes_em_uso.add(chave)
             sector_id = cam.sector_id or 1
             iniciar_hls(cam.id, fonte)
             task = asyncio.create_task(processar_stream_camera(cam.id, fonte, sector_id))
             tarefas_deteccao[cam.id] = task
-            logger.info(f"[STARTUP] Câmera {cam.id} iniciada")
+            logger.info(f"[STARTUP] Camera {cam.id} iniciada")
     except Exception as e:
         logger.error(f"[STARTUP] Erro: {e}", exc_info=True)
 
@@ -615,8 +585,6 @@ async def start_camera_streams():
     except asyncio.CancelledError:
         logger.info("[STARTUP] Encerrado.")
 
-
-# ── Endpoints pontuais ───────────────────────────────────────────────────────
 
 async def analyze_frame(
     camera_id: int,
