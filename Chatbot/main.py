@@ -13,6 +13,8 @@ logging.basicConfig(
 app = FastAPI(
     title="EPIsee Chatbot",
     description=(
+        "Chatbot especialista em EPIs via WhatsApp, Telegram e App Mobile — "
+        "NR-6, direitos do trabalhador e orientações de segurança."
     ),
     version="1.1.0",
 )
