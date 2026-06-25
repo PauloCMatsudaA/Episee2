@@ -1,4 +1,3 @@
-/* ── App shell ─────────────────────────────────────────── */
 .app-shell {
   display: flex;
   flex-direction: column;
@@ -12,7 +11,6 @@
   width: 100%;
 }
 
-/* ── Header ────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
@@ -42,7 +40,6 @@
   gap: 0.5rem;
 }
 
-/* Busca */
 .header-search {
   display: none;
   align-items: center;
@@ -69,7 +66,6 @@
   }
 }
 
-/* Notificações */
 .notif-wrapper {
   position: relative;
 }
@@ -150,7 +146,6 @@
   background: var(--brand-light);
 }
 
-/* Avatar */
 .header-avatar-btn {
   display: flex;
   align-items: center;
@@ -365,7 +360,6 @@
   color: #ef4444;
 }
 
-/* ── Página ────────────────────────────────────────────── */
 .page {
   display: flex;
   flex-direction: column;

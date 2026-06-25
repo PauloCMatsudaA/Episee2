@@ -19,14 +19,11 @@ from app.schemas.training_video import (
     TrainingVideoCreate, TrainingVideoUpdate, TrainingVideoOut,
 )
 
-# prefix apenas "/training" — o main.py já adiciona "/api"
 router = APIRouter(prefix="/training", tags=["training"])
 
-# Pasta onde os vídeos enviados por upload ficam armazenados
 UPLOAD_DIR = Path("uploads") / "training_videos"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-# Tipos MIME permitidos para upload
 MIME_PERMITIDOS = {
     "video/mp4",
     "video/webm",
@@ -35,35 +32,24 @@ MIME_PERMITIDOS = {
     "video/x-msvideo",
 }
 
-TAMANHO_MAXIMO = 500 * 1024 * 1024  # 500 MB
-
+TAMANHO_MAXIMO = 500 * 1024 * 1024  
 
 def _exige_gestor(user: User):
     if getattr(user, 'role', None) not in ('admin', 'manager', 'gestor'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="Apenas gestores podem realizar esta ação.")
 
-
-# ─────────────────────────────────────────────────────────────
-# ROTA PÚBLICA PARA TRABALHADORES
-# ─────────────────────────────────────────────────────────────
-
 @router.get("/worker/epis", response_model=List[EpiTypeOut])
 async def listar_epis_worker(
     db: AsyncSession = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user),
 ):
-    """Lista EPIs com vídeos aprovados. Acessível a qualquer usuário autenticado."""
+    
     result = await db.execute(
         select(EpiType).options(selectinload(EpiType.videos))
     )
     epis = result.scalars().all()
     return [e for e in epis if any(v.aprovado for v in e.videos)]
-
-
-# ─────────────────────────────────────────────────────────────
-# CRUD DE EPI (somente gestor)
-# ─────────────────────────────────────────────────────────────
 
 @router.get("/epis", response_model=List[EpiTypeOut])
 async def listar_epis(
@@ -75,7 +61,6 @@ async def listar_epis(
     )
     return result.scalars().all()
 
-
 @router.get("/epi-types", response_model=List[EpiTypeOut])
 async def listar_epis_alias(
     db: AsyncSession = Depends(get_db),
@@ -85,7 +70,6 @@ async def listar_epis_alias(
         select(EpiType).options(selectinload(EpiType.videos))
     )
     return result.scalars().all()
-
 
 @router.post("/epi-types", response_model=EpiTypeOut, status_code=status.HTTP_201_CREATED)
 @router.post("/epis", response_model=EpiTypeOut, status_code=status.HTTP_201_CREATED)
@@ -100,7 +84,6 @@ async def criar_epi(
     await db.commit()
     await db.refresh(epi)
     return epi
-
 
 @router.patch("/epi-types/{epi_id}", response_model=EpiTypeOut)
 @router.put("/epis/{epi_id}", response_model=EpiTypeOut)
@@ -123,7 +106,6 @@ async def atualizar_epi(
     await db.refresh(epi)
     return epi
 
-
 @router.delete("/epi-types/{epi_id}", status_code=status.HTTP_204_NO_CONTENT)
 @router.delete("/epis/{epi_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def deletar_epi(
@@ -138,11 +120,6 @@ async def deletar_epi(
         raise HTTPException(status_code=404, detail="EPI não encontrado.")
     await db.delete(epi)
     await db.commit()
-
-
-# ─────────────────────────────────────────────────────────────
-# CRUD DE VÍDEOS — URL (somente gestor)
-# ─────────────────────────────────────────────────────────────
 
 @router.post("/videos", response_model=TrainingVideoOut, status_code=status.HTTP_201_CREATED)
 async def adicionar_video(
@@ -160,7 +137,6 @@ async def adicionar_video(
     await db.refresh(video)
     return video
 
-
 @router.post("/epis/{epi_id}/videos", response_model=TrainingVideoOut,
              status_code=status.HTTP_201_CREATED)
 async def adicionar_video_por_epi(
@@ -173,20 +149,13 @@ async def adicionar_video_por_epi(
     result = await db.execute(select(EpiType).where(EpiType.id == epi_id))
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="EPI não encontrado.")
-    # exclude 'epi_type_id' do model_dump para evitar conflito com o parâmetro da URL
+    
     dados_dict = dados.model_dump(exclude={"epi_type_id"})
     video = TrainingVideo(epi_type_id=epi_id, **dados_dict)
     db.add(video)
     await db.commit()
     await db.refresh(video)
     return video
-
-
-# ─────────────────────────────────────────────────────────────
-# UPLOAD DE ARQUIVO DE VÍDEO  ←  ROTA NOVA
-# POST /api/training/videos/upload
-# Recebe multipart/form-data com os campos abaixo.
-# ─────────────────────────────────────────────────────────────
 
 @router.post("/videos/upload", response_model=TrainingVideoOut,
              status_code=status.HTTP_201_CREATED)
@@ -201,19 +170,13 @@ async def upload_video(
     db:          AsyncSession = Depends(get_db),
     current_user: User     = Depends(get_current_user),
 ):
-    """
-    Faz upload de um arquivo de vídeo e cria o registro TrainingVideo.
-    O arquivo fica em  uploads/training_videos/<uuid>.<ext>
-    A URL salva no banco aponta para  /api/training/videos/file/<uuid>.<ext>
-    """
+    
     _exige_gestor(current_user)
 
-    # Valida EPI
     result = await db.execute(select(EpiType).where(EpiType.id == epi_type_id))
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="EPI não encontrado.")
 
-    # Valida tipo MIME
     if file.content_type not in MIME_PERMITIDOS:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
@@ -221,14 +184,13 @@ async def upload_video(
                    f"Use MP4, WebM, OGG, MOV ou AVI."
         )
 
-    # Lê em chunks e verifica tamanho
     extensao = Path(file.filename or "video.mp4").suffix or ".mp4"
     nome_arquivo = f"{uuid.uuid4().hex}{extensao}"
     destino = UPLOAD_DIR / nome_arquivo
 
     tamanho = 0
     async with aiofiles.open(destino, "wb") as f_out:
-        while chunk := await file.read(1024 * 1024):  # lê 1 MB por vez
+        while chunk := await file.read(1024 * 1024):  
             tamanho += len(chunk)
             if tamanho > TAMANHO_MAXIMO:
                 await f_out.close()
@@ -239,7 +201,6 @@ async def upload_video(
                 )
             await f_out.write(chunk)
 
-    # URL interna que o front-end vai usar para reproduzir o vídeo
     url_video = f"/api/training/videos/file/{nome_arquivo}"
 
     video = TrainingVideo(
@@ -256,30 +217,19 @@ async def upload_video(
     await db.refresh(video)
     return video
 
-
-# ─────────────────────────────────────────────────────────────
-# SERVIR ARQUIVO DE VÍDEO ENVIADO POR UPLOAD
-# GET /api/training/videos/file/{nome_arquivo}
-# ─────────────────────────────────────────────────────────────
-
 @router.get("/videos/file/{nome_arquivo}")
 async def servir_video(
     nome_arquivo: str,
     current_user: User = Depends(get_current_user),
 ):
-    """Retorna o arquivo de vídeo armazenado localmente."""
+    
     caminho = UPLOAD_DIR / nome_arquivo
     if not caminho.exists() or not caminho.is_file():
         raise HTTPException(status_code=404, detail="Arquivo não encontrado.")
-    # Garante que não haja path traversal
+    
     if not str(caminho.resolve()).startswith(str(UPLOAD_DIR.resolve())):
         raise HTTPException(status_code=400, detail="Caminho inválido.")
     return FileResponse(str(caminho), media_type="video/mp4")
-
-
-# ─────────────────────────────────────────────────────────────
-# UPDATE / DELETE DE VÍDEOS
-# ─────────────────────────────────────────────────────────────
 
 @router.patch("/videos/{video_id}", response_model=TrainingVideoOut)
 @router.put("/videos/{video_id}", response_model=TrainingVideoOut)
@@ -300,7 +250,6 @@ async def atualizar_video(
     await db.refresh(video)
     return video
 
-
 @router.delete("/videos/{video_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def deletar_video(
     video_id: int,
@@ -313,7 +262,6 @@ async def deletar_video(
     if not video:
         raise HTTPException(status_code=404, detail="Vídeo não encontrado.")
 
-    # Se o vídeo foi enviado por upload, remove o arquivo físico também
     if video.url and video.url.startswith("/api/training/videos/file/"):
         nome = video.url.split("/")[-1]
         arquivo = UPLOAD_DIR / nome

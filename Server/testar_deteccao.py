@@ -1,7 +1,3 @@
-"""
-Roda a detecção num vídeo ou imagem e imprime o resultado no terminal.
-Uso: python testar_deteccao.py [caminho_video_ou_imagem]
-"""
 import sys
 import cv2
 from ultralytics import YOLO
@@ -32,7 +28,7 @@ while True:
         break
 
     frame_n += 1
-    if frame_n % 30 != 0:   # analisa 1 frame por segundo
+    if frame_n % 30 != 0:   
         continue
 
     results = model(frame, conf=CONF, verbose=False)

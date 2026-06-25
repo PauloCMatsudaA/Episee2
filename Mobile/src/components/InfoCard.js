@@ -1,20 +1,7 @@
-// src/components/InfoCard.js — Card informativo genérico
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-/**
- * InfoCard — Card informativo genérico e flexível
- *
- * Props:
- * - titulo: título do card
- * - icone: nome do ícone Ionicons
- * - corIcone: cor do ícone (padrão: #F97316)
- * - children: conteúdo interno
- * - onPress: callback opcional
- * - estilo: estilo adicional para o container
- * - mostrarChevron: exibe seta de navegação (padrão: false)
- */
 export default function InfoCard({
   titulo,
   icone,
@@ -32,7 +19,7 @@ export default function InfoCard({
       onPress={onPress}
       activeOpacity={0.8}
     >
-      {/* Cabeçalho do card */}
+      {}
       {(titulo || icone) && (
         <View style={estilos.cabecalho}>
           {icone && (
@@ -54,7 +41,7 @@ export default function InfoCard({
         </View>
       )}
 
-      {/* Conteúdo */}
+      {}
       {children && (
         <View style={titulo || icone ? estilos.conteudo : null}>
           {children}
@@ -64,15 +51,6 @@ export default function InfoCard({
   );
 }
 
-/**
- * InfoCard.Item — Linha de item dentro de um InfoCard
- *
- * Props:
- * - label: rótulo
- * - valor: valor
- * - icone: ícone opcional
- * - ultimo: remove a borda inferior (padrão: false)
- */
 InfoCard.Item = function InfoCardItem({ label, valor, icone, ultimo = false }) {
   return (
     <View style={[estilosItem.row, ultimo && estilosItem.ultimo]}>

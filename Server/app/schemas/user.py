@@ -5,13 +5,11 @@ from pydantic import BaseModel, EmailStr
 
 from app.models.user import UserRole
 
-
 class SectorBasic(BaseModel):
     id: int
     name: str
 
     model_config = {"from_attributes": True}
-
 
 class UserBase(BaseModel):
     name: str
@@ -20,10 +18,8 @@ class UserBase(BaseModel):
     sector_id: Optional[int] = None
     phone: Optional[str] = None
 
-
 class UserCreate(UserBase):
     password: str
-
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
@@ -33,7 +29,6 @@ class UserUpdate(BaseModel):
     phone: Optional[str] = None
     password: Optional[str] = None
 
-
 class UserResponse(UserBase):
     id: int
     is_system_admin: bool = False
@@ -42,12 +37,10 @@ class UserResponse(UserBase):
 
     model_config = {"from_attributes": True}
 
-
 class Token(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
-
 
 class TokenData(BaseModel):
     user_id: Optional[int] = None

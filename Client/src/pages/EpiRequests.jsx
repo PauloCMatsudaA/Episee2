@@ -114,7 +114,7 @@ export default function EpiRequests() {
         </div>
       )}
 
-      {/* Abas */}
+      {}
       <div className="flex gap-1 rounded-xl border border-slate-100 bg-white p-1 shadow-sm">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -140,7 +140,7 @@ export default function EpiRequests() {
         })}
       </div>
 
-      {/* Tabela */}
+      {}
       <div className="rounded-xl border border-slate-100 bg-white shadow-sm">
         {carregando ? (
           <div className="flex justify-center py-12"><LoadingSpinner /></div>
@@ -183,7 +183,7 @@ export default function EpiRequests() {
                       {format(new Date(sol.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                     </td>
 
-                    {/* Acoes — pendentes */}
+                    {}
                     {abaAtiva === 'pendente' && (
                       <td className="whitespace-nowrap px-4 py-3">
                         <div className="flex items-center gap-1.5">
@@ -205,7 +205,7 @@ export default function EpiRequests() {
                       </td>
                     )}
 
-                    {/* Entrega — aprovadas */}
+                    {}
                     {abaAtiva === 'aprovada' && (
                       <td className="whitespace-nowrap px-4 py-3">
                         {sol.entregue ? (
@@ -224,7 +224,7 @@ export default function EpiRequests() {
                       </td>
                     )}
 
-                    {/* Motivo da rejeicao — rejeitadas */}
+                    {}
                     {abaAtiva === 'rejeitada' && (
                       <td className="max-w-xs px-4 py-3 text-xs text-red-600">
                         {sol.motivo_rejeicao || '-'}
@@ -238,7 +238,7 @@ export default function EpiRequests() {
         )}
       </div>
 
-      {/* Modal de Aprovacao */}
+      {}
       {modalAprovar && solAprovarModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
@@ -277,7 +277,7 @@ export default function EpiRequests() {
         </div>
       )}
 
-      {/* Modal de Rejeicao */}
+      {}
       {modalRejeitar && solRejeitarModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">

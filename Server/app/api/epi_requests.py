@@ -18,16 +18,14 @@ from app.schemas.epi_request import (
 
 router = APIRouter(prefix="/epi-requests", tags=["EPI Requests"])
 
-
 def _to_response(r: EPIRequest) -> EPIRequestResponse:
-    """Converte ORM -> schema incluindo nomes do worker e sector."""
+    
     data = EPIRequestResponse.model_validate(r)
     if r.worker:
         data.worker_name = r.worker.name or r.worker.email
     if r.sector:
         data.sector_name = r.sector.name
     return data
-
 
 @router.get("/my", response_model=List[EPIRequestResponse])
 async def get_my_requests(
@@ -41,7 +39,6 @@ async def get_my_requests(
         .order_by(EPIRequest.created_at.desc())
     )
     return [_to_response(r) for r in result.scalars().all()]
-
 
 @router.get("", response_model=List[EPIRequestResponse])
 @router.get("/", response_model=List[EPIRequestResponse], include_in_schema=False)
@@ -68,7 +65,6 @@ async def list_epi_requests(
     result = await db.execute(query)
     return [_to_response(r) for r in result.scalars().all()]
 
-
 @router.post("", response_model=EPIRequestResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=EPIRequestResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 async def create_epi_request(
@@ -91,7 +87,6 @@ async def create_epi_request(
         .where(EPIRequest.id == epi_request.id)
     )
     return _to_response(result.scalar_one())
-
 
 @router.patch("/{request_id}/approve", response_model=EPIRequestResponse)
 async def approve_epi_request(
@@ -121,7 +116,6 @@ async def approve_epi_request(
         .where(EPIRequest.id == request_id)
     )
     return _to_response(result2.scalar_one())
-
 
 @router.patch("/{request_id}/reject", response_model=EPIRequestResponse)
 async def reject_epi_request(
@@ -155,7 +149,6 @@ async def reject_epi_request(
         .where(EPIRequest.id == request_id)
     )
     return _to_response(result2.scalar_one())
-
 
 @router.patch("/{request_id}/entrega", response_model=EPIRequestResponse)
 async def marcar_entrega(

@@ -52,7 +52,6 @@ if _extra:
         if _o and _o not in ALLOWED_ORIGINS:
             ALLOWED_ORIGINS.append(_o)
 
-
 async def download_model_if_needed():
     if MODEL_PATH.exists():
         logger.info(f"[MODEL] best.pt ja existe ({MODEL_PATH.stat().st_size / 1024 / 1024:.1f} MB) - pulando download.")
@@ -82,9 +81,8 @@ async def download_model_if_needed():
         logger.error(f"[MODEL] Falha ao baixar best.pt: {e}")
         logger.warning("[MODEL] Deteccao por camera pode nao funcionar.")
 
-
 async def migrate_add_is_system_admin():
-    """Adiciona a coluna is_system_admin caso ainda nao exista no banco."""
+    
     async with AsyncSessionLocal() as db:
         try:
             await db.execute(text(
@@ -98,7 +96,6 @@ async def migrate_add_is_system_admin():
         except Exception as e:
             await db.rollback()
             logger.error(f"[MIGRATE] Erro ao adicionar coluna is_system_admin: {e}")
-
 
 async def create_default_admin():
     async with AsyncSessionLocal() as db:
@@ -132,9 +129,8 @@ async def create_default_admin():
                 logger.info("Usuario admin@episee.com marcado como is_system_admin=True.")
         await db.commit()
 
-
 async def registrar_webhook_telegram():
-    """Registra o webhook do Telegram Bot automaticamente no startup."""
+    
     token = getattr(settings, "TELEGRAM_BOT_TOKEN", "")
     app_url = getattr(settings, "APP_URL", "")
 
@@ -156,7 +152,6 @@ async def registrar_webhook_telegram():
                 logger.error(f"[TELEGRAM] Falha ao registrar webhook: {data}")
     except Exception as e:
         logger.error(f"[TELEGRAM] Erro ao registrar webhook: {e}")
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -180,7 +175,6 @@ async def lifespan(app: FastAPI):
         pass
     logger.info("Encerrando servidor.")
 
-
 app = FastAPI(
     title="EPIsee API",
     version="1.0.0",
@@ -197,7 +191,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 @app.get("/hls/{camera_id}/{filename}")
 async def serve_hls(camera_id: str, filename: str):
@@ -227,7 +220,6 @@ async def serve_hls(camera_id: str, filename: str):
         },
     )
 
-
 API_PREFIX = "/api"
 
 app.include_router(auth.router,           prefix=API_PREFIX)
@@ -244,11 +236,9 @@ app.include_router(training_router,       prefix=API_PREFIX)
 app.include_router(chatbot_router,        prefix=API_PREFIX)
 app.include_router(telegram_router,       prefix=API_PREFIX)
 
-
 @app.get("/health", tags=["Health"])
 async def health_check():
     return {"status": "ok", "service": "EPIsee API", "version": "1.0.0"}
-
 
 @app.get("/", tags=["Health"])
 async def root():

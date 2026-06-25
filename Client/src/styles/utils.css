@@ -1,4 +1,3 @@
-/* ── Utilitários ─────────────────────────────────────────── */
 .flex        { display: flex; }
 .flex-col    { flex-direction: column; }
 .items-center { align-items: center; }

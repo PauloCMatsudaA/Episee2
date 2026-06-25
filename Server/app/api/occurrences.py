@@ -19,7 +19,6 @@ from app.schemas.occurrence import (
 
 router = APIRouter(prefix="/occurrences", tags=["Occurrences"])
 
-
 @router.get("/", response_model=List[OccurrenceResponse])
 async def list_occurrences(
     sector_id: Optional[int] = None,
@@ -31,7 +30,7 @@ async def list_occurrences(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """List occurrences with optional filters — includes camera and sector names."""
+    
     conditions = []
 
     if sector_id:
@@ -43,7 +42,6 @@ async def list_occurrences(
     if end_date:
         conditions.append(Occurrence.timestamp <= datetime.combine(end_date, datetime.max.time()))
 
-    # Trabalhadores só vêem ocorrências do próprio setor
     if current_user.role == "trabalhador" and current_user.sector_id:
         conditions.append(Occurrence.sector_id == current_user.sector_id)
 
@@ -63,13 +61,12 @@ async def list_occurrences(
     responses = []
     for o in occurrences:
         data = OccurrenceResponse.model_validate(o)
-        # Aproveita os relacionamentos já carregados (lazy="selectin" no model)
+        
         data.camera_name = o.camera.name if o.camera else f"Camera {o.camera_id}"
         data.sector_name = o.sector.name if o.sector else f"Setor {o.sector_id}"
         responses.append(data)
 
     return responses
-
 
 @router.get("/stats/summary", response_model=OccurrenceSummary)
 async def get_occurrence_summary(
@@ -77,7 +74,7 @@ async def get_occurrence_summary(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    """Return aggregated occurrence statistics."""
+    
     query = select(Occurrence)
     if sector_id:
         query = query.where(Occurrence.sector_id == sector_id)
@@ -106,14 +103,13 @@ async def get_occurrence_summary(
         today_non_compliant=today_non_compliant,
     )
 
-
 @router.get("/{occurrence_id}", response_model=OccurrenceResponse)
 async def get_occurrence(
     occurrence_id: int,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    """Get occurrence details by ID."""
+    
     result = await db.execute(select(Occurrence).where(Occurrence.id == occurrence_id))
     occurrence = result.scalar_one_or_none()
     if not occurrence:
@@ -124,14 +120,13 @@ async def get_occurrence(
     data.sector_name = occurrence.sector.name if occurrence.sector else f"Setor {occurrence.sector_id}"
     return data
 
-
 @router.post("/", response_model=OccurrenceResponse, status_code=status.HTTP_201_CREATED)
 async def create_occurrence(
     occurrence_in: OccurrenceCreate,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    """Create a new occurrence (used by the detection service)."""
+    
     occurrence = Occurrence(
         camera_id=occurrence_in.camera_id,
         sector_id=occurrence_in.sector_id,

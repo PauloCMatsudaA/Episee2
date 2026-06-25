@@ -13,7 +13,6 @@ from app.schemas.sector import SectorCreate, SectorUpdate, SectorResponse, Secto
 
 router = APIRouter(prefix="/sectors", tags=["Sectors"])
 
-
 @router.get("", response_model=List[SectorResponse])
 @router.get("/", response_model=List[SectorResponse], include_in_schema=False)
 async def list_sectors(
@@ -23,7 +22,6 @@ async def list_sectors(
     result = await db.execute(select(Sector).order_by(Sector.name))
     sectors = result.scalars().all()
     return [SectorResponse.model_validate(s) for s in sectors]
-
 
 @router.get("/{sector_id}", response_model=SectorResponse)
 async def get_sector(
@@ -36,7 +34,6 @@ async def get_sector(
     if not sector:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Setor não encontrado")
     return SectorResponse.model_validate(sector)
-
 
 @router.get("/{sector_id}/stats", response_model=SectorStats)
 async def get_sector_stats(
@@ -83,7 +80,6 @@ async def get_sector_stats(
         epis_mais_ausentes=epis_mais_ausentes,
     )
 
-
 @router.post("", response_model=SectorResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=SectorResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 async def create_sector(
@@ -91,7 +87,7 @@ async def create_sector(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_manager),
 ):
-    """Create a new sector. Manager only."""
+    
     result = await db.execute(select(Sector).where(Sector.name == sector_in.name))
     existing = result.scalar_one_or_none()
     if existing:
@@ -110,7 +106,6 @@ async def create_sector(
     await db.refresh(sector)
     return SectorResponse.model_validate(sector)
 
-
 @router.patch("/{sector_id}", response_model=SectorResponse)
 async def update_sector(
     sector_id: int,
@@ -118,7 +113,7 @@ async def update_sector(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_manager),
 ):
-    """Update a sector. Manager only."""
+    
     result = await db.execute(select(Sector).where(Sector.id == sector_id))
     sector = result.scalar_one_or_none()
     if not sector:
@@ -131,14 +126,13 @@ async def update_sector(
     await db.refresh(sector)
     return SectorResponse.model_validate(sector)
 
-
 @router.delete("/{sector_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_sector(
     sector_id: int,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_manager),
 ):
-    """Delete a sector. Manager only."""
+    
     result = await db.execute(select(Sector).where(Sector.id == sector_id))
     sector = result.scalar_one_or_none()
     if not sector:

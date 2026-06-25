@@ -1,19 +1,7 @@
-// src/components/EPICard.js — Card de EPI individual
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-/**
- * EPICard — Exibe informações de um tipo de EPI
- *
- * Props:
- * - icone: nome do ícone Ionicons (ex: 'shield-checkmark')
- * - corIcone: cor do ícone (padrão: #F97316)
- * - nome: nome do EPI
- * - descricao: descrição curta
- * - onPress: callback ao tocar no card
- * - badge: texto opcional (ex: "CA válido")
- */
 export default function EPICard({
   icone = 'shield-checkmark',
   corIcone = '#F97316',
@@ -30,12 +18,12 @@ export default function EPICard({
       activeOpacity={onPress ? 0.75 : 1}
       disabled={!onPress}
     >
-      {/* Ícone com fundo colorido */}
+      {}
       <View style={[estilos.iconContainer, { backgroundColor: corIcone + '18' }]}>
         <Ionicons name={icone} size={28} color={corIcone} />
       </View>
 
-      {/* Conteúdo textual */}
+      {}
       <View style={estilos.conteudo}>
         <Text style={estilos.nome} numberOfLines={1}>{nome}</Text>
         {descricao ? (
@@ -43,7 +31,7 @@ export default function EPICard({
         ) : null}
       </View>
 
-      {/* Badge opcional */}
+      {}
       {badge ? (
         <View style={[estilos.badge, { backgroundColor: badgeColor + '20' }]}>
           <Text style={[estilos.badgeTexto, { color: badgeColor }]}>{badge}</Text>

@@ -40,15 +40,13 @@ export default function PerfilUsuario() {
   const [setor, setSetor] = useState(usuario?.setor || "Produção Geral");
   const [editSalvo, setEditSalvo] = useState(false);
 
-  // Estado do Telegram
-  const [tgVinculado, setTgVinculado] = useState(false); // começa como false sempre
-  const [tgCodigo, setTgCodigo] = useState(null); // código gerado
+  const [tgVinculado, setTgVinculado] = useState(false); 
+  const [tgCodigo, setTgCodigo] = useState(null); 
   const [tgCarregando, setTgCarregando] = useState(false);
   const [tgCopiado, setTgCopiado] = useState(false);
   const [tgErro, setTgErro] = useState("");
   const [telefone, setTelefone] = useState('');
 
-  
   useEffect(() => {
   api.get('/api/telegram/status')
     .then(({ data }) => setTgVinculado(data.vinculado))
@@ -104,7 +102,7 @@ async function salvar() {
         <ChevronLeft size={16} /> Voltar
       </button>
 
-      {/* Card de perfil */}
+      {}
       <div className="card p-6">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
           <div className="relative shrink-0">
@@ -125,7 +123,7 @@ async function salvar() {
                 <Shield size={11} /> {cargoUsuario}
               </span>
               <span className="badge badge-gray">EPIsee v1.0</span>
-              {/* Badge de status do Telegram */}
+              {}
               <span
                 className={`badge ${tgVinculado ? "badge-success" : "badge-gray"}`}
               >
@@ -158,7 +156,7 @@ async function salvar() {
         </div>
       </div>
 
-      {/* Estatísticas */}
+      {}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {estatisticasUsuario.map(({ rotulo, valor, icone: Icone }) => (
           <div key={rotulo} className="card p-4 text-center">
@@ -171,7 +169,7 @@ async function salvar() {
         ))}
       </div>
 
-      {/* Card de vinculação do Telegram */}
+      {}
       <div className="card">
         <div className="card-header">
           <div className="icon-box bg-sky-50">
@@ -192,7 +190,7 @@ async function salvar() {
 
         <div className="card-body space-y-4">
           {tgVinculado ? (
-            /* Já vinculado */
+            
             <div className="flex items-center gap-3 rounded-lg bg-green-50 border border-green-200 p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
                 <Check size={20} className="text-green-600" />
@@ -208,7 +206,7 @@ async function salvar() {
               </div>
             </div>
           ) : (
-            /* Não vinculado — fluxo de geração de código */
+            
             <>
               <div className="rounded-lg bg-slate-50 border border-slate-200 p-4 space-y-2">
                 <p className="text-sm font-medium text-slate-700">
@@ -246,7 +244,7 @@ async function salvar() {
                   {tgCarregando ? "Gerando..." : "Gerar código de vinculação"}
                 </button>
               ) : (
-                /* Código gerado — exibe com botão de copiar */
+                
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 p-4">
                     <div className="flex-1">
@@ -290,7 +288,7 @@ async function salvar() {
         </div>
       </div>
 
-      {/* Card de edição de perfil */}
+      {}
       <div className="card">
         <div className="card-header">
           <div className="icon-box bg-blue-50">

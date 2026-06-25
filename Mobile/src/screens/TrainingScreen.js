@@ -1,4 +1,3 @@
-// src/screens/TrainingScreen.js — Tela de Vídeos de Treinamento por Categoria
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
@@ -98,7 +97,7 @@ export default function TrainingScreen() {
           />
         }
       >
-        {/* Header */}
+        {}
         <View style={estilos.header}>
           <View style={estilos.headerIcone}>
             <Ionicons name="play-circle" size={28} color="#F97316" />
@@ -111,7 +110,7 @@ export default function TrainingScreen() {
           </View>
         </View>
 
-        {/* Erro */}
+        {}
         {erro && (
           <View style={estilos.erroCard}>
             <Ionicons name="alert-circle-outline" size={20} color="#EF4444" />
@@ -119,7 +118,7 @@ export default function TrainingScreen() {
           </View>
         )}
 
-        {/* Sem videos */}
+        {}
         {!erro && categorias.length === 0 && (
           <View style={estilos.vazioContainer}>
             <Ionicons name="videocam-outline" size={52} color="#CBD5E1" />
@@ -130,7 +129,7 @@ export default function TrainingScreen() {
           </View>
         )}
 
-        {/* Categorias */}
+        {}
         {categorias.map((cat) => {
           const aberto = expandido[cat.id] ?? false;
           const videos = (cat.videos || []).filter((v) => v.aprovado);
@@ -138,7 +137,7 @@ export default function TrainingScreen() {
           return (
             <View key={cat.id} style={estilos.categoriaCard}>
 
-              {/* Header clicavel */}
+              {}
               <TouchableOpacity
                 style={estilos.categoriaHeader}
                 onPress={() => toggleCategoria(cat.id)}
@@ -159,11 +158,11 @@ export default function TrainingScreen() {
                 />
               </TouchableOpacity>
 
-              {/* Conteudo expandido */}
+              {}
               {aberto && (
                 <View style={estilos.expandido}>
 
-                  {/* Informacoes do EPI */}
+                  {}
                   {(cat.descricao || cat.quando_usar || cat.como_usar || cat.erros_comuns) && (
                     <View style={estilos.epiInfoCard}>
                       <Text style={estilos.epiInfoTitulo}>Sobre este EPI</Text>
@@ -177,7 +176,7 @@ export default function TrainingScreen() {
 
                   <View style={estilos.divider} />
 
-                  {/* Lista de videos */}
+                  {}
                   {videos.length === 0 ? (
                     <Text style={estilos.semVideos}>Nenhum video aprovado nesta categoria.</Text>
                   ) : (
@@ -220,7 +219,7 @@ export default function TrainingScreen() {
                 </View>
               )}
 
-              {/* Descricao resumida quando fechado */}
+              {}
               {!aberto && cat.descricao ? (
                 <Text style={estilos.categoriaDescFechada} numberOfLines={2}>
                   {cat.descricao}

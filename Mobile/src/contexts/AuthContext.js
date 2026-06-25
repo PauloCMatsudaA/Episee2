@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { loginApi } from '../api/api';
@@ -14,7 +13,6 @@ export function AuthProvider({ children }) {
   const [token, setToken]     = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Carrega sessão persistida ao iniciar o app
   useEffect(() => {
     const carregarSessao = async () => {
       try {
@@ -37,7 +35,6 @@ export function AuthProvider({ children }) {
     carregarSessao();
   }, []);
 
-  // Escuta evento 401 do interceptor do Axios e faz logout automático
   useEffect(() => {
     const handleUnauthorized = () => {
       console.warn('[AuthContext] Token expirado ou inválido — fazendo logout automático.');

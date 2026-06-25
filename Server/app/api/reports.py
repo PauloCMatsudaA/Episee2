@@ -8,7 +8,6 @@ from app.models.user import User
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 
-
 def get_ai_client():
     from openai import AsyncOpenAI          
     if not settings.OPENAI_API_KEY:
@@ -17,8 +16,6 @@ def get_ai_client():
             detail="OPENAI_API_KEY não configurada. Adicione ao .env"
         )
     return AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-
-
 
 class ReportPayload(BaseModel):
     conformidade_geral: float = 0.0
@@ -30,8 +27,6 @@ class ReportPayload(BaseModel):
 
 class ReportResponse(BaseModel):
     analise: str
-
-
 
 @router.post("/generate-analysis", response_model=ReportResponse)
 async def generate_analysis(

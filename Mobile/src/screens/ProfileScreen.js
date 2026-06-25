@@ -44,13 +44,13 @@ export default function ProfileScreen({ navigation }) {
   const fazerLogout = async () => {
     try {
       setSaindo(true);
-      // Limpa storage diretamente como garantia extra
+      
       await AsyncStorage.multiRemove(['@episee:token', '@episee:user']);
-      // Chama o logout do contexto (zera estado global)
+      
       await logout();
     } catch (err) {
       console.warn('[logout]', err.message);
-      // Mesmo com erro, chama o logout do contexto
+      
       logout();
     } finally {
       setSaindo(false);
@@ -81,13 +81,13 @@ export default function ProfileScreen({ navigation }) {
         contentContainerStyle={estilos.scroll}
         bounces
       >
-        {/* Voltar */}
+        {}
         <TouchableOpacity style={estilos.botaoVoltar} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={24} color="#0F172A" />
           <Text style={estilos.botaoVoltarTexto}>Voltar</Text>
         </TouchableOpacity>
 
-        {/* Avatar + nome */}
+        {}
         <View style={estilos.avatarArea}>
           <LinearGradient colors={['#F97316', '#EA580C']} style={estilos.avatarGradiente}>
             {carregando
@@ -98,7 +98,7 @@ export default function ProfileScreen({ navigation }) {
           <Text style={estilos.nome}>{nome}</Text>
         </View>
 
-        {/* Card de informações */}
+        {}
         <View style={estilos.card}>
           {infos.map((item, index) => (
             <View key={item.label} style={[estilos.row, index === infos.length - 1 && estilos.rowUltimo]}>
@@ -113,7 +113,7 @@ export default function ProfileScreen({ navigation }) {
           ))}
         </View>
 
-        {/* Botão sair */}
+        {}
         <TouchableOpacity
           style={[estilos.botaoSair, saindo && { opacity: 0.6 }]}
           onPress={confirmarLogout}

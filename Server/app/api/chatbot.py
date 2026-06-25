@@ -17,16 +17,13 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chatbot", tags=["chatbot"])
 
-
 class MensagemHistorico(BaseModel):
-    role: str    # 'user' ou 'assistant'
+    role: str    
     content: str
-
 
 class ChatbotRequest(BaseModel):
     mensagem: str
     historico: Optional[List[MensagemHistorico]] = []
-
 
 @router.post("/whatsapp")
 async def webhook_whatsapp(
@@ -53,7 +50,6 @@ async def webhook_whatsapp(
     twiml.message(resposta)
     return Response(content=str(twiml), media_type="application/xml")
 
-
 @router.post("/texto")
 async def chatbot_texto(
     body: ChatbotRequest,
@@ -63,7 +59,6 @@ async def chatbot_texto(
     if not body.mensagem.strip():
         return {"erro": "Mensagem vazia"}
 
-    # Busca nome do setor
     nome_setor = None
     if current_user.sector_id:
         result = await db.execute(select(Sector).where(Sector.id == current_user.sector_id))
@@ -71,7 +66,6 @@ async def chatbot_texto(
         if setor:
             nome_setor = setor.name
 
-    # Converte historico do pydantic para lista de dicts
     historico = [h.model_dump() for h in (body.historico or [])]
 
     resposta = await responder_chatbot(

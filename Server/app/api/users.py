@@ -13,7 +13,6 @@ from app.schemas.user import UserCreate, UserResponse, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
-
 @router.get("/", response_model=List[UserResponse])
 async def list_users(
     skip: int = Query(0, ge=0),
@@ -32,7 +31,6 @@ async def list_users(
     result = await db.execute(query)
     return [UserResponse.model_validate(u) for u in result.scalars().all()]
 
-
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(
     user_id: int,
@@ -50,7 +48,6 @@ async def get_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
 
     return UserResponse.model_validate(user)
-
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
@@ -79,13 +76,12 @@ async def create_user(
     )
     db.add(user)
     await db.flush()
-    # Recarrega o objeto com o setor incluido para serializar corretamente
+    
     result = await db.execute(
         select(User).options(selectinload(User.sector)).where(User.id == user.id)
     )
     user = result.scalar_one()
     return UserResponse.model_validate(user)
-
 
 @router.patch("/{user_id}", response_model=UserResponse)
 async def update_user(
@@ -114,13 +110,12 @@ async def update_user(
         setattr(user, field, value)
 
     await db.flush()
-    # Recarrega com setor atualizado
+    
     result = await db.execute(
         select(User).options(selectinload(User.sector)).where(User.id == user_id)
     )
     user = result.scalar_one()
     return UserResponse.model_validate(user)
-
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(

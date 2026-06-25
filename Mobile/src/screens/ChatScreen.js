@@ -1,4 +1,3 @@
-// src/screens/ChatScreen.js — Chatbot EPIsee (NR-6 + GPT-4o)
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -29,7 +28,6 @@ const COR = {
   bolhaUser: '#F97316',
   digitando: '#E2E8F0',
 };
-
 
 function BolhaMensagem({ mensagem }) {
   const ehBot     = mensagem.role === 'bot';
@@ -80,8 +78,6 @@ function PerguntaRapida({ texto, aoPress }) {
   );
 }
 
-// ── Tela principal ────────────────────────────────────────────────────────────
-
 export default function ChatScreen({ navigation }) {
   const { user }                                       = useAuth();
   const { messages, isLoading, quickQuestions,
@@ -90,7 +86,6 @@ export default function ChatScreen({ navigation }) {
   const listaRef                                       = useRef(null);
   const mostrarPerguntasRapidas                        = messages.length <= 1;
 
-  // Auto-scroll ao final quando novas mensagens chegam
   useEffect(() => {
     if (listaRef.current && messages.length > 0) {
       setTimeout(() => listaRef.current?.scrollToEnd({ animated: true }), 100);
@@ -109,7 +104,7 @@ export default function ChatScreen({ navigation }) {
 
   return (
     <SafeAreaView style={estilos.container} edges={['top']}>
-      {/* Cabeçalho */}
+      {}
       <View style={estilos.cabecalho}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={estilos.botaoVoltar}>
           <Ionicons name="arrow-back" size={22} color={COR.branco} />
@@ -133,7 +128,7 @@ export default function ChatScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Lista de mensagens */}
+      {}
       <KeyboardAvoidingView
         style={estilos.corpo}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -150,7 +145,7 @@ export default function ChatScreen({ navigation }) {
           onContentSizeChange={() => listaRef.current?.scrollToEnd({ animated: true })}
         />
 
-        {/* Perguntas rápidas — só aparece no início da conversa */}
+        {}
         {mostrarPerguntasRapidas && !isLoading && (
           <ScrollView
             horizontal
@@ -164,7 +159,7 @@ export default function ChatScreen({ navigation }) {
           </ScrollView>
         )}
 
-        {/* Barra de input */}
+        {}
         <View style={estilos.barraInput}>
           <View style={estilos.inputContainer}>
             <TextInput
@@ -198,14 +193,12 @@ export default function ChatScreen({ navigation }) {
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
 const estilos = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COR.fundo,
   },
 
-  // Cabeçalho
   cabecalho: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -256,7 +249,6 @@ const estilos = StyleSheet.create({
     padding: 6,
   },
 
-  // Corpo
   corpo: {
     flex: 1,
   },
@@ -265,7 +257,6 @@ const estilos = StyleSheet.create({
     paddingBottom: 4,
   },
 
-  // Bolhas
   bolhaContainer: {
     flexDirection: 'row',
     marginBottom: 12,
@@ -328,7 +319,6 @@ const estilos = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
   },
 
-  // Indicador digitando
   digitandoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -343,7 +333,6 @@ const estilos = StyleSheet.create({
     backgroundColor: COR.cinzaCl,
   },
 
-  // Perguntas rápidas
   perguntasRapidasContainer: {
     maxHeight: 50,
     marginBottom: 4,
@@ -366,7 +355,6 @@ const estilos = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Barra de input
   barraInput: {
     flexDirection: 'row',
     alignItems: 'flex-end',

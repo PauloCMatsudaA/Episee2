@@ -228,7 +228,7 @@ export default function Usuarios() {
                     </td>
                     <td style={{ color: 'var(--text-muted)' }}>{u.email}</td>
                     <td>
-                      {/* Sem ícone — exibe só o texto do papel */}
+                      {}
                       <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
                         {labelPapel(u.role)}
                       </span>
@@ -239,7 +239,7 @@ export default function Usuarios() {
                         <button className="btn btn-ghost btn-sm btn-icon" onClick={() => abrirEdicao(u)} title="Editar">
                           <Pencil size={14} />
                         </button>
-                        {/* Oculta lixeira para o administrador padrão do sistema */}
+                        {}
                         {!u.is_system_admin && (
                           <button className="btn btn-danger btn-sm btn-icon" onClick={() => excluir(u.id)} title="Excluir">
                             <Trash2 size={14} />
@@ -255,7 +255,7 @@ export default function Usuarios() {
         </div>
       )}
 
-      {/* Modal */}
+      {}
       {modalAberto && (
         <div className="overlay" onClick={fecharModal}>
           <div className="modal modal-lg fade-in" onClick={(e) => e.stopPropagation()}>

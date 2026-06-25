@@ -25,7 +25,6 @@ router = APIRouter(prefix="/cameras", tags=["Cameras"])
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "best.pt")
 
-
 @router.get("/", response_model=List[CameraResponse])
 async def list_cameras(db: AsyncSession = Depends(get_db), _=Depends(get_current_user)):
     result = await db.execute(
@@ -35,7 +34,6 @@ async def list_cameras(db: AsyncSession = Depends(get_db), _=Depends(get_current
     )
     cameras = result.unique().scalars().all()
     return [CameraResponse.model_validate(c) for c in cameras]
-
 
 @router.post("/", response_model=CameraResponse, status_code=status.HTTP_201_CREATED)
 async def create_camera(
@@ -54,7 +52,6 @@ async def create_camera(
     await db.flush()
     await db.commit()
 
-    # Reconsulta com sector carregado para evitar MissingGreenlet no Pydantic
     result = await db.execute(
         select(Camera)
         .options(joinedload(Camera.sector))
@@ -62,7 +59,6 @@ async def create_camera(
     )
     camera = result.unique().scalar_one()
     return CameraResponse.model_validate(camera)
-
 
 @router.patch("/{camera_id}", response_model=CameraResponse)
 async def update_camera(
@@ -82,7 +78,6 @@ async def update_camera(
     await db.flush()
     await db.commit()
 
-    # Reconsulta com sector carregado para evitar MissingGreenlet no Pydantic
     result = await db.execute(
         select(Camera)
         .options(joinedload(Camera.sector))
@@ -91,8 +86,7 @@ async def update_camera(
     camera = result.unique().scalar_one()
     return CameraResponse.model_validate(camera)
 
-
-HLS_DIR = Path("hls")  # ajuste para o caminho real do seu projeto
+HLS_DIR = Path("hls")  
 
 @router.delete("/{camera_id}", status_code=204)
 async def delete_camera(
@@ -106,7 +100,6 @@ async def delete_camera(
     await db.delete(camera)
     await db.commit()
 
-    # Remove pasta de segmentos HLS da câmera excluída
     pasta_hls = HLS_DIR / str(camera_id)
     if pasta_hls.exists():
         shutil.rmtree(pasta_hls, ignore_errors=True)
@@ -125,10 +118,8 @@ async def start_detection(
     if not camera.rtsp_url:
         raise HTTPException(status_code=400, detail="Câmera sem URL RTSP configurada.")
 
-    # Inicia o stream HLS (player no frontend)
     iniciar_hls(camera_id, camera.rtsp_url)
 
-    # Inicia a detecção YOLOv8 se o modelo existir e não estiver rodando já
     modelo_existe = os.path.exists(MODEL_PATH)
     deteccao_ativa = camera_id in tarefas_deteccao and not tarefas_deteccao[camera_id].done()
 
@@ -158,7 +149,6 @@ async def start_detection(
         message=mensagem,
     )
 
-
 @router.post("/{camera_id}/stop-detection", response_model=DetectionControl)
 async def stop_detection(
     camera_id: int,
@@ -170,7 +160,6 @@ async def stop_detection(
     if not camera:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Câmera não encontrada")
 
-    # Para HLS e detecção YOLOv8
     parar_hls(camera_id)
 
     return DetectionControl(

@@ -3,9 +3,8 @@ from typing import Optional, List, Any
 from pydantic import BaseModel, field_validator
 from app.models.occurrence import OccurrenceStatus
 
-
 class OccurrenceBase(BaseModel):
-    # Optional pois câmera/setor podem ter sido deletados (FK SET NULL)
+    
     camera_id: Optional[int] = None
     sector_id: Optional[int] = None
     status: OccurrenceStatus = OccurrenceStatus.conforme
@@ -18,17 +17,14 @@ class OccurrenceBase(BaseModel):
     def nulo_vira_lista(cls, v):
         return v if v is not None else []
 
-
 class OccurrenceCreate(OccurrenceBase):
     timestamp: Optional[datetime] = None
-
 
 class OccurrenceUpdate(BaseModel):
     status: Optional[OccurrenceStatus] = None
     epi_detected: Optional[List[Any]] = None
     confidence: Optional[float] = None
     image_path: Optional[str] = None
-
 
 class OccurrenceResponse(OccurrenceBase):
     id: int
@@ -38,7 +34,6 @@ class OccurrenceResponse(OccurrenceBase):
     sector_name: Optional[str] = None
 
     model_config = {"from_attributes": True}
-
 
 class OccurrenceSummary(BaseModel):
     total: int

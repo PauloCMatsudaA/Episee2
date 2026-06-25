@@ -1,4 +1,3 @@
-// src/screens/LoginScreen.js — Tela de login do EPIsee
 import React, { useState } from 'react';
 import {
   View,
@@ -15,7 +14,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 
-// ── Constantes ────────────────────────────────────────────────────────────────────────────
 const CORES = {
   primaria:       '#F97316',
   primariaEscura: '#EA6C0A',
@@ -63,16 +61,16 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ── Logo (apenas texto) ───────────────────────────────────── */}
+          {}
           <View style={estilos.logoContainer}>
             <Text style={estilos.logoTexto}>EPIsee</Text>
           </View>
 
-          {/* ── Card do formulário ──────────────────────────────────────────── */}
+          {}
           <View style={estilos.card}>
             <Text style={estilos.cardTitulo}>Acessar minha conta</Text>
 
-            {/* Campo e-mail */}
+            {}
             <View style={estilos.campoContainer}>
               <Text style={estilos.campoLabel}>E-mail</Text>
               <View style={estilos.inputWrapper}>
@@ -91,7 +89,7 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            {/* Campo senha */}
+            {}
             <View style={estilos.campoContainer}>
               <Text style={estilos.campoLabel}>Senha</Text>
               <View style={estilos.inputWrapper}>
@@ -119,7 +117,7 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            {/* Mensagem de erro inline */}
+            {}
             {erro ? (
               <View style={estilos.erroContainer}>
                 <Ionicons name="alert-circle" size={16} color={CORES.erro} />
@@ -127,7 +125,7 @@ export default function LoginScreen() {
               </View>
             ) : null}
 
-            {/* Botão de login */}
+            {}
             <TouchableOpacity
               onPress={handleLogin}
               activeOpacity={0.85}
@@ -157,7 +155,6 @@ export default function LoginScreen() {
   );
 }
 
-// ── Estilos ────────────────────────────────────────────────────────────────────────────────
 const estilos = StyleSheet.create({
   gradiente:     { flex: 1 },
   keyboardAvoid: { flex: 1 },

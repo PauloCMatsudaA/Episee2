@@ -113,7 +113,6 @@ export default function EpiRequestScreen() {
   const [erro, setErro]               = useState('');
   const [erros, setErros]             = useState({});
 
-  // Busca o nome do setor do usuário apenas para exibir
   useEffect(() => {
     const buscarNomeSetor = async () => {
       if (!user?.sector_id) return;
@@ -172,7 +171,7 @@ export default function EpiRequestScreen() {
 
         <View style={estilos.formularioCard}>
 
-          {/* Setor fixo — exibido mas não editável */}
+          {}
           {(nomeSetor || user?.sector_id) ? (
             <View style={estilos.campo}>
               <Text style={estilos.campoLabel}>Seu Setor</Text>

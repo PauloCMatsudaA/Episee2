@@ -1,16 +1,13 @@
-// src/components/RequestCard.js — Card de solicitação de EPI
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-// Mapeamento de status para cores e ícones
 const STATUS_CONFIG = {
   Pendente:  { cor: '#EAB308', fundo: '#FEF9C3', icone: 'time-outline',         label: 'Pendente'  },
   Aprovada:  { cor: '#22C55E', fundo: '#DCFCE7', icone: 'checkmark-circle',     label: 'Aprovada'  },
   Rejeitada: { cor: '#EF4444', fundo: '#FEE2E2', icone: 'close-circle-outline', label: 'Rejeitada' },
 };
 
-// Ícones por tipo de EPI
 const EPI_ICONES = {
   'Capacete de Segurança':  'construct-outline',
   'Luva de Proteção':       'hand-left-outline',
@@ -22,9 +19,6 @@ const EPI_ICONES = {
   'Protetor Auditivo':      'ear-outline',
 };
 
-/**
- * Formata data ISO para dd/mm/aaaa
- */
 function formatarData(dataISO) {
   if (!dataISO) return '';
   const d = new Date(dataISO);
@@ -35,17 +29,6 @@ function formatarData(dataISO) {
   });
 }
 
-/**
- * RequestCard — Card de solicitação de EPI
- *
- * Props:
- * - tipoEpi: string (nome do EPI)
- * - motivo: string
- * - observacoes: string (opcional)
- * - setor: string
- * - status: 'Pendente' | 'Aprovada' | 'Rejeitada'
- * - dataSolicitacao: string ISO
- */
 export default function RequestCard({
   tipoEpi,
   motivo,
@@ -59,7 +42,7 @@ export default function RequestCard({
 
   return (
     <View style={estilos.card}>
-      {/* Cabeçalho: ícone + nome + badge de status */}
+      {}
       <View style={estilos.cabecalho}>
         <View style={estilos.iconContainer}>
           <Ionicons name={iconeEpi} size={22} color="#F97316" />
@@ -68,17 +51,17 @@ export default function RequestCard({
           <Text style={estilos.tipoEpi} numberOfLines={1}>{tipoEpi}</Text>
           <Text style={estilos.setor}>{setor}</Text>
         </View>
-        {/* Badge de status */}
+        {}
         <View style={[estilos.badge, { backgroundColor: cfg.fundo }]}>
           <Ionicons name={cfg.icone} size={13} color={cfg.cor} />
           <Text style={[estilos.badgeTexto, { color: cfg.cor }]}>{cfg.label}</Text>
         </View>
       </View>
 
-      {/* Divisor */}
+      {}
       <View style={estilos.divisor} />
 
-      {/* Detalhes */}
+      {}
       <View style={estilos.detalhes}>
         <View style={estilos.detalheRow}>
           <Ionicons name="alert-circle-outline" size={14} color="#94A3B8" />

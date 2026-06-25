@@ -1,17 +1,3 @@
-"""
-Telegram Webhook Router — Recebe e processa mensagens do bot do Telegram.
-
-Fluxo:
-  1. Telegram envia POST com Update (mensagem do usuário)
-  2. Webhook identifica tipo (texto ou voz)
-  3. Se voz: transcreve via Whisper (reutiliza audio_service)
-  4. Consulta chatbot (RAG + GPT-4o)
-  5. Envia resposta como TEXTO + VOZ (TTS) para o usuário
-
-Configuração necessária (variáveis de ambiente):
-  TELEGRAM_BOT_TOKEN  — Token do bot obtido pelo @BotFather
-  TELEGRAM_WEBHOOK_URL — URL pública do servidor (ex: https://seuapp.com)
-"""
 import logging
 import os
 import httpx
@@ -45,16 +31,13 @@ HELP_MESSAGE = (
     "• /desativar_voz — Somente texto\n"
 )
 
-# Armazena preferência de voz por usuário (em memória)
 _voice_enabled: dict[str, bool] = {}
-
 
 def _token() -> str:
     token = os.getenv("TELEGRAM_BOT_TOKEN", "")
     if not token:
         raise RuntimeError("TELEGRAM_BOT_TOKEN não configurado.")
     return token
-
 
 async def _send_message(chat_id: int, text: str) -> None:
     url = TELEGRAM_API.format(token=_token(), method="sendMessage")
@@ -64,7 +47,6 @@ async def _send_message(chat_id: int, text: str) -> None:
             "text": text,
             "parse_mode": "Markdown",
         })
-
 
 async def _send_voice(chat_id: int, ogg_path) -> None:
     url = TELEGRAM_API.format(token=_token(), method="sendVoice")
@@ -76,11 +58,10 @@ async def _send_voice(chat_id: int, ogg_path) -> None:
                 files={"voice": ("voice.ogg", audio_file, "audio/ogg")},
             )
 
-
 async def _download_file(file_id: str) -> bytes:
-    """Baixa um arquivo do Telegram pelo file_id e retorna os bytes."""
+    
     token = _token()
-    # 1. Obtém o file_path
+    
     async with httpx.AsyncClient(timeout=20) as client:
         resp = await client.get(
             TELEGRAM_API.format(token=token, method="getFile"),
@@ -91,20 +72,13 @@ async def _download_file(file_id: str) -> bytes:
     file_path = data["result"]["file_path"]
     file_url = f"https://api.telegram.org/file/bot{token}/{file_path}"
 
-    # 2. Baixa o arquivo
     async with httpx.AsyncClient(timeout=60) as client:
         resp = await client.get(file_url)
         return resp.content
 
-
-# ── Endpoint principal ────────────────────────────────────────────────────────
-
 @router.post("/telegram/webhook")
 async def telegram_webhook(request: Request, background_tasks: BackgroundTasks):
-    """
-    Recebe Updates do Telegram e processa em background.
-    Retorna 200 imediatamente.
-    """
+    
     body = await request.json()
 
     message = body.get("message") or body.get("edited_message")
@@ -114,17 +88,14 @@ async def telegram_webhook(request: Request, background_tasks: BackgroundTasks):
     background_tasks.add_task(processar_mensagem_telegram, message)
     return {"status": "ok"}
 
-
 async def processar_mensagem_telegram(message: dict) -> None:
-    """
-    Processa a mensagem do Telegram e responde com texto + voz (opcional).
-    """
+    
     chat_id: int = message["chat"]["id"]
-    user_id = str(chat_id)  # Usa chat_id como identificador do histórico
-    voice_on = _voice_enabled.get(user_id, True)  # Voz ativada por padrão
+    user_id = str(chat_id)  
+    voice_on = _voice_enabled.get(user_id, True)  
 
     try:
-        # ── Comandos especiais ──────────────────────────────────────────────
+        
         text = (message.get("text") or "").strip()
 
         if text.lower() == COMMAND_RESET:
@@ -146,7 +117,6 @@ async def processar_mensagem_telegram(message: dict) -> None:
             await _send_message(chat_id, "Voz desativada. Somente respostas em texto.")
             return
 
-        # ── Mensagem de voz do usuário (STT) ───────────────────────────────
         if "voice" in message:
             file_id = message["voice"]["file_id"]
             logger.info(f"Transcrevendo áudio do Telegram para user {user_id}...")
@@ -162,7 +132,6 @@ async def processar_mensagem_telegram(message: dict) -> None:
                 )
                 return
 
-        # ── Tipo não suportado ─────────────────────────────────────────────
         if not text:
             await _send_message(
                 chat_id,
@@ -171,14 +140,11 @@ async def processar_mensagem_telegram(message: dict) -> None:
             )
             return
 
-        # ── Obtém resposta do chatbot ──────────────────────────────────────
         logger.info(f"Pergunta do Telegram user {user_id}: '{text}'")
         resposta = get_chat_response(user_id=user_id, user_message=text)
 
-        # ── Envia resposta em texto ────────────────────────────────────────
         await _send_message(chat_id, resposta)
 
-        # ── Envia resposta em voz (TTS) se habilitado ──────────────────────
         if voice_on:
             try:
                 ogg_path = await texto_para_voz(resposta)
@@ -186,8 +152,7 @@ async def processar_mensagem_telegram(message: dict) -> None:
                 limpar_audio(ogg_path)
             except Exception as e:
                 logger.warning(f"TTS falhou (não crítico): {e}")
-                # Não bloqueia — a resposta em texto já foi enviada
-
+                
         logger.info(f"Resposta enviada ao Telegram user {user_id}.")
 
     except Exception as e:

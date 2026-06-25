@@ -13,7 +13,6 @@ if "is_active" not in columns:
     conn.close()
     exit()
     
-
 print("Recriando tabela users sem is_active...")
 
 cursor.executescript("""

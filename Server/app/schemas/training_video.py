@@ -3,9 +3,6 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-
-# ── TrainingVideo ─────────────────────────────────────────────────────────────
-
 class TrainingVideoBase(BaseModel):
     titulo:     str
     url:        str
@@ -14,10 +11,8 @@ class TrainingVideoBase(BaseModel):
     aprovado:   bool = True
     prioridade: int  = 0
 
-
 class TrainingVideoCreate(TrainingVideoBase):
     epi_type_id: int
-
 
 class TrainingVideoUpdate(BaseModel):
     titulo:     Optional[str] = None
@@ -26,7 +21,6 @@ class TrainingVideoUpdate(BaseModel):
     fonte:      Optional[str] = None
     aprovado:   Optional[bool] = None
     prioridade: Optional[int]  = None
-
 
 class TrainingVideoResponse(TrainingVideoBase):
     id:          int
@@ -38,9 +32,6 @@ class TrainingVideoResponse(TrainingVideoBase):
 
 TrainingVideoOut = TrainingVideoResponse
 
-
-# ── EpiType ──────────────────────────────────────────────────────────────
-
 class EpiTypeBase(BaseModel):
     nome:           str
     descricao:      Optional[str] = None
@@ -48,12 +39,10 @@ class EpiTypeBase(BaseModel):
     como_usar:      Optional[str] = None
     erros_comuns:   Optional[str] = None
     nr6_ref:        Optional[str] = None
-    palavras_chave: Optional[str] = None  # sinônimos separados por vírgula
-
+    palavras_chave: Optional[str] = None  
 
 class EpiTypeCreate(EpiTypeBase):
     pass
-
 
 class EpiTypeUpdate(BaseModel):
     nome:           Optional[str] = None
@@ -63,7 +52,6 @@ class EpiTypeUpdate(BaseModel):
     erros_comuns:   Optional[str] = None
     nr6_ref:        Optional[str] = None
     palavras_chave: Optional[str] = None
-
 
 class EpiTypeResponse(EpiTypeBase):
     id:        int

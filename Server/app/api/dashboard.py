@@ -21,18 +21,12 @@ from app.schemas.dashboard import (
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
-
 @router.get("/stats", response_model=DashboardStats)
 async def get_dashboard_stats(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    """
-    Return aggregated dashboard statistics calculated from real database data.
-    Includes total occurrences, compliance rate, pending requests,
-    active cameras, per-sector breakdown, and 30-day compliance trend.
-    """
-    # --- Load all data ---
+    
     occurrences_result = await db.execute(select(Occurrence))
     occurrences: List[Occurrence] = occurrences_result.scalars().all()
 
@@ -50,7 +44,6 @@ async def get_dashboard_stats(
     sectors: List[Sector] = sectors_result.scalars().all()
     sector_map = {s.id: s.name for s in sectors}
 
-    # --- Aggregates ---
     total = len(occurrences)
     conforme_count = sum(1 for o in occurrences if o.status == OccurrenceStatus.conforme)
     compliance_rate = round((conforme_count / total * 100), 2) if total > 0 else 100.0
@@ -62,7 +55,6 @@ async def get_dashboard_stats(
         if o.status == OccurrenceStatus.nao_conforme and o.timestamp >= today_start
     )
 
-    # --- Per sector breakdown ---
     sector_totals: dict = defaultdict(lambda: {"total": 0, "non_compliant": 0})
     for o in occurrences:
         sector_totals[o.sector_id]["total"] += 1
@@ -84,7 +76,6 @@ async def get_dashboard_stats(
             )
         )
 
-    # --- 30-day compliance trend ---
     compliance_trend: List[ComplianceTrendItem] = []
     now = datetime.utcnow()
     for days_ago in range(29, -1, -1):

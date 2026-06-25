@@ -13,7 +13,6 @@ from app.models.user import User
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
-
 class NotificationOut(BaseModel):
     id:        int
     tipo:      str
@@ -22,7 +21,6 @@ class NotificationOut(BaseModel):
     criado_em: datetime
 
     model_config = {"from_attributes": True}
-
 
 @router.get("/", response_model=List[NotificationOut])
 async def list_notifications(
@@ -36,7 +34,6 @@ async def list_notifications(
         .limit(50)
     )
     return result.scalars().all()
-
 
 @router.get("/unread-count")
 async def unread_count(
@@ -83,5 +80,3 @@ async def mark_as_read(
     )
     await db.commit()
     return {"ok": True}
-
-

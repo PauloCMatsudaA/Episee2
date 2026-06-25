@@ -1,9 +1,7 @@
-
 import logging
 from typing import Optional
 
 logger = logging.getLogger(__name__)
-
 
 async def send_noncompliance_alert(
     occurrence_id: int,
@@ -14,26 +12,7 @@ async def send_noncompliance_alert(
     manager_phone: Optional[str] = None,
     manager_email: Optional[str] = None,
 ) -> dict:
-    """
-    Envia alerta de não-conformidade ao gestor responsável pelo setor.
-
-    Canais suportados (a implementar conforme integração disponível):
-    - WhatsApp: via API do chatbot EPIsee (já implementado separadamente)
-    - E-mail: via SMTP ou SendGrid
-    - Push notification: via Firebase Cloud Messaging
-
-    Args:
-        occurrence_id: ID da ocorrência criada no banco
-        sector_name: Nome do setor onde ocorreu a não-conformidade
-        camera_name: Nome da câmera que detectou
-        epi_detected: Lista de EPIs encontrados na imagem
-        confidence: Confiança média das detecções (0.0 - 1.0)
-        manager_phone: Número do gestor para WhatsApp (formato: +5511999999999)
-        manager_email: E-mail do gestor
-
-    Returns:
-        dict com resultado do envio por canal
-    """
+    
     message = (
         f" *EPIsee — Alerta de Não-Conformidade*\n\n"
         f" Setor: {sector_name}\n"
@@ -71,7 +50,6 @@ async def send_noncompliance_alert(
 
     return results
 
-
 async def send_epi_request_notification(
     request_id: int,
     worker_name: str,
@@ -79,16 +57,7 @@ async def send_epi_request_notification(
     sector_name: str,
     manager_phone: Optional[str] = None,
 ) -> dict:
-    """
-    Notifica o gestor quando um trabalhador abre uma solicitação de EPI.
-
-    Args:
-        request_id: ID da solicitação no banco
-        worker_name: Nome do trabalhador solicitante
-        epi_type: Tipo de EPI solicitado
-        sector_name: Setor do trabalhador
-        manager_phone: Número do gestor para WhatsApp
-    """
+    
     message = (
         f" *EPIsee — Nova Solicitação de EPI*\n\n"
         f" Trabalhador: {worker_name}\n"

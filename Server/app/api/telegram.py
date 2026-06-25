@@ -9,33 +9,27 @@ from app.services.telegram_service import gerar_link_code, processar_webhook
 
 router = APIRouter(prefix="/telegram", tags=["Telegram"])
 
-
 @router.post("/gerar-codigo")
 async def gerar_codigo_vinculacao(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Gera código único para o gestor vincular o Telegram."""
+    
     codigo = gerar_link_code()
     current_user.telegram_link_code = codigo
     await db.commit()
     return {
         "codigo": codigo,
-        "bot": "@episee_bot",          # ← troque pelo username do seu bot
+        "bot": "@episee_bot",          
         "instrucao": f"/vincular {codigo}",
     }
 
-
 @router.post("/webhook")
 async def telegram_webhook(request: Request):
-    """
-    Endpoint chamado pelo Telegram quando o bot recebe mensagem.
-    Não precisa de autenticação — o Telegram envia direto aqui.
-    """
+    
     update = await request.json()
     await processar_webhook(update)
     return {"ok": True}
-
 
 @router.get("/status")
 async def telegram_status(current_user: User = Depends(get_current_user)):

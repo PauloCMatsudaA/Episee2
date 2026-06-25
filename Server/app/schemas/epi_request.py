@@ -3,22 +3,18 @@ from typing import Optional
 from pydantic import BaseModel, model_validator
 from app.models.epi_request import EPIRequestStatus
 
-
 class EPIRequestBase(BaseModel):
     epi_type: str
     reason: Optional[str] = None
     sector_id: int
 
-
 class EPIRequestCreate(EPIRequestBase):
     pass
-
 
 class EPIRequestUpdate(BaseModel):
     epi_type: Optional[str] = None
     reason: Optional[str] = None
     status: Optional[EPIRequestStatus] = None
-
 
 class EPIRequestResponse(EPIRequestBase):
     id: int
@@ -36,14 +32,11 @@ class EPIRequestResponse(EPIRequestBase):
 
     @model_validator(mode="after")
     def resolver_nomes(self) -> "EPIRequestResponse":
-        # Resolve worker_name e sector_name a partir dos relacionamentos ORM
-        # O objeto ORM precisa ter os atributos 'worker' e 'sector' carregados
+        
         return self
-
 
 class EPIRequestApproveReject(BaseModel):
     motivo_rejeicao: Optional[str] = None
-
 
 class EPIRequestEntrega(BaseModel):
     entregue: bool

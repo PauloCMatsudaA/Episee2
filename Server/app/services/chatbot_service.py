@@ -17,19 +17,16 @@ logger = logging.getLogger(__name__)
 
 TELEGRAM_BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN
 
-
 def _get_deepseek_client() -> AsyncOpenAI:
-    """Cliente DeepSeek — usado apenas para chat."""
+    
     return AsyncOpenAI(
         api_key=settings.DEEPSEEK_API_KEY,
         base_url="https://api.deepseek.com/v1",
     )
 
-
 def _get_openai_client() -> AsyncOpenAI:
-    """Cliente OpenAI — usado para transcrição de áudio (Whisper)."""
+    
     return AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-
 
 SYSTEM_PROMPT = """
 Você é o EPIsee Bot, assistente especializado em segurança do trabalho e EPIs.
@@ -63,7 +60,6 @@ Regras de CONTEÚDO:
 - Leve em conta o contexto e as mensagens anteriores da conversa para dar respostas coerentes
 """
 
-
 def _limpar_markdown(texto: str) -> str:
     texto = re.sub(r'\*{1,3}(.*?)\*{1,3}', r'\1', texto)
     texto = re.sub(r'_{1,2}(.*?)_{1,2}', r'\1', texto)
@@ -73,7 +69,6 @@ def _limpar_markdown(texto: str) -> str:
     texto = re.sub(r'\n{3,}', '\n\n', texto)
     return texto.strip()
 
-
 async def _colunas_epi_types() -> set:
     try:
         async with AsyncSessionLocal() as db:
@@ -81,7 +76,6 @@ async def _colunas_epi_types() -> set:
             return {row[1] for row in result.fetchall()}
     except Exception:
         return set()
-
 
 def _epi_relevante(epi: EpiType, mensagem_lower: str, tem_palavras_chave: bool) -> bool:
     if epi.nome.lower() in mensagem_lower:
@@ -91,7 +85,6 @@ def _epi_relevante(epi: EpiType, mensagem_lower: str, tem_palavras_chave: bool) 
         if any(termo in mensagem_lower for termo in termos):
             return True
     return False
-
 
 async def _buscar_contexto_epi(mensagem: str) -> str:
     try:
@@ -138,12 +131,8 @@ async def _buscar_contexto_epi(mensagem: str) -> str:
         logger.warning(f"[CHATBOT] Falha ao buscar contexto EPI: {e}")
         return ""
 
-
 async def transcrever_audio_telegram(file_id: str) -> str:
-    """
-    Baixa o áudio do Telegram e transcreve usando OpenAI Whisper.
-    DeepSeek não suporta audio/transcriptions — por isso usamos OpenAI aqui.
-    """
+    
     if not settings.OPENAI_API_KEY:
         logger.warning("[CHATBOT] OPENAI_API_KEY não configurada — transcrição de áudio indisponível.")
         return ""
@@ -163,7 +152,6 @@ async def transcrever_audio_telegram(file_id: str) -> str:
             tmp.write(audio_resp.content)
             tmp_path = tmp.name
 
-        # Usa OpenAI Whisper para transcrição (DeepSeek não tem este endpoint)
         openai_client = _get_openai_client()
         with open(tmp_path, "rb") as audio_file:
             transcricao = await openai_client.audio.transcriptions.create(
@@ -177,7 +165,6 @@ async def transcrever_audio_telegram(file_id: str) -> str:
     except Exception as e:
         logger.error(f"[CHATBOT] Erro ao transcrever áudio Telegram: {e}")
         return ""
-
 
 async def responder_chatbot(
     mensagem: str,

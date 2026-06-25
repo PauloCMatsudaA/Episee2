@@ -1,4 +1,3 @@
-// src/hooks/useChatbot.js — Chat state management hook
 import { useState, useCallback, useRef } from 'react';
 import { chatbotApi } from '../api/api';
 
@@ -42,11 +41,9 @@ export function useChatbot() {
 
     const userMsg = buildUserMessage(trimmed);
 
-    // Captura o historico ANTES de adicionar a mensagem atual
     setMessages((prev) => {
       const historicoAtual = prev;
 
-      // Dispara a chamada com o historico capturado
       setIsLoading(true);
       setError(null);
 

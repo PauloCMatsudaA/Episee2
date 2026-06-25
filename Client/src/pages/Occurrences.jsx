@@ -111,10 +111,10 @@ export default function Occurrences() {
 
   return (
     <div className="space-y-4">
-      {/* Filtros */}
+      {}
       <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-end gap-3">
-          {/* Busca local */}
+          {}
           <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
             <Search size={16} className="text-slate-400" />
             <input
@@ -126,7 +126,7 @@ export default function Occurrences() {
             />
           </div>
 
-          {/* Status */}
+          {}
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Status</label>
             <select
@@ -140,7 +140,7 @@ export default function Occurrences() {
             </select>
           </div>
 
-          {/* De */}
+          {}
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">De</label>
             <input
@@ -151,7 +151,7 @@ export default function Occurrences() {
             />
           </div>
 
-          {/* Até */}
+          {}
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Até</label>
             <input
@@ -185,7 +185,7 @@ export default function Occurrences() {
         </div>
       </div>
 
-      {/* Tabela */}
+      {}
       <div className="rounded-xl border border-slate-100 bg-white shadow-sm">
         {carregando ? (
           <div className="flex justify-center py-12"><LoadingSpinner /></div>
@@ -198,7 +198,7 @@ export default function Occurrences() {
           />
         )}
 
-        {/* Paginação */}
+        {}
         {!carregando && totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3">
             <span className="text-xs text-slate-400">Página {currentPage} de {totalPages}</span>
@@ -242,7 +242,7 @@ export default function Occurrences() {
         )}
       </div>
 
-      {/* Modal de detalhes */}
+      {}
       {selected && (() => {
         const c = campoModal(selected);
         return (

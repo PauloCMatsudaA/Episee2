@@ -45,7 +45,6 @@ tarefas_deteccao: dict[int, asyncio.Task]      = {}
 
 _model = None
 
-
 def _find_ffmpeg() -> str | None:
     found = shutil.which("ffmpeg")
     if found:
@@ -71,13 +70,11 @@ def _find_ffmpeg() -> str | None:
 
     return None
 
-
 FFMPEG_BIN = _find_ffmpeg()
 if FFMPEG_BIN:
     logger.info(f"[HLS] ffmpeg encontrado: {FFMPEG_BIN}")
 else:
     logger.warning("[HLS] ffmpeg NAO encontrado — streams HLS nao funcionarao. Instale com: apt-get install ffmpeg")
-
 
 def _cv2():
     import cv2
@@ -87,9 +84,8 @@ def _np():
     import numpy as np
     return np
 
-
 def _iou_area(boxA: list, boxB: list) -> float:
-    """Retorna a proporcao da area de boxB coberta por boxA."""
+    
     ax1, ay1, ax2, ay2 = boxA
     bx1, by1, bx2, by2 = boxB
     ix1 = max(ax1, bx1)
@@ -102,18 +98,16 @@ def _iou_area(boxA: list, boxB: list) -> float:
     area_b = max((bx2 - bx1) * (by2 - by1), 1)
     return inter / area_b
 
-
 def epi_esta_sobre_alvo(
     epi_box: list,
     alvo_boxes: list[list],
     threshold: float,
 ) -> bool:
-    """Retorna True se epi_box se sobrepoe a pelo menos um alvo acima do limiar."""
+    
     for alvo in alvo_boxes:
         if _iou_area(epi_box, alvo) >= threshold:
             return True
     return False
-
 
 def capacete_esta_na_cabeca(
     helmet_box: list,
@@ -121,7 +115,6 @@ def capacete_esta_na_cabeca(
     threshold: float = IOUI_HELMET_HEAD,
 ) -> bool:
     return epi_esta_sobre_alvo(helmet_box, head_boxes, threshold)
-
 
 def get_model():
     global _model
@@ -136,14 +129,12 @@ def get_model():
             _model = None
     return _model
 
-
 def is_local_webcam_source(fonte) -> bool:
     if isinstance(fonte, int):
         return True
     if isinstance(fonte, str) and str(fonte).strip().isdigit():
         return True
     return False
-
 
 def normalize_camera_source(rtsp_url: str | None):
     if not rtsp_url:
@@ -152,7 +143,6 @@ def normalize_camera_source(rtsp_url: str | None):
     if raw.isdigit():
         return int(raw)
     return raw
-
 
 def iniciar_hls(camera_id: int, source):
     pasta = os.path.join(HLS_DIR, str(camera_id))
@@ -187,7 +177,6 @@ def iniciar_hls(camera_id: int, source):
     except Exception as e:
         logger.error(f"[HLS] Erro: {e}")
 
-
 def iniciar_hls_pipe(camera_id: int, width: int, height: int, fps: int = 15):
     pasta = os.path.join(HLS_DIR, str(camera_id))
     os.makedirs(pasta, exist_ok=True)
@@ -217,7 +206,6 @@ def iniciar_hls_pipe(camera_id: int, width: int, height: int, fps: int = 15):
         logger.error(f"[HLS-PIPE] Erro: {e}")
         return None
 
-
 def parar_hls(camera_id: int):
     proc = processos_ffmpeg.pop(camera_id, None)
     if proc:
@@ -226,7 +214,6 @@ def parar_hls(camera_id: int):
     if task:
         task.cancel()
     logger.info(f"[CAM {camera_id}] Stream e deteccao encerrados.")
-
 
 class FrameReader(Thread):
     def __init__(self, fonte, camera_id: int):
@@ -295,7 +282,6 @@ class FrameReader(Thread):
     def stop(self):
         self.running = False
 
-
 def inferir_frame(frame) -> list[dict]:
     model = get_model()
     if model is None:
@@ -318,7 +304,6 @@ def inferir_frame(frame) -> list[dict]:
                 "bbox":       box.xyxy[0].tolist(),
             })
     return deteccoes
-
 
 def _validar_epis_por_intersecao(
     epis_encontrados: set,
@@ -356,7 +341,6 @@ def _validar_epis_por_intersecao(
 
     return epis_validos
 
-
 def avaliar_deteccoes(
     deteccoes: list[dict],
     epis_obrigatorios: set[str] | None = None,
@@ -391,7 +375,6 @@ def avaliar_deteccoes(
         "detections":        deteccoes,
     }
 
-
 async def get_epis_obrigatorios_do_setor(sector_id: int | None) -> set[str]:
     if sector_id is None:
         return {"safety-vest"}
@@ -409,7 +392,6 @@ async def get_epis_obrigatorios_do_setor(sector_id: int | None) -> set[str]:
     except Exception as e:
         logger.error(f"[SETOR {sector_id}] Erro ao buscar EPIs: {e}", exc_info=True)
     return {"safety-vest"}
-
 
 async def salvar_ocorrencia(
     camera_id: int,
@@ -486,7 +468,6 @@ async def salvar_ocorrencia(
     except Exception as e:
         logger.error(f"[CAM {camera_id}] Erro ao salvar ocorrencia: {e}", exc_info=True)
 
-
 async def processar_stream_camera(camera_id: int, fonte, sector_id: int):
     epis_obrigatorios = await get_epis_obrigatorios_do_setor(sector_id)
     reader = FrameReader(fonte, camera_id)
@@ -546,7 +527,6 @@ async def processar_stream_camera(camera_id: int, fonte, sector_id: int):
             except Exception:
                 pass
 
-
 async def start_camera_streams():
     await asyncio.sleep(2)
     logger.info(">>> [STARTUP] start_camera_streams chamado <<<")
@@ -585,7 +565,6 @@ async def start_camera_streams():
     except asyncio.CancelledError:
         logger.info("[STARTUP] Encerrado.")
 
-
 async def analyze_frame(
     camera_id: int,
     frame_data: bytes,
@@ -603,7 +582,6 @@ async def analyze_frame(
     epis      = await get_epis_obrigatorios_do_setor(sector_id)
     deteccoes = inferir_frame(frame)
     return avaliar_deteccoes(deteccoes, epis_obrigatorios=epis)
-
 
 async def analisar_frame(
     camera_id: int,

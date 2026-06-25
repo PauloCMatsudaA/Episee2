@@ -11,7 +11,6 @@ from app.models.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
-
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db),
@@ -37,7 +36,6 @@ async def get_current_user(
         raise credentials_exception
 
     return user
-
 
 async def get_current_manager(
     current_user: User = Depends(get_current_user),

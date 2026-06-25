@@ -2,15 +2,12 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
-
-# Schema resumido do setor para embutir na câmera
 class SectorInfo(BaseModel):
     id: int
     name: str
     epis_obrigatorios: list[str] = []
 
     model_config = {"from_attributes": True}
-
 
 class CameraBase(BaseModel):
     name: str
@@ -19,10 +16,8 @@ class CameraBase(BaseModel):
     rtsp_url: Optional[str] = None
     is_active: bool = True
 
-
 class CameraCreate(CameraBase):
     pass
-
 
 class CameraUpdate(BaseModel):
     name: Optional[str] = None
@@ -31,7 +26,6 @@ class CameraUpdate(BaseModel):
     rtsp_url: Optional[str] = None
     is_active: Optional[bool] = None
 
-
 class CameraResponse(CameraBase):
     id: int
     last_seen: Optional[datetime] = None
@@ -39,7 +33,6 @@ class CameraResponse(CameraBase):
     sector: Optional[SectorInfo] = None
 
     model_config = {"from_attributes": True}
-
 
 class DetectionControl(BaseModel):
     camera_id: int

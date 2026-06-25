@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Bell, Search, Menu } from 'lucide-react';
 import { notificacoesApi } from '../api/api';
 
-const POLLING_MS = 15_000; // busca a cada 15 segundos
+const POLLING_MS = 15_000; 
 
 export default function Cabecalho({ titulo, aoAbrirMenu }) {
   const { usuario }  = useAuth();
@@ -15,10 +15,9 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
   const [naoLidas, setNaoLidas]         = useState(0);
   const intervalRef = useRef(null);
 
-  // ── Busca notificações reais da API ───────────────────────────────────────
   const buscarNotificacoes = useCallback(async () => {
     try {
-      const res  = await notificacoesApi.listar(); // GET /api/notifications/
+      const res  = await notificacoesApi.listar(); 
       const lista = res.data || [];
       setNotificacoes(lista);
       setNaoLidas(lista.filter(n => !n.lida).length);
@@ -30,33 +29,30 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
 }
   }, []);
 
-  // Polling automático enquanto o usuário está logado
   useEffect(() => {
     if (!usuario) return;
 
-    buscarNotificacoes(); // busca imediata ao montar
+    buscarNotificacoes(); 
 
     intervalRef.current = setInterval(buscarNotificacoes, POLLING_MS);
     return () => clearInterval(intervalRef.current);
   }, [usuario, buscarNotificacoes]);
 
-  // ── Abre painel e marca todas como lidas ──────────────────────────────────
   const abrirPainel = async () => {
     const abrindo = !notifAberta;
     setNotifAberta(abrindo);
 
     if (abrindo && naoLidas > 0) {
       try {
-        await notificacoesApi.marcarTodasLidas(); // PATCH /api/notifications/read-all
+        await notificacoesApi.marcarTodasLidas(); 
         setNaoLidas(0);
         setNotificacoes(prev => prev.map(n => ({ ...n, lida: true })));
       } catch {
-        // silencia
+        
       }
     }
   };
 
-  // ── Tempo relativo ────────────────────────────────────────────────────────
   const tempoRelativo = (criado_em) => {
     const diff = Math.floor((Date.now() - new Date(criado_em).getTime()) / 1000);
     if (diff < 60)    return `há ${diff}s`;
@@ -65,7 +61,6 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
     return `há ${Math.floor(diff / 86400)}d`;
   };
 
-  // ── Cor do ponto por tipo ─────────────────────────────────────────────────
   const corTipo = {
     err:  '#ef4444',
     warn: '#f59e0b',
@@ -90,7 +85,7 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
           <input type="text" placeholder="Buscar..." />
         </div>
 
-        {/* ── Sino de notificações ── */}
+        {}
         <div className="notif-wrapper">
           <button
             onClick={abrirPainel}
@@ -107,7 +102,7 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
 
           {notifAberta && (
             <>
-              {/* Overlay para fechar ao clicar fora */}
+              {}
               <div
                 style={{ position: 'fixed', inset: 0, zIndex: 10 }}
                 onClick={() => setNotifAberta(false)}
@@ -143,7 +138,7 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
                             {tempoRelativo(n.criado_em)}
                           </p>
                         </div>
-                        {/* Bolinha azul = não lida */}
+                        {}
                         {!n.lida && (
                           <span style={{
                             width: 8,
@@ -174,7 +169,7 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
           )}
         </div>
 
-        {/* ── Avatar / Perfil ── */}
+        {}
         <button
           className="header-avatar-btn"
           onClick={() => navegar('/perfil')}

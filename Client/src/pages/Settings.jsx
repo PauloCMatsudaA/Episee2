@@ -74,7 +74,7 @@ export default function Configuracoes() {
   return (
     <div className="pg">
 
-      {/* Minha Conta */}
+      {}
       <div className="card">
         <div className="flex items-center gap-2 px-5 py-4 border-b border-slate-100">
           <div className="icon-box bg-blue-50"><User size={16} className="text-blue-500" /></div>
@@ -139,7 +139,7 @@ export default function Configuracoes() {
         </div>
       </div>
 
-      {/* Telegram */}
+      {}
       <div className="card mt-6">
         <div className="flex items-center gap-2 px-5 py-4 border-b border-slate-100">
           <div className="icon-box bg-sky-50"><Send size={16} className="text-sky-500" /></div>

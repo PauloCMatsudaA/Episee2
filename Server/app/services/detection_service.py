@@ -1,7 +1,4 @@
-
-
 import asyncio
-
 
 async def analyze_frame_stub(camera_id: int, frame_data: bytes) -> dict:
 

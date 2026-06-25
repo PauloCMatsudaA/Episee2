@@ -1,7 +1,3 @@
-"""
-Chat Service — Lógica principal do chatbot EPIsee.
-Gerencia histórico por usuário, contexto RAG e chamadas ao GPT-4o.
-"""
 from collections import defaultdict, deque
 from openai import OpenAI
 from app.core.config import get_settings
@@ -9,10 +5,8 @@ from app.rag.retriever import retrieve_relevant_chunks, format_context
 
 settings = get_settings()
 
-# Cliente OpenAI (singleton)
 openai_client = OpenAI(api_key=settings.openai_api_key)
 
-# Histórico por número de WhatsApp: { "5541999999999": deque([mensagens]) }
 _conversation_history: dict[str, deque] = defaultdict(
     lambda: deque(maxlen=settings.max_history_messages)
 )
@@ -37,7 +31,6 @@ REGRAS IMPORTANTES:
 - Ao final de respostas sobre EPIs específicos, sempre lembre: "Em caso de dúvida, consulte o técnico de segurança da sua empresa."
 
 Você pode receber perguntas via texto ou transcrições de áudio. Trate ambas da mesma forma."""
-
 
 def get_chat_response(user_id: str, user_message: str) -> str:
     try:
@@ -73,8 +66,7 @@ def get_chat_response(user_id: str, user_message: str) -> str:
 
     return assistant_message
 
-
 def clear_history(user_id: str):
-    """Limpa o histórico de conversa de um usuário."""
+    
     if user_id in _conversation_history:
         _conversation_history[user_id].clear()

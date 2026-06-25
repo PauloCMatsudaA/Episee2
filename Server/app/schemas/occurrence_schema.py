@@ -3,7 +3,6 @@ from typing import Optional, List, Any
 from pydantic import BaseModel
 from app.models.occurrence import OccurrenceStatus
 
-
 class OccurrenceBase(BaseModel):
     camera_id: int
     sector_id: int
@@ -12,10 +11,8 @@ class OccurrenceBase(BaseModel):
     confidence: Optional[float] = None
     image_path: Optional[str] = None
 
-
 class OccurrenceCreate(OccurrenceBase):
     timestamp: Optional[datetime] = None
-
 
 class OccurrenceUpdate(BaseModel):
     status: Optional[OccurrenceStatus] = None
@@ -23,17 +20,15 @@ class OccurrenceUpdate(BaseModel):
     confidence: Optional[float] = None
     image_path: Optional[str] = None
 
-
 class OccurrenceResponse(OccurrenceBase):
     id: int
     timestamp: datetime
     created_at: datetime
-    # Campos enriquecidos — nome real da câmera e do setor
+    
     camera_name: Optional[str] = None
     sector_name: Optional[str] = None
 
     model_config = {"from_attributes": True}
-
 
 class OccurrenceSummary(BaseModel):
     total: int

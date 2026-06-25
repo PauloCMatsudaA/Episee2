@@ -174,7 +174,7 @@ export default function TrainingVideos() {
               {expandido === epi.id && (
                 <div className="border-t border-gray-100 px-4 py-4 space-y-3">
 
-                  {/* Palavras-chave sem fundo colorido */}
+                  {}
                   {epi.palavras_chave && (
                     <div>
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 flex items-center gap-1">
@@ -260,7 +260,7 @@ export default function TrainingVideos() {
         </div>
       )}
 
-      {/* Modal EPI */}
+      {}
       {modalEpi && (
         <div className="overlay" onClick={() => setModalEpi(null)}>
           <div className="modal modal-lg fade-in" onClick={e => e.stopPropagation()}>
@@ -307,7 +307,7 @@ export default function TrainingVideos() {
         </div>
       )}
 
-      {/* Modal Vídeo */}
+      {}
       {modalVideo && (
         <div className="overlay" onClick={() => setModalVideo(null)}>
           <div className="modal fade-in" onClick={e => e.stopPropagation()}>

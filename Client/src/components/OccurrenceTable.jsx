@@ -48,7 +48,6 @@ function LinhaOcorrencia({ occ, compacto, aoVerDetalhes }) {
       ? occ.epi_detected.split(',').map(s => s.trim()).filter(Boolean)
       : occ.epis ?? [];
 
-  // Prioriza nome real; fallback para ID
   const nomeCamera = occ.camera_name ?? occ.camera ?? (occ.camera_id ? `Camera ${occ.camera_id}` : '—');
   const nomeSetor  = occ.sector_name  ?? occ.sector  ?? (occ.sector_id  ? `Setor ${occ.sector_id}`   : '—');
 

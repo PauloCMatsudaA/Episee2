@@ -3,9 +3,8 @@ from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
-
 class EpiType(Base):
-    """Tipos de EPI cadastrados pelo gestor."""
+    
     __tablename__ = "epi_types"
 
     id            = Column(Integer, primary_key=True, index=True)
@@ -15,8 +14,7 @@ class EpiType(Base):
     como_usar     = Column(Text, nullable=True)
     erros_comuns  = Column(Text, nullable=True)
     nr6_ref       = Column(String(100), nullable=True)
-    # RAG: sinônimos e termos alternativos separados por vírgula
-    # ex: "capacete,protetor de cabeça,EPC craniano,elmo"
+    
     palavras_chave = Column(Text, nullable=True)
     criado_em     = Column(DateTime, server_default=func.now(), nullable=False)
 
@@ -27,9 +25,8 @@ class EpiType(Base):
         lazy="selectin",
     )
 
-
 class TrainingVideo(Base):
-    """Vídeos educativos vinculados a um tipo de EPI."""
+    
     __tablename__ = "training_videos"
 
     id          = Column(Integer, primary_key=True, index=True)

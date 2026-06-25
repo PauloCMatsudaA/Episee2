@@ -7,7 +7,7 @@ const mapaCores = {
   vermelho:{ fundo: 'bg-red-50',    icone: 'text-err',      borda: 'border-red-100'    },
   amarelo: { fundo: 'bg-yellow-50', icone: 'text-warn',     borda: 'border-yellow-100' },
   azul:    { fundo: 'bg-blue-50',   icone: 'text-blue-500', borda: 'border-blue-100'   },
-  // aliases em inglês para compatibilidade com páginas existentes
+  
   orange:  { fundo: 'bg-orange-50', icone: 'text-brand',    borda: 'border-orange-100' },
   green:   { fundo: 'bg-green-50',  icone: 'text-ok',       borda: 'border-green-100'  },
   red:     { fundo: 'bg-red-50',    icone: 'text-err',      borda: 'border-red-100'    },

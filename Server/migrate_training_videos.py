@@ -1,4 +1,3 @@
-"""Migração manual: cria as tabelas epi_types e training_videos no SQLite."""
 import sqlite3
 import os
 

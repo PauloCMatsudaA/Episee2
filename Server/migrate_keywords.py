@@ -1,8 +1,3 @@
-"""Migração manual: adiciona coluna palavras_chave na tabela epi_types.
-
-Execute UMA vez após o deploy:
-    python migrate_keywords.py
-"""
 import sqlite3
 import os
 
@@ -12,7 +7,6 @@ def main():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # Verifica se a coluna já existe
     cursor.execute("PRAGMA table_info(epi_types)")
     colunas = [row[1] for row in cursor.fetchall()]
 

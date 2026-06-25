@@ -7,11 +7,9 @@ from app.core.database import Base
 from datetime import datetime
 from app.models.camera import Camera
 
-
 class OccurrenceStatus(str, enum.Enum):
     conforme = "conforme"
     nao_conforme = "nao_conforme"
-
 
 class Occurrence(Base):
     __tablename__ = "occurrences"

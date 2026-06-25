@@ -8,20 +8,10 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Voz padrão da OpenAI TTS
-# Opções: alloy | echo | fable | onyx | nova | shimmer
-# - nova: feminina, natural e amigável (recomendada para assistentes)
-# - onyx: masculina, profunda e clara
-# - shimmer: feminina, suave e expressiva
 DEFAULT_VOICE = "nova"
 
-
 async def _mp3_para_ogg(mp3_bytes: bytes) -> bytes:
-    """
-    Converte bytes MP3 para OGG/OPUS via ffmpeg.
-    OGG/OPUS é o formato nativo de voice note do Telegram.
-    Se ffmpeg falhar, retorna o MP3 original como fallback.
-    """
+    
     with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
         f.write(mp3_bytes)
         mp3_path = f.name
@@ -46,7 +36,7 @@ async def _mp3_para_ogg(mp3_bytes: bytes) -> bytes:
             logger.error(f"[TTS] ffmpeg falhou: {result.stderr.decode()}")
             if os.path.exists(ogg_path):
                 os.unlink(ogg_path)
-            return mp3_bytes  # fallback: MP3
+            return mp3_bytes  
 
         with open(ogg_path, "rb") as f:
             ogg_bytes = f.read()
@@ -64,13 +54,8 @@ async def _mp3_para_ogg(mp3_bytes: bytes) -> bytes:
             os.unlink(mp3_path)
         return mp3_bytes
 
-
 async def _tts_openai(texto: str, voice: str = DEFAULT_VOICE) -> bytes | None:
-    """
-    Gera áudio usando a API TTS da OpenAI (tts-1).
-    Vozes disponíveis: alloy, echo, fable, onyx, nova, shimmer.
-    Retorna bytes MP3 ou None se falhar.
-    """
+    
     if not getattr(settings, "OPENAI_API_KEY", ""):
         logger.warning("[TTS] OPENAI_API_KEY não configurada.")
         return None
@@ -88,12 +73,8 @@ async def _tts_openai(texto: str, voice: str = DEFAULT_VOICE) -> bytes | None:
         logger.error(f"[TTS] Erro OpenAI TTS: {e}")
         return None
 
-
 async def _tts_gtts_fallback(texto: str) -> bytes | None:
-    """
-    Fallback com gTTS (voz robótica, gratuita).
-    Usado apenas se a OpenAI TTS falhar.
-    """
+    
     try:
         from gtts import gTTS
         tts = gTTS(text=texto, lang="pt", slow=False)
@@ -105,28 +86,15 @@ async def _tts_gtts_fallback(texto: str) -> bytes | None:
         logger.error(f"[TTS] Erro gTTS fallback: {e}")
         return None
 
-
 async def texto_para_audio_ogg(
     texto: str,
     voice: str = DEFAULT_VOICE,
 ) -> bytes | None:
-    """
-    Converte texto em áudio OGG/OPUS pronto para envio como voice note no Telegram.
-
-    Prioridade:
-      1. OpenAI TTS (tts-1) — voz natural, qualidade de IA
-      2. gTTS — fallback gratuito se a OpenAI falhar
-      3. None — se tudo falhar
-
-    O áudio é gerado em MP3 e convertido para OGG/OPUS via ffmpeg.
-    """
-    # Limita o texto para não exceder o limite da API (4096 chars)
+    
     texto_cortado = texto[:4000] if len(texto) > 4000 else texto
 
-    # 1. Tenta OpenAI TTS
     mp3_bytes = await _tts_openai(texto_cortado, voice=voice)
 
-    # 2. Fallback para gTTS
     if not mp3_bytes:
         logger.info("[TTS] Usando gTTS como fallback.")
         mp3_bytes = await _tts_gtts_fallback(texto_cortado)
@@ -135,5 +103,4 @@ async def texto_para_audio_ogg(
         logger.error("[TTS] Todos os métodos de TTS falharam.")
         return None
 
-    # 3. Converte MP3 → OGG/OPUS
     return await _mp3_para_ogg(mp3_bytes)

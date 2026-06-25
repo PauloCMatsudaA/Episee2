@@ -1,4 +1,3 @@
-// src/screens/NR6Screen.js — Tela de consulta à NR-6
 import React, { useState, useMemo } from 'react';
 import {
   View,
@@ -14,12 +13,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-// Habilita LayoutAnimation no Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-// ── Conteúdo completo da NR-6 ─────────────────────────────────────────────────
 const SECOES_NR6 = [
   {
     id: 1,
@@ -182,7 +179,6 @@ const SECOES_NR6 = [
   },
 ];
 
-// ── Componente de seção expansível (Accordion) ────────────────────────────────
 function SecaoAccordion({ secao, aberta, onToggle }) {
   const toggle = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -191,7 +187,7 @@ function SecaoAccordion({ secao, aberta, onToggle }) {
 
   return (
     <View style={[estilos.secaoCard, aberta && estilos.secaoCardAberta]}>
-      {/* Cabeçalho clicável */}
+      {}
       <TouchableOpacity style={estilos.secaoHeader} onPress={toggle} activeOpacity={0.75}>
         <View style={[estilos.secaoIconeContainer, { backgroundColor: secao.cor + '18' }]}>
           <Ionicons name={secao.icone} size={20} color={secao.cor} />
@@ -204,7 +200,7 @@ function SecaoAccordion({ secao, aberta, onToggle }) {
         />
       </TouchableOpacity>
 
-      {/* Conteúdo expandido */}
+      {}
       {aberta && (
         <View style={estilos.secaoConteudo}>
           <View style={estilos.secaoDivisor} />
@@ -256,14 +252,12 @@ function SecaoAccordion({ secao, aberta, onToggle }) {
   );
 }
 
-// ── Tela principal ────────────────────────────────────────────────────────────
 export default function NR6Screen() {
   const [busca, setBusca]     = useState('');
-  const [aberta, setAberta]   = useState(null); // ID da seção aberta
+  const [aberta, setAberta]   = useState(null); 
 
   const toggle = (id) => setAberta(aberta === id ? null : id);
 
-  // Filtragem por busca
   const secoesFiltradas = useMemo(() => {
     if (!busca.trim()) return SECOES_NR6;
     const termo = busca.toLowerCase();
@@ -280,7 +274,7 @@ export default function NR6Screen() {
 
   return (
     <SafeAreaView style={estilos.container}>
-      {/* ── Header ──────────────────────────────────────────────────────── */}
+      {}
       <View style={estilos.header}>
         <View>
           <Text style={estilos.headerTitulo}>NR-6</Text>
@@ -291,7 +285,7 @@ export default function NR6Screen() {
         </View>
       </View>
 
-      {/* ── Barra de busca ──────────────────────────────────────────────── */}
+      {}
       <View style={estilos.buscaContainer}>
         <Ionicons name="search" size={18} color="#94A3B8" />
         <TextInput
@@ -309,13 +303,13 @@ export default function NR6Screen() {
         )}
       </View>
 
-      {/* ── Lista de seções ──────────────────────────────────────────────── */}
+      {}
       <ScrollView
         style={estilos.scroll}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={estilos.scrollContent}
       >
-        {/* Banner informativo */}
+        {}
         <View style={estilos.bannerInfo}>
           <Ionicons name="information-circle" size={18} color="#3B82F6" />
           <Text style={estilos.bannerTexto}>
@@ -348,7 +342,6 @@ export default function NR6Screen() {
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
 const estilos = StyleSheet.create({
   container: {
     flex: 1,
@@ -381,7 +374,6 @@ const estilos = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Busca
   buscaContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -405,7 +397,6 @@ const estilos = StyleSheet.create({
     height: 46,
   },
 
-  // Scroll
   scroll: {
     flex: 1,
   },
@@ -414,7 +405,6 @@ const estilos = StyleSheet.create({
     paddingBottom: 30,
   },
 
-  // Banner informativo
   bannerInfo: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -433,7 +423,6 @@ const estilos = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // Card de seção (accordion)
   secaoCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -479,7 +468,6 @@ const estilos = StyleSheet.create({
     paddingBottom: 16,
   },
 
-  // Bloco de texto
   blocoTexto: {
     fontSize: 14,
     color: '#334155',
@@ -487,7 +475,6 @@ const estilos = StyleSheet.create({
     marginBottom: 12,
   },
 
-  // Lista com bullets
   blocoLista: {
     gap: 8,
     marginBottom: 4,
@@ -511,7 +498,6 @@ const estilos = StyleSheet.create({
     lineHeight: 20,
   },
 
-  // Subtítulo (tipo de trabalho)
   subtituloContainer: {
     backgroundColor: '#F8FAFC',
     borderRadius: 8,
@@ -530,7 +516,6 @@ const estilos = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // Passos numerados
   passoItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -552,7 +537,6 @@ const estilos = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // Sem resultados
   semResultados: {
     alignItems: 'center',
     paddingVertical: 60,
@@ -563,7 +547,6 @@ const estilos = StyleSheet.create({
     color: '#94A3B8',
   },
 
-  // Rodapé
   rodape: {
     textAlign: 'center',
     fontSize: 11,

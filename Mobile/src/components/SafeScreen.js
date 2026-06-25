@@ -1,4 +1,3 @@
-// src/components/SafeScreen.js — Wrapper de tela segura com scroll
 import React from 'react';
 import {
   SafeAreaView,
@@ -8,17 +7,6 @@ import {
   RefreshControl,
 } from 'react-native';
 
-/**
- * SafeScreen — Wrapper padrão para todas as telas
- *
- * Props:
- * - backgroundColor: cor do fundo (padrão: #F1F5F9)
- * - scrollable: habilita scroll (padrão: true)
- * - refreshing: estado de pull-to-refresh
- * - onRefresh: callback de pull-to-refresh
- * - padding: padding horizontal interno (padrão: 16)
- * - children: conteúdo da tela
- */
 export default function SafeScreen({
   children,
   backgroundColor = '#F1F5F9',

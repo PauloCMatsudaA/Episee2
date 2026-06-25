@@ -1,7 +1,6 @@
 from typing import List, Optional
 from pydantic import BaseModel
 
-
 class OccurrenceBySector(BaseModel):
     sector_id: int
     sector_name: str
@@ -9,13 +8,11 @@ class OccurrenceBySector(BaseModel):
     non_compliant: int
     compliance_rate: float
 
-
 class ComplianceTrendItem(BaseModel):
-    date: str  # ISO date string YYYY-MM-DD
+    date: str  
     rate: float
     total: int
     non_compliant: int
-
 
 class DashboardStats(BaseModel):
     total_occurrences: int

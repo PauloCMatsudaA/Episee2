@@ -1,13 +1,3 @@
-"""
-Webhook Router — Recebe e processa eventos do WhatsApp Cloud API.
-
-Fluxo:
-  1. Meta envia POST com mensagem do usuário
-  2. Webhook identifica tipo (texto ou áudio)
-  3. Se áudio: transcreve via Whisper
-  4. Consulta chatbot (RAG + GPT-4o)
-  5. Envia resposta de volta ao usuário via WhatsApp
-"""
 import logging
 from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks
 from app.core.config import get_settings
@@ -19,7 +9,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 settings = get_settings()
 
-# Comandos especiais que o usuário pode enviar
 COMMAND_RESET = "/reiniciar"
 COMMAND_HELP = "/ajuda"
 
@@ -40,13 +29,9 @@ Posso te ajudar com:
 
 Pode me enviar sua pergunta por *texto*! """
 
-
 @router.get("/webhook")
 async def verify_webhook(request: Request):
-    """
-    Verificação do webhook pela Meta.
-    A Meta envia um GET com hub.challenge que precisa ser retornado.
-    """
+    
     params = dict(request.query_params)
     mode = params.get("hub.mode")
     token = params.get("hub.verify_token")
@@ -59,25 +44,19 @@ async def verify_webhook(request: Request):
     logger.warning(f"Falha na verificação do webhook. Token recebido: {token}")
     raise HTTPException(status_code=403, detail="Token de verificação inválido.")
 
-
 @router.post("/webhook")
 async def receive_message(request: Request, background_tasks: BackgroundTasks):
-    """
-    Recebe mensagens do WhatsApp e processa em background.
-    Retorna 200 imediatamente para evitar timeout da Meta.
-    """
+    
     body = await request.json()
 
-    # Valida estrutura mínima esperada
     try:
         entry = body["entry"][0]
         changes = entry["changes"][0]
         value = changes["value"]
     except (KeyError, IndexError):
-        # Pode ser notificação de status de entrega — ignora
+        
         return {"status": "ignored"}
 
-    # Verifica se é uma mensagem real (não status)
     if "messages" not in value:
         return {"status": "ignored"}
 
@@ -86,7 +65,6 @@ async def receive_message(request: Request, background_tasks: BackgroundTasks):
     message_id = message["id"]
     message_type = message["type"]
 
-    # Processa em background (Meta exige resposta em < 5s)
     background_tasks.add_task(
         process_message,
         from_number=from_number,
@@ -97,22 +75,17 @@ async def receive_message(request: Request, background_tasks: BackgroundTasks):
 
     return {"status": "ok"}
 
-
 async def process_message(
     from_number: str,
     message_id: str,
     message_type: str,
     message: dict,
 ):
-    """
-    Processa a mensagem recebida e envia a resposta.
-    Executado em background.
-    """
+    
     try:
-        # Marca como lida
+        
         await mark_as_read(message_id)
 
-        # Comandos especiais
         if message_type == "text":
             user_text = message["text"]["body"].strip()
 
@@ -128,7 +101,6 @@ async def process_message(
                 await send_text_message(from_number, HELP_MESSAGE)
                 return
 
-        # Áudio: transcrever primeiro
         elif message_type == "audio":
             media_id = message["audio"]["id"]
             logger.info(f"Transcrevendo áudio de {from_number}...")
@@ -144,7 +116,7 @@ async def process_message(
                 return
 
         else:
-            # Tipo não suportado (imagem, vídeo, documento, etc.)
+            
             await send_text_message(
                 from_number,
                 "Por enquanto só consigo processar mensagens de texto e áudio. "
@@ -152,11 +124,9 @@ async def process_message(
             )
             return
 
-        # Obter resposta do chatbot
         logger.info(f"Processando pergunta de {from_number}: '{user_text}'")
         response_text = get_chat_response(user_id=from_number, user_message=user_text)
 
-        # Enviar resposta
         await send_text_message(from_number, response_text)
         logger.info(f"Resposta enviada para {from_number}.")
 

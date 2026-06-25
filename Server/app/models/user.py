@@ -5,11 +5,9 @@ from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
-
 class UserRole(str, enum.Enum):
     gestor = "gestor"
     trabalhador = "trabalhador"
-
 
 class User(Base):
     __tablename__ = "users"
@@ -24,7 +22,7 @@ class User(Base):
     telegram_chat_id = Column(String(50),  nullable=True)
     telegram_link_code = Column(String(20), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
-    # Protege o administrador criado automaticamente pelo servidor contra exclusão
+    
     is_system_admin = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
 

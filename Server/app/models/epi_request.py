@@ -6,12 +6,10 @@ from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
-
 class EPIRequestStatus(str, enum.Enum):
     pendente  = "pendente"
     aprovada  = "aprovada"
     rejeitada = "rejeitada"
-
 
 class EPIRequest(Base):
     __tablename__ = "epi_requests"
@@ -23,9 +21,9 @@ class EPIRequest(Base):
     reason           = Column(Text, nullable=True)
     status           = Column(Enum(EPIRequestStatus), nullable=False, default=EPIRequestStatus.pendente)
     manager_id       = Column(Integer, ForeignKey("users.id"), nullable=True)
-    # Campo: EPI foi entregue ao trabalhador? (somente para aprovadas)
+    
     entregue         = Column(Boolean, nullable=True, default=None)
-    # Campo: justificativa quando rejeitada
+    
     motivo_rejeicao  = Column(Text, nullable=True)
     created_at       = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at       = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

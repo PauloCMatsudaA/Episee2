@@ -1,7 +1,3 @@
-"""
-seed_db.py — Popula o banco com dados realistas para visualização dos gráficos.
-Execute uma vez: python seed_db.py
-"""
 import asyncio
 import random
 from datetime import datetime, timedelta
@@ -23,19 +19,17 @@ engine = create_async_engine(DATABASE_URL, echo=False)
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-
 async def seed():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     async with AsyncSessionLocal() as db:
-        # ── Setores ──────────────────────────────────────────────────────────
+        
         setor_nomes = ["Produção", "Manutenção", "Almoxarifado", "Expedição"]
         setores = [Sector(name=n, description=f"Setor de {n}") for n in setor_nomes]
         db.add_all(setores)
         await db.flush()
 
-        # ── Usuários ─────────────────────────────────────────────────────────
         gestor = User(
             name="Admin EPIsee",
             email="admin@episee.com",
@@ -65,7 +59,6 @@ async def seed():
 
         await db.flush()
 
-        # ── Câmeras ───────────────────────────────────────────────────────────
         cameras = []
         CAMERA_RTSP = {
                     "Produção":      ["rtsp://192.168.1.10/stream", "rtsp://192.168.1.11/stream"],
@@ -76,13 +69,11 @@ async def seed():
         for i, setor in enumerate(setores):
             for j in range(2):
             
-
-                # E dentro do loop de criação de câmeras:
                 c = Camera(
                     name=f"Câmera {j+1} — {setor.name}",
                     location=f"{setor.name} — Área {j+1}",
                     sector_id=setor.id,
-                    rtsp_url=CAMERA_RTSP[setor.name][j],  # ← campo correto
+                    rtsp_url=CAMERA_RTSP[setor.name][j],  
                     is_active=True,
                 )
                 cameras.append(c)
@@ -90,15 +81,14 @@ async def seed():
 
         await db.flush()
 
-        # ── Ocorrências (últimos 30 dias) ─────────────────────────────────────
         epi_tipos = ["Capacete", "Luvas", "Óculos", "Colete", "Botina", "Protetor auricular"]
         now = datetime.utcnow()
 
         for days_ago in range(30):
             base_ts = now - timedelta(days=days_ago)
-            # Mais ocorrências nos últimos dias (tendência crescente de conformidade)
+            
             qtd = random.randint(8, 20)
-            compliance_bias = 0.6 + (30 - days_ago) / 30 * 0.3  # 60% → 90%
+            compliance_bias = 0.6 + (30 - days_ago) / 30 * 0.3  
 
             for _ in range(qtd):
                 cam = random.choice(cameras)
@@ -125,12 +115,9 @@ async def seed():
                 )
                 db.add(occ)
 
-        # ── Solicitações de EPI ───────────────────────────────────────────────
         epis_solicitados = ["Capacete", "Luvas de proteção", "Óculos de segurança",
                             "Colete refletivo", "Botina de segurança", "Protetor auricular"]
-        statuses = [EPIRequestStatus.pendente] * 4 + \
-                   [EPIRequestStatus.aprovada] * 5 + \
-                   [EPIRequestStatus.rejeitada] * 2
+        statuses = [EPIRequestStatus.pendente] * 4 +                   [EPIRequestStatus.aprovada] * 5 +                   [EPIRequestStatus.rejeitada] * 2
 
         for i in range(11):
             trab = random.choice(trabalhadores)
@@ -155,7 +142,6 @@ async def seed():
         print(f"   • 11 solicitações de EPI")
         print()
         print("Login: admin@episee.com / admin123")
-
 
 if __name__ == "__main__":
     asyncio.run(seed())

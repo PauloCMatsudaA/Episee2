@@ -1,4 +1,3 @@
-// App.js — Ponto de entrada principal do EPIsee Mobile
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';

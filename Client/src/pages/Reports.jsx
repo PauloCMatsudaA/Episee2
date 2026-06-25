@@ -221,7 +221,6 @@ function canvasPizza(dados, W = 280, H = 220) {
   return c;
 }
 
-
 function pdfWrapText(pdf, text, maxW) {
   const words = text.split(' ');
   const lines = []; let cur = '';

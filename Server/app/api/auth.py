@@ -16,7 +16,6 @@ from app.schemas.user import UserCreate, UserResponse, Token
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-
 @router.post("/login", response_model=Token)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -43,7 +42,6 @@ async def login(
         token_type="bearer",
         user=UserResponse.model_validate(user),
     )
-
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(
@@ -72,13 +70,11 @@ async def register(
     db.add(user)
     await db.flush()
 
-    # Recarrega com setor para serializar corretamente
     result = await db.execute(
         select(User).options(selectinload(User.sector)).where(User.id == user.id)
     )
     user = result.scalar_one()
     return UserResponse.model_validate(user)
-
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(

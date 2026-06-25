@@ -1,4 +1,3 @@
-// src/api/api.js
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import authEvents, { AUTH_EVENTS } from '../utils/authEvents';
@@ -12,7 +11,6 @@ const api = axios.create({
   maxRedirects: 5,
 });
 
-// Injeta token em toda requisição
 api.interceptors.request.use(
   async (config) => {
     try {
@@ -26,7 +24,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Trata respostas — emite evento de logout ao receber 401
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -38,7 +35,6 @@ api.interceptors.response.use(
   }
 );
 
-// ── Auth ──────────────────────────────────────────────────────────────────
 export const loginApi = async (email, senha) => {
   const params = new URLSearchParams();
   params.append('username', email);
@@ -64,7 +60,6 @@ export const logoutApi = async () => {
   await AsyncStorage.multiRemove(['@episee:token', '@episee:user']);
 };
 
-// ── Solicitações de EPI ───────────────────────────────────────────────────
 export const criarSolicitacao = async (dados) => {
   const sectorId = dados.sector_id != null ? Number(dados.sector_id) : null;
 
@@ -96,19 +91,16 @@ export const todasSolicitacoes = async () => {
   return response.data;
 };
 
-// ── Setores ───────────────────────────────────────────────────────────────
 export const getSetores = async () => {
   const response = await api.get('/sectors');
   return response.data;
 };
 
-// ── Vídeos de Treinamento ─────────────────────────────────────────────────
 export const getVideosWorker = async () => {
   const response = await api.get('/training/worker/epis');
   return response.data;
 };
 
-// ── Chatbot ───────────────────────────────────────────────────────────────
 export const chatbotApi = async (mensagem, historico = []) => {
   const historicoFormatado = historico
     .filter((m) => m.id !== '0')

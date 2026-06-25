@@ -6,13 +6,11 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 TELEGRAM_API = "https://api.telegram.org/bot{token}/{method}"
 
-
 def _url(method: str) -> str:
     return TELEGRAM_API.format(token=settings.TELEGRAM_BOT_TOKEN, method=method)
 
-
 async def enviar_alerta_telegram(chat_id: str, mensagem: str) -> bool:
-    """Envia uma mensagem de texto para um chat_id via Telegram Bot API."""
+    
     if not settings.TELEGRAM_BOT_TOKEN or not chat_id:
         return False
     try:
@@ -27,12 +25,8 @@ async def enviar_alerta_telegram(chat_id: str, mensagem: str) -> bool:
         logger.error(f"[TELEGRAM] Erro ao enviar mensagem: {e}")
         return False
 
-
 async def enviar_audio_telegram(chat_id: str, audio_bytes: bytes, is_ogg: bool = True) -> bool:
-    """
-    Envia um arquivo de áudio como voice note (OGG/OPUS) ou audio (MP3).
-    OGG/OPUS aparece como bolha de voz no Telegram; MP3 aparece como arquivo de áudio.
-    """
+    
     if not settings.TELEGRAM_BOT_TOKEN or not chat_id:
         return False
     try:
@@ -54,27 +48,14 @@ async def enviar_audio_telegram(chat_id: str, audio_bytes: bytes, is_ogg: bool =
         logger.error(f"[TELEGRAM] Erro ao enviar áudio: {e}")
         return False
 
-
 def gerar_link_code() -> str:
-    """Gera um código único de 6 caracteres para vinculação do gestor."""
-    return "EPIS-" + secrets.token_hex(3).upper()  # ex: EPIS-3FA2C1
+    
+    return "EPIS-" + secrets.token_hex(3).upper()  
 
-
-# Controle de TTS por sessão (em memória) — True por padrão
-# Usuários que nunca usaram /voz_off recebem áudio automaticamente
 _voz_ativa: dict[str, bool] = {}
 
-
 async def processar_webhook(update: dict) -> None:
-    """
-    Processa updates recebidos pelo webhook do Telegram Bot.
-
-    Fluxos suportados:
-    1. /vincular CODIGO  — vincula o chat_id ao gestor no banco
-    2. /voz_on | /voz_off — ativa/desativa resposta em áudio (TTS)
-    3. Mensagem de texto — envia ao chatbot DeepSeek e responde com texto + voz
-    4. Mensagem de áudio / voice — transcreve e envia ao chatbot DeepSeek
-    """
+    
     from app.core.database import AsyncSessionLocal
     from app.models.user import User
     from sqlalchemy import select
@@ -89,9 +70,6 @@ async def processar_webhook(update: dict) -> None:
     first_name = message.get("from", {}).get("first_name", "usuário")
     text = message.get("text", "").strip()
 
-    # ────────────────────────────────────────
-    # 1. Comando /vincular
-    # ────────────────────────────────────────
     if text.startswith("/vincular"):
         partes = text.split()
         if len(partes) < 2:
@@ -128,9 +106,6 @@ async def processar_webhook(update: dict) -> None:
         logger.info(f"[TELEGRAM] Usuário vinculado — chat_id: {chat_id}")
         return
 
-    # ────────────────────────────────────────
-    # 2. Comandos de controle de voz
-    # ────────────────────────────────────────
     if text == "/voz_on":
         _voz_ativa[chat_id] = True
         await enviar_alerta_telegram(chat_id,
@@ -159,9 +134,6 @@ async def processar_webhook(update: dict) -> None:
         )
         return
 
-    # ────────────────────────────────────────
-    # 3. Mensagem de áudio / voice note
-    # ────────────────────────────────────────
     audio = message.get("voice") or message.get("audio")
     if audio and not text:
         file_id = audio.get("file_id", "")
@@ -175,9 +147,6 @@ async def processar_webhook(update: dict) -> None:
         text = transcricao
         await enviar_alerta_telegram(chat_id, f"📝 Entendi: <i>{transcricao}</i>")
 
-    # ────────────────────────────────────────
-    # 4. Sem texto — mensagem de boas-vindas
-    # ────────────────────────────────────────
     if not text:
         await enviar_alerta_telegram(chat_id,
             "👋 Olá! Pode me fazer perguntas sobre EPIs e segurança do trabalho.\n"
@@ -186,9 +155,6 @@ async def processar_webhook(update: dict) -> None:
         )
         return
 
-    # ────────────────────────────────────────
-    # 5. Texto → chatbot DeepSeek + TTS
-    # ────────────────────────────────────────
     try:
         async with httpx.AsyncClient(timeout=3) as client:
             await client.post(_url("sendChatAction"), json={"chat_id": chat_id, "action": "typing"})
@@ -197,10 +163,8 @@ async def processar_webhook(update: dict) -> None:
 
     resposta = await responder_chatbot(text)
 
-    # Sempre envia o texto
     await enviar_alerta_telegram(chat_id, resposta)
 
-    # TTS: ativo por padrão — só desativa se o usuário tiver usado /voz_off explicitamente
     if _voz_ativa.get(chat_id, True):
         try:
             async with httpx.AsyncClient(timeout=3) as client:

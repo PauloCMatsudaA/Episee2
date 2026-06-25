@@ -83,7 +83,7 @@ function CardEpi({ epi }) {
       {aberto && (
         <div className="border-t border-gray-100 px-4 pb-4">
 
-          {/* Card SOBRE ESTE EPI — fundo branco, sem amarelo */}
+          {}
           {(epi.descricao || epi.quando_usar || epi.como_usar || epi.erros_comuns || epi.nr6_ref) && (
             <div className="mt-3 rounded-xl border border-gray-200 bg-white overflow-hidden">
               <div className="px-4 py-2 border-b border-gray-100">
@@ -138,7 +138,7 @@ function CardEpi({ epi }) {
             </div>
           )}
 
-          {/* Palavras-chave */}
+          {}
           {keywords.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-3">
               <Tag className="w-3.5 h-3.5 text-gray-400 mt-0.5" />
@@ -148,7 +148,7 @@ function CardEpi({ epi }) {
             </div>
           )}
 
-          {/* Vídeos */}
+          {}
           {videosVisiveis.length > 0 ? (
             <div className="mt-4">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">🎬 Vídeos de treinamento</p>

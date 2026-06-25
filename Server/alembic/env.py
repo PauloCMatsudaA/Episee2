@@ -1,7 +1,3 @@
-"""
-Alembic environment configuration for EPIsee Backend.
-Supports async SQLAlchemy with aiosqlite/asyncpg.
-"""
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -13,16 +9,14 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-# Load application config and models
 from app.core.config import settings
 from app.core.database import Base
-import app.models  # noqa: F401 — registers all models
+import app.models  
 
 config = context.config
 
-
 def _make_async_url(url: str) -> str:
-    """Garante que a URL use driver async compatível com SQLAlchemy asyncio."""
+    
     if url.startswith("postgres://"):
         return url.replace("postgres://", "postgresql+asyncpg://", 1)
     if url.startswith("postgresql://") and "+asyncpg" not in url:
@@ -33,8 +27,6 @@ def _make_async_url(url: str) -> str:
         return url.replace("sqlite://", "sqlite+aiosqlite://", 1)
     return url
 
-
-# Override sqlalchemy.url com driver async correto
 async_url = _make_async_url(settings.DATABASE_URL)
 config.set_main_option("sqlalchemy.url", async_url)
 
@@ -43,9 +35,8 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode (without DB connection)."""
+    
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -56,15 +47,13 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
-
 def do_run_migrations(connection):
     context.configure(connection=connection, target_metadata=target_metadata)
     with context.begin_transaction():
         context.run_migrations()
 
-
 async def run_async_migrations() -> None:
-    """Run migrations using an async engine."""
+    
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
@@ -74,11 +63,9 @@ async def run_async_migrations() -> None:
         await connection.run_sync(do_run_migrations)
     await connectable.dispose()
 
-
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode."""
+    
     asyncio.run(run_async_migrations())
-
 
 if context.is_offline_mode():
     run_migrations_offline()
