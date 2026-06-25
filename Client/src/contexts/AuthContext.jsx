@@ -1,50 +1,41 @@
-import { createContext, useState, useCallback } from 'react';
-import { autenticacaoApi } from '../api/api';
+import React, { createContext, useState, useEffect } from 'react';
+import { api } from '../api/api';
 
-export const ContextoAutenticacao = createContext(null);
+export const AuthContext = createContext(null);
 
-export function ProvedorAutenticacao({ children }) {
-  const [usuario, setUsuario] = useState(() => {
-    const salvo = localStorage.getItem('episee_user');
-    return salvo ? JSON.parse(salvo) : null;
-  });
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const [token, setToken] = useState(() => localStorage.getItem('episee_token'));
-  const [carregando, setCarregando] = useState(false);
-
-  const estaAutenticado = !!token && !!usuario;
-
-  const entrar = useCallback(async (email, senha) => {
-  setCarregando(true);
-  try {
-    const { data } = await autenticacaoApi.login(email, senha);
-
-    localStorage.setItem('episee_token', data.access_token);
-    localStorage.setItem('episee_user', JSON.stringify(data.user ?? { email }));
-    setToken(data.access_token);
-    setUsuario(data.user ?? { email });
-
-    return { sucesso: true };
-  } catch (erro) {
-    return {
-      sucesso: false,
-      erro: erro.response?.data?.detail || 'Erro ao conectar com o servidor.',
-    };
-  } finally {
-    setCarregando(false);
-  }
-}, []);
-
-  const sair = useCallback(() => {
-    localStorage.removeItem('episee_token');
-    localStorage.removeItem('episee_user');
-    setToken(null);
-    setUsuario(null);
+  useEffect(() => {
+    const stored = localStorage.getItem('episee_user');
+    if (stored) {
+      try {
+        setUser(JSON.parse(stored));
+      } catch {
+        localStorage.removeItem('episee_user');
+      }
+    }
+    setLoading(false);
   }, []);
 
+  const login = async (email, password) => {
+    const data = await api.login(email, password);
+    setUser(data.user);
+    localStorage.setItem('episee_user', JSON.stringify(data.user));
+    localStorage.setItem('episee_token', data.access_token);
+    return data;
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('episee_user');
+    localStorage.removeItem('episee_token');
+  };
+
   return (
-    <ContextoAutenticacao.Provider value={{ usuario, token, carregando, estaAutenticado, entrar, sair }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
-    </ContextoAutenticacao.Provider>
+    </AuthContext.Provider>
   );
 }

@@ -1,93 +1,62 @@
-import { NavLink } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
-import {
-  ShieldCheck,
-  LayoutDashboard,
-  AlertTriangle,
-  FileBarChart,
-  ClipboardList,
-  Camera,
-  Building2,
-  Settings,
-  LogOut,
-  X,
-  Users,
-  BookOpen,
-} from "lucide-react";
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
-const itensMenu = [
-  { rota: "/dashboard",       rotulo: "Dashboard",         Icone: LayoutDashboard },
-  { rota: "/occurrences",     rotulo: "Ocorrências",        Icone: AlertTriangle },
-  { rota: "/reports",         rotulo: "Relatórios",         Icone: FileBarChart },
-  { rota: "/epi-requests",    rotulo: "Solicitações EPI",   Icone: ClipboardList },
-  { rota: "/cameras",         rotulo: "Câmeras",            Icone: Camera },
-  { rota: "/sectors",         rotulo: "Setores",            Icone: Building2 },
-  { rota: "/users",           rotulo: "Usuários",           Icone: Users },
-  { rota: "/training-videos", rotulo: "Vídeos Educativos",  Icone: BookOpen },
-  { rota: "/settings",        rotulo: "Configurações",      Icone: Settings },
+const NAV_ITEMS = [
+  { to: '/dashboard', label: 'Dashboard', icon: '📊', roles: ['admin', 'manager', 'worker'] },
+  { to: '/cameras', label: 'Câmeras', icon: '📹', roles: ['admin', 'manager'] },
+  { to: '/occurrences', label: 'Ocorrências', icon: '⚠️', roles: ['admin', 'manager'] },
+  { to: '/epi-requests', label: 'Solicitações EPI', icon: '🧲', roles: ['admin', 'manager', 'worker'] },
+  { to: '/sectors', label: 'Setores', icon: '🏭', roles: ['admin'] },
+  { to: '/users', label: 'Usuários', icon: '👥', roles: ['admin'] },
+  { to: '/training', label: 'Treinamentos', icon: '🎬', roles: ['admin', 'manager', 'worker'] },
+  { to: '/reports', label: 'Relatórios', icon: '📈', roles: ['admin', 'manager'] },
+  { to: '/settings', label: 'Configurações', icon: '⚙️', roles: ['admin'] },
 ];
 
-export default function MenuGaveta({ aberto, aoFechar }) {
-  const { usuario, sair } = useAuth();
+export default function NavDrawer({ isOpen, onClose }) {
+  const { user, logout } = useAuth();
+  const location = useLocation();
 
-  const inicial = usuario?.nome?.charAt(0) || usuario?.name?.charAt(0) || "U";
-  const nome    = usuario?.nome  || usuario?.name  || "";
-  const cargo   = usuario?.cargo || usuario?.role  || "";
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => !user?.role || item.roles.includes(user.role)
+  );
 
   return (
     <>
-      <div
-        aria-hidden="true"
-        onClick={aoFechar}
-        className={`nav-overlay ${aberto ? "open" : "closed"}`}
-      />
-
-      <nav
-        aria-label="Menu de navegação"
-        className={`nav-drawer ${aberto ? "open" : "closed"}`}
-      >
+      {isOpen && (
+        <div
+          className="nav-overlay"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+      <nav className={`nav-drawer ${isOpen ? 'open' : ''}`} aria-label="Menu principal">
         <div className="nav-header">
-          <button
-            onClick={aoFechar}
-            className="nav-close"
-            aria-label="Fechar menu"
-          >
-            <X size={18} />
+          <span className="nav-logo">EPIsee</span>
+          <button className="nav-close" onClick={onClose} aria-label="Fechar menu">
+            ✕
           </button>
         </div>
-
-        <ul className="nav-links">
-          {itensMenu.map(({ rota, rotulo, Icone }) => (
-            <li key={rota}>
-              <NavLink
-                to={rota}
-                onClick={aoFechar}
-                className={({ isActive }) =>
-                  `nav-link${isActive ? " active" : ""}`
-                }
+        <ul className="nav-list">
+          {visibleItems.map((item) => (
+            <li key={item.to}>
+              <Link
+                to={item.to}
+                className={`nav-item ${location.pathname === item.to ? 'active' : ''}`}
+                onClick={onClose}
               >
-                <Icone size={18} />
-                {rotulo}
-              </NavLink>
+                <span className="nav-icon">{item.icon}</span>
+                <span>{item.label}</span>
+              </Link>
             </li>
           ))}
         </ul>
-
         <div className="nav-footer">
-          {usuario && (
-            <div className="nav-user">
-              <div className="nav-user-avatar">{inicial}</div>
-              <div style={{ minWidth: 0 }}>
-                <p className="nav-user-name">{nome}</p>
-                <p className="nav-user-role">{cargo}</p>
-              </div>
-            </div>
-          )}
-          <button
-            onClick={() => { sair(); aoFechar(); }}
-            className="nav-logout"
-          >
-            <LogOut size={16} />
+          <Link to="/profile" className="nav-profile" onClick={onClose}>
+            👤 {user?.name || 'Perfil'}
+          </Link>
+          <button className="nav-logout" onClick={logout}>
             Sair
           </button>
         </div>
