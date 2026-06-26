@@ -84,14 +84,18 @@ async def download_model_if_needed():
 async def migrate_add_is_system_admin():
     async with AsyncSessionLocal() as db:
         try:
-            await db.execute(text(
-                """
-                ALTER TABLE users
-                ADD COLUMN IF NOT EXISTS is_system_admin BOOLEAN NOT NULL DEFAULT FALSE;
-                """
-            ))
-            await db.commit()
-            logger.info("[MIGRATE] Coluna is_system_admin verificada/adicionada com sucesso.")
+            # SQLite nao suporta ADD COLUMN IF NOT EXISTS — verificar via PRAGMA
+            result = await db.execute(text("PRAGMA table_info(users)"))
+            colunas = [row[1] for row in result.fetchall()]
+
+            if "is_system_admin" not in colunas:
+                await db.execute(text(
+                    "ALTER TABLE users ADD COLUMN is_system_admin BOOLEAN NOT NULL DEFAULT FALSE"
+                ))
+                await db.commit()
+                logger.info("[MIGRATE] Coluna is_system_admin adicionada com sucesso.")
+            else:
+                logger.info("[MIGRATE] Coluna is_system_admin ja existe, pulando.")
         except Exception as e:
             await db.rollback()
             logger.error(f"[MIGRATE] Erro ao adicionar coluna is_system_admin: {e}")
