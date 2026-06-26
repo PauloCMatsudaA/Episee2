@@ -82,7 +82,6 @@ async def download_model_if_needed():
         logger.warning("[MODEL] Deteccao por camera pode nao funcionar.")
 
 async def migrate_add_is_system_admin():
-    
     async with AsyncSessionLocal() as db:
         try:
             await db.execute(text(
@@ -108,13 +107,13 @@ async def create_default_admin():
             await db.refresh(default_sector)
             logger.info("Setor padrao 'Geral' criado.")
 
-        result = await db.execute(select(User).where(User.email == "admin@episee.com"))
+        result = await db.execute(select(User).where(User.email == settings.DEFAULT_ADMIN_EMAIL))
         admin = result.scalar_one_or_none()
         if not admin:
             admin = User(
                 name="Administrador EPIsee",
-                email="admin@episee.com",
-                hashed_password=get_password_hash("admin123"),
+                email=settings.DEFAULT_ADMIN_EMAIL,
+                hashed_password=get_password_hash(settings.DEFAULT_ADMIN_PASSWORD),
                 role=UserRole.gestor,
                 sector_id=default_sector.id,
                 phone="+5511999999999",
@@ -130,7 +129,6 @@ async def create_default_admin():
         await db.commit()
 
 async def registrar_webhook_telegram():
-    
     token = getattr(settings, "TELEGRAM_BOT_TOKEN", "")
     app_url = getattr(settings, "APP_URL", "")
 

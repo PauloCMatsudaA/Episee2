@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     TWILIO_AUTH_TOKEN: str = ""
     TELEGRAM_BOT_TOKEN: str = ""
     APP_URL: str = ""
+    DEFAULT_ADMIN_EMAIL: str = "admin@episee.com"
+    DEFAULT_ADMIN_PASSWORD: str = "admin123"
 
     model_config = SettingsConfigDict(
         env_file=".env",
