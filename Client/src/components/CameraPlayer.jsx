@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js/dist/hls.min.js";
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://episee2-production.up.railway.app";
+const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 function buildSrc(baseUrl) {
   return `${API_BASE}${baseUrl}?t=${Date.now()}`;
