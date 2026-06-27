@@ -1,77 +1,98 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { NavLink } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import {
+  LayoutDashboard,
+  AlertTriangle,
+  FileBarChart,
+  ClipboardList,
+  Camera,
+  Building2,
+  Settings,
+  LogOut,
+  X,
+  Users,
+  Video,
+} from "lucide-react";
 
-// Mapeia roles do backend para roles internos
-const ROLE_MAP = {
-  gestor: 'manager',
-  admin: 'admin',
-  manager: 'manager',
-  worker: 'worker',
-  operador: 'worker',
-};
-
-const NAV_ITEMS = [
-  { to: '/dashboard',         label: 'Dashboard',          icon: '📊', roles: ['admin', 'manager', 'worker'] },
-  { to: '/cameras',           label: 'Câmeras',             icon: '📹', roles: ['admin', 'manager'] },
-  { to: '/occurrences',       label: 'Ocorrências',         icon: '⚠️', roles: ['admin', 'manager'] },
-  { to: '/epi-requests',      label: 'Solicitações EPI',    icon: '🧰', roles: ['admin', 'manager', 'worker'] },
-  { to: '/sectors',           label: 'Setores',             icon: '🏭', roles: ['admin', 'manager'] },
-  { to: '/users',             label: 'Usuários',            icon: '👥', roles: ['admin', 'manager'] },
-  { to: '/training-videos',   label: 'Treinamentos',        icon: '🎬', roles: ['admin', 'manager', 'worker'] },
-  { to: '/reports',           label: 'Relatórios',          icon: '📈', roles: ['admin', 'manager'] },
-  { to: '/settings',          label: 'Configurações',       icon: '⚙️', roles: ['admin', 'manager'] },
+const itensMenu = [
+  { rota: "/dashboard",        rotulo: "Dashboard",         Icone: LayoutDashboard },
+  { rota: "/occurrences",      rotulo: "Ocorr\u00eancias",        Icone: AlertTriangle },
+  { rota: "/reports",          rotulo: "Relat\u00f3rios",          Icone: FileBarChart },
+  { rota: "/epi-requests",     rotulo: "Solicita\u00e7\u00f5es EPI",   Icone: ClipboardList },
+  { rota: "/cameras",          rotulo: "C\u00e2meras",             Icone: Camera },
+  { rota: "/sectors",          rotulo: "Setores",            Icone: Building2 },
+  { rota: "/users",            rotulo: "Usu\u00e1rios",           Icone: Users },
+  { rota: "/training-videos",  rotulo: "Treinamentos",       Icone: Video },
+  { rota: "/settings",         rotulo: "Configura\u00e7\u00f5es",      Icone: Settings },
 ];
 
-// Aceita tanto { aberto, aoFechar } quanto { isOpen, onClose }
-export default function NavDrawer({ aberto, aoFechar, isOpen, onClose }) {
-  const open    = aberto    ?? isOpen    ?? false;
-  const onCloseF = aoFechar ?? onClose   ?? (() => {});
-
+export default function MenuGaveta({ aberto, aoFechar }) {
   const { user, logout } = useAuth();
-  const location = useLocation();
 
-  const mappedRole = ROLE_MAP[user?.role] ?? user?.role ?? 'worker';
-
-  const visibleItems = NAV_ITEMS.filter((item) =>
-    item.roles.includes(mappedRole)
-  );
+  const inicial = user?.name?.charAt(0) || "U";
+  const nome    = user?.name  || "";
+  const cargo   = user?.role  || "";
 
   return (
     <>
-      {open && (
-        <div
-          className="nav-overlay"
-          onClick={onCloseF}
-          aria-hidden="true"
-        />
-      )}
-      <nav className={`nav-drawer ${open ? 'open' : ''}`} aria-label="Menu principal">
+      <div
+        aria-hidden="true"
+        onClick={aoFechar}
+        className={`nav-overlay ${aberto ? "open" : "closed"}`}
+      />
+
+      <nav
+        aria-label="Menu de navega\u00e7\u00e3o"
+        className={`nav-drawer ${aberto ? "open" : "closed"}`}
+      >
         <div className="nav-header">
-          <span className="nav-logo">EPIsee</span>
-          <button className="nav-close" onClick={onCloseF} aria-label="Fechar menu">
-            ✕
+          <div className="nav-logo">
+            <div className="nav-logo-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <span className="nav-logo-text">EPI<span>see</span></span>
+          </div>
+          <button
+            onClick={aoFechar}
+            className="nav-close"
+            aria-label="Fechar menu"
+          >
+            <X size={18} />
           </button>
         </div>
-        <ul className="nav-list">
-          {visibleItems.map((item) => (
-            <li key={item.to}>
-              <Link
-                to={item.to}
-                className={`nav-item ${location.pathname === item.to ? 'active' : ''}`}
-                onClick={onCloseF}
+
+        <ul className="nav-links">
+          {itensMenu.map(({ rota, rotulo, Icone }) => (
+            <li key={rota}>
+              <NavLink
+                to={rota}
+                onClick={aoFechar}
+                className={({ isActive }) =>
+                  `nav-link${isActive ? " active" : ""}`
+                }
               >
-                <span className="nav-icon">{item.icon}</span>
-                <span>{item.label}</span>
-              </Link>
+                <Icone size={18} />
+                {rotulo}
+              </NavLink>
             </li>
           ))}
         </ul>
+
         <div className="nav-footer">
-          <Link to="/perfil" className="nav-profile" onClick={onCloseF}>
-            👤 {user?.name || 'Perfil'}
-          </Link>
-          <button className="nav-logout" onClick={logout}>
+          {user && (
+            <div className="nav-user">
+              <div className="nav-user-avatar">{inicial}</div>
+              <div style={{ minWidth: 0 }}>
+                <p className="nav-user-name">{nome}</p>
+                <p className="nav-user-role">{cargo}</p>
+              </div>
+            </div>
+          )}
+          <button
+            onClick={() => { logout(); aoFechar(); }}
+            className="nav-logout"
+          >
+            <LogOut size={16} />
             Sair
           </button>
         </div>
