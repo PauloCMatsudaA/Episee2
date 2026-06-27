@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
-import MenuGaveta from './components/NavDrawer';
+import NavDrawer from './components/NavDrawer';
 import Cabecalho from './components/Header';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -17,16 +17,16 @@ import TrainingVideos from './pages/TrainingVideos';
 import VideosWorker from './pages/VideosWorker';
 
 const titulosPagina = {
-  '/dashboard':        'Dashboard',
-  '/occurrences':      'Ocorrências',
-  '/reports':          'Relatórios',
-  '/epi-requests':     'Solicitações EPI',
-  '/cameras':          'Câmeras',
-  '/sectors':          'Setores',
-  '/settings':         'Configurações',
-  '/users':            'Usuários',
-  '/perfil':           'Meu Perfil',
-  '/training-videos':  'Vídeos Educativos',
+  '/dashboard':         'Dashboard',
+  '/occurrences':       'Ocorrências',
+  '/reports':           'Relatórios',
+  '/epi-requests':      'Solicitações EPI',
+  '/cameras':           'Câmeras',
+  '/sectors':           'Setores',
+  '/settings':          'Configurações',
+  '/users':             'Usuários',
+  '/perfil':            'Meu Perfil',
+  '/training-videos':   'Vídeos Educativos',
   '/meus-treinamentos': 'Meus Treinamentos',
 };
 
@@ -41,14 +41,30 @@ function Layout() {
   const [menuAberto, setMenuAberto] = useState(false);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-light">
-      <MenuGaveta aberto={menuAberto} aoFechar={() => setMenuAberto(false)} />
-      <Cabecalho
-        titulo={titulosPagina[pathname] || 'Dashboard'}
-        aoAbrirMenu={() => setMenuAberto(true)}
-      />
-      <main className="flex-1 overflow-y-auto p-4 md:p-6">
-        <div className="page-enter">
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      {/* Sidebar fixa em desktop */}
+      <aside style={{
+        width: '240px',
+        flexShrink: 0,
+        height: '100vh',
+        overflowY: 'auto',
+        background: 'var(--color-sidebar, #0f172a)',
+        display: 'flex',
+        flexDirection: 'column',
+      }} className="sidebar-desktop">
+        <NavDrawer aberto={true} aoFechar={() => {}} />
+      </aside>
+
+      {/* Drawer mobile */}
+      <NavDrawer aberto={menuAberto} aoFechar={() => setMenuAberto(false)} />
+
+      {/* Conteúdo principal */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <Cabecalho
+          titulo={titulosPagina[pathname] || 'Dashboard'}
+          aoAbrirMenu={() => setMenuAberto(true)}
+        />
+        <main style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
           <Routes>
             <Route path="/dashboard"          element={<Dashboard />}        />
             <Route path="/occurrences"        element={<Ocorrencias />}      />
@@ -63,8 +79,8 @@ function Layout() {
             <Route path="/meus-treinamentos"  element={<VideosWorker />}     />
             <Route path="*"                   element={<Navigate to="/dashboard" replace />} />
           </Routes>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
