@@ -1,16 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { ProvedorAutenticacao } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import App from './App';
 import './styles/index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <ProvedorAutenticacao>
+      <AuthProvider>
         <App />
-      </ProvedorAutenticacao>
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
 );
