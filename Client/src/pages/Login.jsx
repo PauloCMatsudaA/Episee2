@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { ShieldCheck, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 
 export default function Login() {
   const navegar            = useNavigate();
@@ -37,11 +37,8 @@ export default function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-white p-6 sm:p-12">
       <div className="w-full max-w-sm">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand">
-            <ShieldCheck size={22} className="text-white" />
-          </div>
-          <span className="text-2xl font-bold text-slate-800">
+        <div className="mb-8">
+          <span className="text-3xl font-bold text-slate-800">
             EPI<span className="text-brand">see</span>
           </span>
         </div>
