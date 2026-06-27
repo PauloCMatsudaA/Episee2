@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Bell, Search, Menu } from 'lucide-react';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://episee2-production.up.railway.app';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export default function Cabecalho({ titulo, aoAbrirMenu }) {
-  const { usuario } = useAuth();
-  const navegar     = useNavigate();
+  const { user } = useAuth();
+  const navegar  = useNavigate();
 
   const [notifAberta, setNotifAberta] = useState(false);
   const [alertas, setAlertas]         = useState([]);
@@ -15,7 +15,7 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
   const esRef = useRef(null);
 
   useEffect(() => {
-    if (!usuario) return;
+    if (!user) return;
 
     const token = localStorage.getItem('episee_token');
     if (!token) return;
@@ -42,7 +42,7 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
 
     conectar();
     return () => esRef.current?.close();
-  }, [usuario]);
+  }, [user]);
 
   const abrirPainel = () => {
     setNotifAberta(prev => !prev);
@@ -57,8 +57,8 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
     return `há ${Math.floor(diff / 86400)}d`;
   };
 
-  const inicial      = usuario?.nome?.charAt(0) || usuario?.name?.charAt(0) || 'U';
-  const primeiroNome = (usuario?.nome || usuario?.name || '').split(' ')[0];
+  const inicial      = user?.nome?.charAt(0) || user?.name?.charAt(0) || 'U';
+  const primeiroNome = (user?.nome || user?.name || '').split(' ')[0];
 
   return (
     <header className="header">
