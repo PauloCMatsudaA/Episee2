@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { api } from '../api/api';
+import { autenticacaoApi } from '../api/api';
 
 export const AuthContext = createContext(null);
 
@@ -20,7 +20,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (email, password) => {
-    const data = await api.login(email, password);
+    const response = await autenticacaoApi.login(email, password);
+    const data = response.data;
     setUser(data.user);
     localStorage.setItem('episee_user', JSON.stringify(data.user));
     localStorage.setItem('episee_token', data.access_token);
