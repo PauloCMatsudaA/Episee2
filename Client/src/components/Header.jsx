@@ -2,69 +2,57 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Bell, Search, Menu } from 'lucide-react';
-import { notificacoesApi } from '../api/api';
+import { ocorrenciasApi } from '../api/api';
 
-const POLLING_MS = 15_000; 
+const POLLING_MS = 30_000;
 
 export default function Cabecalho({ titulo, aoAbrirMenu }) {
   const { usuario }  = useAuth();
   const navegar      = useNavigate();
 
-  const [notifAberta, setNotifAberta]   = useState(false);
-  const [notificacoes, setNotificacoes] = useState([]);
-  const [naoLidas, setNaoLidas]         = useState(0);
-  const intervalRef = useRef(null);
+  const [notifAberta, setNotifAberta] = useState(false);
+  const [alertas, setAlertas]         = useState([]);
+  const [naoLidas, setNaoLidas]       = useState(0);
+  const ultimaChecagem = useRef(new Date().toISOString());
+  const intervalRef    = useRef(null);
 
-  const buscarNotificacoes = useCallback(async () => {
+  const buscarOcorrenciasNovas = useCallback(async () => {
     try {
-      const res  = await notificacoesApi.listar(); 
-      const lista = res.data || [];
-      setNotificacoes(lista);
-      setNaoLidas(lista.filter(n => !n.lida).length);
-   } catch (err) {
-  console.warn('[Notificações] Erro ao buscar:', err);
-  console.warn('Response:', err?.response);
-  console.warn('Message:', err?.message);
-  console.warn('Code:', err?.code);
-}
+      const res  = await ocorrenciasApi.listar({ limit: 10 });
+      const lista = res.data ?? [];
+
+      const novas = lista.filter(
+        o => o.status === 'nao_conforme' && new Date(o.timestamp) > new Date(ultimaChecagem.current)
+      );
+
+      if (novas.length > 0) {
+        setAlertas(prev => [...novas, ...prev].slice(0, 20));
+        setNaoLidas(prev => prev + novas.length);
+        ultimaChecagem.current = new Date().toISOString();
+      }
+    } catch (err) {
+      console.warn('[Alertas] Erro:', err?.message);
+    }
   }, []);
 
   useEffect(() => {
     if (!usuario) return;
-
-    buscarNotificacoes(); 
-
-    intervalRef.current = setInterval(buscarNotificacoes, POLLING_MS);
+    buscarOcorrenciasNovas();
+    intervalRef.current = setInterval(buscarOcorrenciasNovas, POLLING_MS);
     return () => clearInterval(intervalRef.current);
-  }, [usuario, buscarNotificacoes]);
+  }, [usuario, buscarOcorrenciasNovas]);
 
-  const abrirPainel = async () => {
-    const abrindo = !notifAberta;
-    setNotifAberta(abrindo);
-
-    if (abrindo && naoLidas > 0) {
-      try {
-        await notificacoesApi.marcarTodasLidas(); 
-        setNaoLidas(0);
-        setNotificacoes(prev => prev.map(n => ({ ...n, lida: true })));
-      } catch {
-        
-      }
-    }
+  const abrirPainel = () => {
+    setNotifAberta(prev => !prev);
+    setNaoLidas(0);
   };
 
-  const tempoRelativo = (criado_em) => {
-    const diff = Math.floor((Date.now() - new Date(criado_em).getTime()) / 1000);
+  const tempoRelativo = (ts) => {
+    const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
     if (diff < 60)    return `há ${diff}s`;
     if (diff < 3600)  return `há ${Math.floor(diff / 60)}min`;
     if (diff < 86400) return `há ${Math.floor(diff / 3600)}h`;
     return `há ${Math.floor(diff / 86400)}d`;
-  };
-
-  const corTipo = {
-    err:  '#ef4444',
-    warn: '#f59e0b',
-    info: '#3b82f6',
   };
 
   const inicial      = usuario?.nome?.charAt(0) || usuario?.name?.charAt(0) || 'U';
@@ -85,7 +73,6 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
           <input type="text" placeholder="Buscar..." />
         </div>
 
-        {}
         <div className="notif-wrapper">
           <button
             onClick={abrirPainel}
@@ -102,52 +89,42 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
 
           {notifAberta && (
             <>
-              {}
               <div
                 style={{ position: 'fixed', inset: 0, zIndex: 10 }}
                 onClick={() => setNotifAberta(false)}
               />
 
               <div className="notif-dropdown card fade-in" style={{ padding: '0.5rem' }}>
-                <p className="notif-heading">Notificações</p>
+                <p className="notif-heading">Detecções recentes</p>
 
-                {notificacoes.length === 0 ? (
+                {alertas.length === 0 ? (
                   <p style={{
                     textAlign: 'center',
                     padding: '1.5rem 1rem',
                     color: 'var(--text-faint)',
                     fontSize: '0.85rem',
                   }}>
-                    Nenhuma notificação
+                    Nenhuma não conformidade detectada
                   </p>
                 ) : (
                   <ul>
-                    {notificacoes.slice(0, 10).map(n => (
+                    {alertas.slice(0, 10).map(n => (
                       <li
                         key={n.id}
                         className="notif-item"
-                        style={{ opacity: n.lida ? 0.5 : 1 }}
                       >
                         <span
                           className="notif-item-dot"
-                          style={{ background: corTipo[n.tipo] || '#6b7280' }}
+                          style={{ background: '#ef4444' }}
                         />
                         <div style={{ flex: 1 }}>
-                          <p className="notif-item-text">{n.texto}</p>
+                          <p className="notif-item-text">
+                            ⚠️ {n.epi_detected ?? 'Não conformidade'} — {n.camera_name ?? n.sector_name ?? 'Câmera'}
+                          </p>
                           <p className="notif-item-time">
-                            {tempoRelativo(n.criado_em)}
+                            {tempoRelativo(n.timestamp)}
                           </p>
                         </div>
-                        {}
-                        {!n.lida && (
-                          <span style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            background: '#3b82f6',
-                            flexShrink: 0,
-                          }} />
-                        )}
                       </li>
                     ))}
                   </ul>
@@ -158,7 +135,7 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
                     className="notif-footer-btn"
                     onClick={() => {
                       setNotifAberta(false);
-                      navegar('/notificacoes');
+                      navegar('/ocorrencias');
                     }}
                   >
                     Ver todas
@@ -169,7 +146,6 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
           )}
         </div>
 
-        {}
         <button
           className="header-avatar-btn"
           onClick={() => navegar('/perfil')}
