@@ -107,10 +107,6 @@ export default function Login() {
             }
           </button>
         </form>
-
-        <p className="mt-8 text-center text-xs text-slate-400">
-          EPIsee v1.0 — Segurança do trabalho inteligente
-        </p>
       </div>
     </div>
   );
