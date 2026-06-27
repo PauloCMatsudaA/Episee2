@@ -31,8 +31,9 @@ const titulosPagina = {
 };
 
 function Protegida({ children }) {
-  const { estaAutenticado } = useAuth();
-  return estaAutenticado ? children : <Navigate to="/login" replace />;
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return user ? children : <Navigate to="/login" replace />;
 }
 
 function Layout() {
