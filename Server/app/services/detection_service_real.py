@@ -29,9 +29,7 @@ CLASSES_EPI = {
 }
 
 EPIS_FACIAIS = {"helmet", "glasses", "face-mask-medical", "face-guard", "earmuffs"}
-
 EPIS_TORSO = {"safety-vest"}
-
 EPIS_SEM_INTERSECAO = {"gloves", "medical-suit", "safety-suit"}
 
 CONFIANCA_MINIMA  = 0.45
@@ -44,6 +42,29 @@ processos_ffmpeg: dict[int, subprocess.Popen] = {}
 tarefas_deteccao: dict[int, asyncio.Task]      = {}
 
 _model = None
+
+_sse_subscribers: list[asyncio.Queue] = []
+
+def sse_subscribe() -> asyncio.Queue:
+    q: asyncio.Queue = asyncio.Queue(maxsize=20)
+    _sse_subscribers.append(q)
+    return q
+
+def sse_unsubscribe(q: asyncio.Queue):
+    try:
+        _sse_subscribers.remove(q)
+    except ValueError:
+        pass
+
+def _sse_publish(evento: dict):
+    mortos = []
+    for q in _sse_subscribers:
+        try:
+            q.put_nowait(evento)
+        except asyncio.QueueFull:
+            mortos.append(q)
+    for q in mortos:
+        sse_unsubscribe(q)
 
 def _find_ffmpeg() -> str | None:
     found = shutil.which("ffmpeg")
@@ -85,7 +106,6 @@ def _np():
     return np
 
 def _iou_area(boxA: list, boxB: list) -> float:
-    
     ax1, ay1, ax2, ay2 = boxA
     bx1, by1, bx2, by2 = boxB
     ix1 = max(ax1, bx1)
@@ -98,22 +118,13 @@ def _iou_area(boxA: list, boxB: list) -> float:
     area_b = max((bx2 - bx1) * (by2 - by1), 1)
     return inter / area_b
 
-def epi_esta_sobre_alvo(
-    epi_box: list,
-    alvo_boxes: list[list],
-    threshold: float,
-) -> bool:
-    
+def epi_esta_sobre_alvo(epi_box, alvo_boxes, threshold):
     for alvo in alvo_boxes:
         if _iou_area(epi_box, alvo) >= threshold:
             return True
     return False
 
-def capacete_esta_na_cabeca(
-    helmet_box: list,
-    head_boxes: list[list],
-    threshold: float = IOUI_HELMET_HEAD,
-) -> bool:
+def capacete_esta_na_cabeca(helmet_box, head_boxes, threshold=IOUI_HELMET_HEAD):
     return epi_esta_sobre_alvo(helmet_box, head_boxes, threshold)
 
 def get_model():
@@ -305,12 +316,8 @@ def inferir_frame(frame) -> list[dict]:
             })
     return deteccoes
 
-def _validar_epis_por_intersecao(
-    epis_encontrados: set,
-    deteccoes: list[dict],
-) -> set:
+def _validar_epis_por_intersecao(epis_encontrados, deteccoes):
     epis_validos = set(epis_encontrados)
-
     head_boxes   = [d["bbox"] for d in deteccoes if d["class"] == "head"]
     person_boxes = [d["bbox"] for d in deteccoes if d["class"] == "person"]
 
@@ -323,9 +330,6 @@ def _validar_epis_por_intersecao(
         )
         if not algum_vestido:
             epis_validos.discard(epi)
-            logger.debug(
-                f"[DETECCAO] '{epi}' detectado mas nao sobre cabeca — desconsiderado"
-            )
 
     if "safety-vest" in epis_validos and person_boxes:
         vest_boxes = [d["bbox"] for d in deteccoes if d["class"] == "safety-vest"]
@@ -335,26 +339,18 @@ def _validar_epis_por_intersecao(
         )
         if not algum_vestido:
             epis_validos.discard("safety-vest")
-            logger.debug(
-                "[DETECCAO] 'safety-vest' detectado mas nao sobre pessoa — desconsiderado"
-            )
 
     return epis_validos
 
-def avaliar_deteccoes(
-    deteccoes: list[dict],
-    epis_obrigatorios: set[str] | None = None,
-) -> dict:
+def avaliar_deteccoes(deteccoes, epis_obrigatorios=None):
     if epis_obrigatorios is None:
         epis_obrigatorios = {"safety-vest"}
 
     classes          = {d["class"] for d in deteccoes}
     pessoa_detectada = bool(classes & CLASSE_PESSOA)
     epis_encontrados = classes & CLASSES_EPI
-
     epis_encontrados = _validar_epis_por_intersecao(epis_encontrados, deteccoes)
-
-    epis_ausentes = epis_obrigatorios - epis_encontrados
+    epis_ausentes    = epis_obrigatorios - epis_encontrados
 
     if not pessoa_detectada:
         status = "sem_pessoa"
@@ -375,7 +371,7 @@ def avaliar_deteccoes(
         "detections":        deteccoes,
     }
 
-async def get_epis_obrigatorios_do_setor(sector_id: int | None) -> set[str]:
+async def get_epis_obrigatorios_do_setor(sector_id):
     if sector_id is None:
         return {"safety-vest"}
     try:
@@ -393,12 +389,7 @@ async def get_epis_obrigatorios_do_setor(sector_id: int | None) -> set[str]:
         logger.error(f"[SETOR {sector_id}] Erro ao buscar EPIs: {e}", exc_info=True)
     return {"safety-vest"}
 
-async def salvar_ocorrencia(
-    camera_id: int,
-    sector_id: int,
-    resultado: dict,
-    frame,
-):
+async def salvar_ocorrencia(camera_id, sector_id, resultado, frame):
     from app.core.database import AsyncSessionLocal
     from app.models.occurrence import Occurrence, OccurrenceStatus
     from app.models.notification import Notification
@@ -437,6 +428,18 @@ async def salvar_ocorrencia(
                     f"Faltando: {ausentes_str} | "
                     f"Confianca: {resultado['confidence'] * 100:.0f}%"
                 )
+
+                _sse_publish({
+                    "id":          occ.id,
+                    "camera_id":   camera_id,
+                    "sector_id":   sector_id,
+                    "epi_detected": resultado["epi_detected"],
+                    "epis_ausentes": resultado["epis_ausentes"],
+                    "confidence":  resultado["confidence"],
+                    "timestamp":   datetime.utcnow().isoformat() + "Z",
+                    "texto":       texto,
+                })
+
                 res = await db.execute(
                     select(User).where(
                         User.role == UserRole.gestor,
@@ -468,7 +471,7 @@ async def salvar_ocorrencia(
     except Exception as e:
         logger.error(f"[CAM {camera_id}] Erro ao salvar ocorrencia: {e}", exc_info=True)
 
-async def processar_stream_camera(camera_id: int, fonte, sector_id: int):
+async def processar_stream_camera(camera_id, fonte, sector_id):
     epis_obrigatorios = await get_epis_obrigatorios_do_setor(sector_id)
     reader = FrameReader(fonte, camera_id)
     reader.start()
@@ -565,11 +568,7 @@ async def start_camera_streams():
     except asyncio.CancelledError:
         logger.info("[STARTUP] Encerrado.")
 
-async def analyze_frame(
-    camera_id: int,
-    frame_data: bytes,
-    sector_id: int | None = None,
-) -> dict:
+async def analyze_frame(camera_id, frame_data, sector_id=None):
     np = _np()
     cv2 = _cv2()
     nparr = np.frombuffer(frame_data, np.uint8)
@@ -583,11 +582,7 @@ async def analyze_frame(
     deteccoes = inferir_frame(frame)
     return avaliar_deteccoes(deteccoes, epis_obrigatorios=epis)
 
-async def analisar_frame(
-    camera_id: int,
-    frame,
-    sector_id: int | None = None,
-) -> dict:
+async def analisar_frame(camera_id, frame, sector_id=None):
     epis      = await get_epis_obrigatorios_do_setor(sector_id)
     deteccoes = await asyncio.get_event_loop().run_in_executor(None, inferir_frame, frame)
     return avaliar_deteccoes(deteccoes, epis_obrigatorios=epis)

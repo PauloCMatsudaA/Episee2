@@ -1,46 +1,48 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Bell, Search, Menu } from 'lucide-react';
-import { ocorrenciasApi } from '../api/api';
 
-const POLLING_MS = 30_000;
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://episee2-production.up.railway.app';
 
 export default function Cabecalho({ titulo, aoAbrirMenu }) {
-  const { usuario }  = useAuth();
-  const navegar      = useNavigate();
+  const { usuario } = useAuth();
+  const navegar     = useNavigate();
 
   const [notifAberta, setNotifAberta] = useState(false);
   const [alertas, setAlertas]         = useState([]);
   const [naoLidas, setNaoLidas]       = useState(0);
-  const ultimaChecagem = useRef(new Date().toISOString());
-  const intervalRef    = useRef(null);
-
-  const buscarOcorrenciasNovas = useCallback(async () => {
-    try {
-      const res  = await ocorrenciasApi.listar({ limit: 10 });
-      const lista = res.data ?? [];
-
-      const novas = lista.filter(
-        o => o.status === 'nao_conforme' && new Date(o.timestamp) > new Date(ultimaChecagem.current)
-      );
-
-      if (novas.length > 0) {
-        setAlertas(prev => [...novas, ...prev].slice(0, 20));
-        setNaoLidas(prev => prev + novas.length);
-        ultimaChecagem.current = new Date().toISOString();
-      }
-    } catch (err) {
-      console.warn('[Alertas] Erro:', err?.message);
-    }
-  }, []);
+  const esRef = useRef(null);
 
   useEffect(() => {
     if (!usuario) return;
-    buscarOcorrenciasNovas();
-    intervalRef.current = setInterval(buscarOcorrenciasNovas, POLLING_MS);
-    return () => clearInterval(intervalRef.current);
-  }, [usuario, buscarOcorrenciasNovas]);
+
+    const token = localStorage.getItem('episee_token');
+    if (!token) return;
+
+    const conectar = () => {
+      const url = `${BASE_URL}/api/detection/stream?token=${token}`;
+      const es  = new EventSource(url);
+      esRef.current = es;
+
+      es.onmessage = (e) => {
+        try {
+          const dado = JSON.parse(e.data);
+          if (dado.tipo === 'conectado') return;
+          setAlertas(prev => [dado, ...prev].slice(0, 20));
+          setNaoLidas(prev => prev + 1);
+        } catch {}
+      };
+
+      es.onerror = () => {
+        es.close();
+        setTimeout(conectar, 5000);
+      };
+    };
+
+    conectar();
+    return () => esRef.current?.close();
+  }, [usuario]);
 
   const abrirPainel = () => {
     setNotifAberta(prev => !prev);
@@ -49,10 +51,10 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
 
   const tempoRelativo = (ts) => {
     const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
-    if (diff < 60)    return `há ${diff}s`;
-    if (diff < 3600)  return `há ${Math.floor(diff / 60)}min`;
-    if (diff < 86400) return `há ${Math.floor(diff / 3600)}h`;
-    return `há ${Math.floor(diff / 86400)}d`;
+    if (diff < 60)    return `h\u00e1 ${diff}s`;
+    if (diff < 3600)  return `h\u00e1 ${Math.floor(diff / 60)}min`;
+    if (diff < 86400) return `h\u00e1 ${Math.floor(diff / 3600)}h`;
+    return `h\u00e1 ${Math.floor(diff / 86400)}d`;
   };
 
   const inicial      = usuario?.nome?.charAt(0) || usuario?.name?.charAt(0) || 'U';
@@ -77,7 +79,7 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
           <button
             onClick={abrirPainel}
             className="btn-icon"
-            aria-label="Notificações"
+            aria-label="Notifica\u00e7\u00f5es"
           >
             <Bell size={20} />
             {naoLidas > 0 && (
@@ -93,9 +95,8 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
                 style={{ position: 'fixed', inset: 0, zIndex: 10 }}
                 onClick={() => setNotifAberta(false)}
               />
-
               <div className="notif-dropdown card fade-in" style={{ padding: '0.5rem' }}>
-                <p className="notif-heading">Detecções recentes</p>
+                <p className="notif-heading">Detec\u00e7\u00f5es em tempo real</p>
 
                 {alertas.length === 0 ? (
                   <p style={{
@@ -104,22 +105,19 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
                     color: 'var(--text-faint)',
                     fontSize: '0.85rem',
                   }}>
-                    Nenhuma não conformidade detectada
+                    Nenhuma n\u00e3o conformidade detectada
                   </p>
                 ) : (
                   <ul>
-                    {alertas.slice(0, 10).map(n => (
-                      <li
-                        key={n.id}
-                        className="notif-item"
-                      >
+                    {alertas.slice(0, 10).map((n, i) => (
+                      <li key={n.id ?? i} className="notif-item">
                         <span
                           className="notif-item-dot"
                           style={{ background: '#ef4444' }}
                         />
                         <div style={{ flex: 1 }}>
                           <p className="notif-item-text">
-                            ⚠️ {n.epi_detected ?? 'Não conformidade'} — {n.camera_name ?? n.sector_name ?? 'Câmera'}
+                            \u26a0\ufe0f Faltando: {n.epis_ausentes?.join(', ') || 'EPI'} \u2014 C\u00e2mera {n.camera_id}
                           </p>
                           <p className="notif-item-time">
                             {tempoRelativo(n.timestamp)}
