@@ -51,10 +51,10 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
 
   const tempoRelativo = (ts) => {
     const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
-    if (diff < 60)    return `h\u00e1 ${diff}s`;
-    if (diff < 3600)  return `h\u00e1 ${Math.floor(diff / 60)}min`;
-    if (diff < 86400) return `h\u00e1 ${Math.floor(diff / 3600)}h`;
-    return `h\u00e1 ${Math.floor(diff / 86400)}d`;
+    if (diff < 60)    return `há ${diff}s`;
+    if (diff < 3600)  return `há ${Math.floor(diff / 60)}min`;
+    if (diff < 86400) return `há ${Math.floor(diff / 3600)}h`;
+    return `há ${Math.floor(diff / 86400)}d`;
   };
 
   const inicial      = usuario?.nome?.charAt(0) || usuario?.name?.charAt(0) || 'U';
@@ -79,7 +79,7 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
           <button
             onClick={abrirPainel}
             className="btn-icon"
-            aria-label="Notifica\u00e7\u00f5es"
+            aria-label="Notificações"
           >
             <Bell size={20} />
             {naoLidas > 0 && (
@@ -96,7 +96,7 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
                 onClick={() => setNotifAberta(false)}
               />
               <div className="notif-dropdown card fade-in" style={{ padding: '0.5rem' }}>
-                <p className="notif-heading">Detec\u00e7\u00f5es em tempo real</p>
+                <p className="notif-heading">Detecções em tempo real</p>
 
                 {alertas.length === 0 ? (
                   <p style={{
@@ -105,7 +105,7 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
                     color: 'var(--text-faint)',
                     fontSize: '0.85rem',
                   }}>
-                    Nenhuma n\u00e3o conformidade detectada
+                    Nenhuma não conformidade detectada
                   </p>
                 ) : (
                   <ul>
@@ -117,7 +117,7 @@ export default function Cabecalho({ titulo, aoAbrirMenu }) {
                         />
                         <div style={{ flex: 1 }}>
                           <p className="notif-item-text">
-                            \u26a0\ufe0f Faltando: {n.epis_ausentes?.join(', ') || 'EPI'} \u2014 C\u00e2mera {n.camera_id}
+                            ⚠️ Faltando: {n.epis_ausentes?.join(', ') || 'EPI'} — Câmera {n.camera_id}
                           </p>
                           <p className="notif-item-time">
                             {tempoRelativo(n.timestamp)}
