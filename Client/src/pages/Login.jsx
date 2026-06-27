@@ -4,8 +4,8 @@ import { useAuth } from '../hooks/useAuth';
 import { ShieldCheck, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 
 export default function Login() {
-  const navegar               = useNavigate();
-  const { entrar, carregando } = useAuth();
+  const navegar            = useNavigate();
+  const { login, loading } = useAuth();
 
   const [email, setEmail]               = useState('');
   const [senha, setSenha]               = useState('');
@@ -21,11 +21,12 @@ export default function Login() {
       return;
     }
 
-    const resultado = await entrar(email, senha);
-    if (resultado.sucesso) {
+    try {
+      await login(email, senha);
       navegar('/dashboard', { replace: true });
-    } else {
-      setErro(resultado.erro);
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Credenciais inválidas.';
+      setErro(msg);
     }
   }
 
@@ -100,10 +101,10 @@ export default function Login() {
 
           <button
             type="submit"
-            disabled={carregando}
+            disabled={loading}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition-all hover:bg-brand-h disabled:opacity-60"
           >
-            {carregando
+            {loading
               ? <><Loader2 size={18} className="animate-spin" /> Entrando...</>
               : 'Entrar'
             }
